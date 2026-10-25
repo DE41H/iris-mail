@@ -63,7 +63,6 @@ class Result(models.Model):
     class Meta:
         indexes = (
             models.Index(fields=("plugin", "fetched", "-time")),
-            models.Index(fields=("user", "plugin", "-time")),
         )
 
     def __str__(self) -> str:
