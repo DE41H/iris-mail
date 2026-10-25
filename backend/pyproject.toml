@@ -1,0 +1,12 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "django-allauth>=65.20.1",
+    "django-stubs>=6.1.2",
+    "djangorestframework>=3.18.3",
+    "simplegmail>=5.0.0",
+]
