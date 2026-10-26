@@ -1,18 +1,25 @@
 from hashlib import sha256
 from secrets import compare_digest, token_urlsafe
 
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models.functions.uuid import UUID7
 
 # Create your models here.
 
-User = get_user_model()
+class UserTier(models.IntegerChoices):
+    BASE = 1, "Base"
+    CORE = 2, "Core"
+    PRIME = 3, "Prime"
+
+class CustomUser(AbstractUser):
+    id = models.UUIDField(primary_key=True, default=UUID7, editable=False)
+    tier = models.PositiveSmallIntegerField(choices=UserTier.choices, default=UserTier.BASE)
 
 
 class Plugin(models.Model):
     id = models.UUIDField(primary_key=True, default=UUID7, editable=False)
-    developer = models.ForeignKey(to=User, on_delete=models.CASCADE, related_name="dev_plugins")
+    developer = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE, related_name="dev_plugins")
     name = models.SlugField(max_length=255)
     desc = models.TextField(blank=True, null=True)
     schema = models.JSONField(default=list)
@@ -44,8 +51,8 @@ class Plugin(models.Model):
         pre = f"iris_{secret[:11]}"
         full = f"{pre}_{secret}"
         hash = self.__class__.get_hash(full)
-        self.__class__.objects.filter(pk=self.pk).update(key=hash, prefix=pre)
-        self.refresh_from_db(fields=("key", "prefix"))
+        if self.__class__.objects.filter(pk=self.pk).update(key=hash, prefix=pre):
+            self.refresh_from_db(fields=("key", "prefix"))
         return full
 
     def __str__(self) -> str:
@@ -54,7 +61,7 @@ class Plugin(models.Model):
 
 class Subscription(models.Model):
     id = models.UUIDField(primary_key=True, default=UUID7, editable=False)
-    user = models.ForeignKey(to=User, on_delete=models.CASCADE, related_name="subscriptions")
+    user = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE, related_name="subscriptions")
     plugin = models.ForeignKey(to=Plugin, on_delete=models.CASCADE, related_name="subscribers")
     active = models.BooleanField(default=True)
     time = models.DateTimeField(auto_now_add=True)
@@ -80,7 +87,7 @@ class Subscription(models.Model):
 
 class Result(models.Model):
     id = models.UUIDField(primary_key=True, default=UUID7, editable=False)
-    user = models.ForeignKey(to=User, on_delete=models.CASCADE, related_name="results")
+    user = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE, related_name="results")
     plugin = models.ForeignKey(to=Plugin, on_delete=models.CASCADE, related_name="results")
     output = models.JSONField()
     fetched = models.BooleanField(default=False)
@@ -88,7 +95,10 @@ class Result(models.Model):
 
     class Meta:
         indexes = (
-            models.Index(fields=("plugin", "fetched", "-time")),
+            models.Index(
+                fields=("plugin", "-time"),
+                condition=models.Q(fetched=False),
+            ),
         )
 
     def __str__(self) -> str:
