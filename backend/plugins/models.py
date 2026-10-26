@@ -76,7 +76,7 @@ class Subscription(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
     user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="subscriptions")
     plugin = models.ForeignKey(to=Plugin, on_delete=models.CASCADE, related_name="subscribers")
-    active = models.BooleanField(default=True)
+    active = models.BooleanField(default=False)
     time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -110,4 +110,5 @@ class Result(models.Model):
                 condition=models.Q(fetched=False),
                 name="result_plugin_time_idx",
             ),
+            models.Index(fields=("plugin", "-id")),
         )
