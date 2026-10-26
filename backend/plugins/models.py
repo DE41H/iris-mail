@@ -1,3 +1,6 @@
+from hashlib import sha256
+from secrets import compare_digest, token_urlsafe
+
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models.functions.uuid import UUID7
@@ -14,8 +17,8 @@ class Plugin(models.Model):
     desc = models.TextField(blank=True, null=True)
     schema = models.JSONField(default=list)
     hint = models.CharField(max_length=512, blank=True, null=True)
-    key = models.CharField(max_length=128, unique=True, blank=True, null=True)
-    prefix = models.CharField(max_length=16, blank=True, null=True, db_index=True)
+    key = models.BinaryField(max_length=32, unique=True, blank=True, null=True)
+    prefix = models.CharField(max_length=16, unique=True, blank=True, null=True)
 
     class Meta:
         constraints = (
@@ -24,6 +27,26 @@ class Plugin(models.Model):
                 name="unique_developer_plugin_name",
             ),
         )
+
+    @classmethod
+    def get_hash(cls, content: str) -> bytes:
+        return sha256(content.encode("utf-8")).digest()
+
+    @classmethod
+    def authenticate(cls, key: str):
+        if not key or not key.startswith("iris_") or len(key) != 60: return None
+        hash = cls.get_hash(key)
+        plugin = cls.objects.filter(prefix__isnull=False, prefix=key[:16]).first()
+        return plugin if plugin and compare_digest(bytes(plugin.key), hash) else None
+
+    def rotate_key(self):
+        secret = token_urlsafe(32)
+        pre = f"iris_{secret[:11]}"
+        full = f"{pre}_{secret}"
+        hash = self.__class__.get_hash(full)
+        self.__class__.objects.filter(pk=self.pk).update(key=hash, prefix=pre)
+        self.refresh_from_db(fields=("key", "prefix"))
+        return full
 
     def __str__(self) -> str:
         return f"{self.name} by {self.developer}"
@@ -47,6 +70,10 @@ class Subscription(models.Model):
             models.Index(fields=("user", "active")),
         )
 
+    def toggle(self):
+        self.__class__.objects.filter(pk=self.pk).update(active=~models.F("active"))
+        self.refresh_from_db(fields=("active",))
+
     def __str__(self) -> str:
         return f"{self.user} on {self.plugin} at {self.time}"
 
@@ -55,7 +82,6 @@ class Result(models.Model):
     id = models.UUIDField(primary_key=True, default=UUID7, editable=False)
     user = models.ForeignKey(to=User, on_delete=models.CASCADE, related_name="results")
     plugin = models.ForeignKey(to=Plugin, on_delete=models.CASCADE, related_name="results")
-    hash = models.CharField(max_length=256, db_index=True)
     output = models.JSONField()
     fetched = models.BooleanField(default=False)
     time = models.DateTimeField(auto_now_add=True)
