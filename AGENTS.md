@@ -27,6 +27,7 @@ Pub/Sub, Google OAuth (allauth), Laya (extraction). Python 3.13, uv.
 
 ## Conventions
 
+- No tests and no unnecessary code. Verify changes by hand (run the app, hit the endpoint, check the shell) and do not add test files.
 - Models: `uuid7` PKs, `UUIDField(primary_key=True, editable=False)`.
 - Hot writes use `.update()` / `F()` expressions, then `refresh_from_db`.
 - Add a DB index whenever a new query pattern appears; keep partial indexes
