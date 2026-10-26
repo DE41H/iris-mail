@@ -8,6 +8,7 @@ dependencies = [
     "django-allauth>=65.20.1",
     "django-stubs>=6.1.2",
     "djangorestframework>=3.18.3",
+    "granian>=2.8.5",
     "laya>=0.4.15",
     "procrastinate[django]>=3.10.0",
     "psycopg[binary]>=3.3.6",
