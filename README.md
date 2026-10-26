@@ -51,8 +51,8 @@ The email never stays with Iris. Only the answer does.
 
 ## Built to keep up
 
-- Emails are deduplicated in Dragonfly before they cost any processing time.
-- RabbitMQ and Celery keep ingestion asynchronous and absorb bursts.
+- Emails are deduplicated in Valkey before they cost any processing time.
+- Procrastinate keeps ingestion asynchronous and absorbs bursts.
 - Postgres stores only results, with indexes tuned for "what's new".
 - The whole path — Pub/Sub to result — is designed to scale horizontally.
 
@@ -60,10 +60,11 @@ The email never stays with Iris. Only the answer does.
 
 | Layer | Technology |
 | --- | --- |
+| Deployment | Docker |
 | API & dashboard | Django, Django REST Framework |
 | Storage | PostgreSQL |
-| Queue | RabbitMQ, Celery |
-| Deduplication | Dragonfly |
+| Background tasks | Procrastinate |
+| Cache & deduplication | Valkey |
 | Inbox events | Google Pub/Sub |
 | Authorization | Google OAuth |
 | Extraction | Laya |

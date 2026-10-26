@@ -54,7 +54,7 @@ ROOT_URLCONF = 'cfg.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -76,8 +76,8 @@ DATABASES = {
         'NAME': getenv('POSTGRES_DB', 'name'),
         'USER': getenv('POSTGRES_USER', 'user'),
         'PASSWORD': getenv('POSTGRES_PASSWORD', 'password'),
-        'HOST': 'db',
-        'PORT': '5432',
+        'HOST': getenv('POSTGRES_HOST', 'db'),
+        'PORT': getenv('POSTGRES_PORT', '5432'),
         'CONN_MAX_AGE': 600,
         'CONN_HEALTH_CHECKS': True,
     }
@@ -89,9 +89,6 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         'LOCATION': getenv('VALKEY_URL', 'redis://127.0.0.1:6379/1'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django.core.cache.backends.redis.PyRedisClient',
-        }
     }
 }
 
@@ -122,6 +119,8 @@ USE_TZ = True
 
 # Staticfiles
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 
 # Auth
@@ -129,7 +128,7 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/plugins'
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*']
 ACCOUNT_EMAIL_VERIFICATION = 'none'

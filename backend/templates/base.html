@@ -1,0 +1,24 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Iris{% endblock %} · Iris</title>
+  <link rel="stylesheet" href="{% static 'iris.css' %}">
+</head>
+<body>
+  <header class="header">
+    <a class="brand" href="/plugins">Iris</a>
+    <nav>
+      {% if user.is_authenticated %}
+        <a href="/plugins">Plugins</a>
+        <a href="/subscriptions">Subscriptions</a>
+        <a href="{% url 'account_logout' %}">Sign out</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main class="auth">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

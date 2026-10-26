@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Sign in cancelled{% endblock %}
+{% block content %}
+<h1>Sign in cancelled</h1>
+<div class="box">
+  <div class="box-body">
+    <p class="muted">You cancelled signing in with Google. Nothing was changed.</p>
+    <a class="btn btn-block" href="{% url 'account_login' %}">Back to sign in</a>
+  </div>
+</div>
+{% endblock %}

@@ -7,15 +7,16 @@ structured results. Raw email is never persisted.
 
 ## Stack
 
-Django 6.1 + DRF, PostgreSQL, Celery + RabbitMQ, Dragonfly (dedupe), Google
-Pub/Sub, Google OAuth (allauth), Laya (extraction). Python 3.13, uv.
+Docker, Django 6.1 + DRF, Valkey (cache and dedupe), Procrastinate (background
+tasks, Postgres-backed), PostgreSQL, Laya (extraction), Google OAuth (allauth),
+Google Pub/Sub (inbox events). Python 3.13, uv.
 
 ## Layout
 
     backend/
-      cfg/        settings, urls, wsgi/asgi, celery app
+      cfg/        settings, urls, wsgi/asgi
       plugins/    models, views, urls, admin (domain lives here)
-    docker/       compose/services (empty for now)
+    docker/       compose file and Dockerfiles (not written yet)
 
 ## Commands
 
@@ -23,7 +24,7 @@ Pub/Sub, Google OAuth (allauth), Laya (extraction). Python 3.13, uv.
     uv sync
     uv run manage.py migrate
     uv run manage.py runserver
-    uv run celery -A cfg worker -l info
+    uv run manage.py procrastinate worker
 
 ## Conventions
 
@@ -43,16 +44,18 @@ Pub/Sub, Google OAuth (allauth), Laya (extraction). Python 3.13, uv.
 - Never store email bodies, headers, or addresses. Only structured `Result`
   output.
 - API keys are stored as SHA-256 only (`Plugin.key`), never plaintext; auth
-  goes through `Plugin.authenticate()` (prefix lookup + `compare_digest`).
-  Return the full key exactly once, from `rotate_key()`.
+  goes through `Plugin.auth_key()` (prefix lookup + `compare_digest`).
+  Return the full key exactly once, from `rot_key()`.
 - Respect `Subscription.active`; extract only for enabled plugins.
 - Deduplicate before inference — no duplicate Laya calls.
 - Secrets come from env; never commit keys or `.env`.
 
 ## Current state
 
-Scaffolding. Models + key helpers exist; `views.py`, `urls.py`, `admin.py` are
-stubs, no migrations are committed, and `settings.py` is stock (SQLite, no
-`plugins`/allauth/DRF/Celery/Postgres wiring). No test suite yet.
+Scaffolding. Models, key helpers, DRF views/serializers/auth/throttling, and
+the Google OAuth adapter exist. `settings.py` is wired for Postgres, Valkey,
+allauth, DRF, and Procrastinate. Known gaps: the DB host is hardcoded to `db`
+(the compose service name), no migrations are committed, the Docker setup is
+not written, and the Laya and Pub/Sub pipeline is not built. No test suite yet.
 
 See `README.md` for the product overview.

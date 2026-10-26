@@ -1,0 +1,30 @@
+---
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · Iris</title>
+    <link rel="stylesheet" href="/static/iris.css" />
+  </head>
+  <body>
+    <header class="header">
+      <a class="brand" href="/plugins">Iris</a>
+      <nav>
+        <a href="/plugins">Plugins</a>
+        <a href="/subscriptions">Subscriptions</a>
+        <a href="/accounts/logout/">Sign out</a>
+      </nav>
+    </header>
+    <main class="container">
+      <slot />
+    </main>
+  </body>
+</html>

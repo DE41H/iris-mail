@@ -1,0 +1,93 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="New plugin">
+  <div class="page-head">
+    <h1>New plugin</h1>
+  </div>
+  <div class="box">
+    <div class="box-body">
+      <div id="error" class="alert alert-danger" hidden></div>
+      <div id="key" class="key-box" hidden>
+        <strong>Your API key</strong>
+        <p class="muted">Copy it now. It will not be shown again.</p>
+        <code id="key-value"></code>
+        <button class="btn btn-sm" id="copy" type="button">Copy key</button>
+        <a class="btn btn-sm" href="/plugins">Done</a>
+      </div>
+      <form id="form">
+        <div class="field">
+          <label for="name">Name</label>
+          <input id="name" name="name" type="text" required pattern="[-a-z0-9_]+" />
+          <div class="help">Lowercase letters, numbers, hyphens and underscores. Unique to you.</div>
+        </div>
+        <div class="field">
+          <label for="desc">Description</label>
+          <input id="desc" name="desc" type="text" />
+        </div>
+        <div class="field">
+          <label for="hint">Hint</label>
+          <input id="hint" name="hint" type="text" />
+          <div class="help">Helps Laya know what to look for in an email.</div>
+        </div>
+        <div class="field">
+          <label for="schema">Schema</label>
+          <textarea id="schema" name="schema" spellcheck="false">{'{"fields": []}'}</textarea>
+          <div class="help">JSON describing the fields to extract.</div>
+        </div>
+        <button class="btn btn-primary" type="submit">Create plugin</button>
+        <a class="btn" href="/plugins">Cancel</a>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { api, ApiError, type Page } from '../../lib/api';
+
+  const form = document.getElementById('form') as HTMLFormElement;
+  const error = document.getElementById('error')!;
+  const keyBox = document.getElementById('key')!;
+  const keyValue = document.getElementById('key-value')!;
+  const showError = (message: string) => {
+    error.textContent = message;
+    error.hidden = false;
+  };
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    error.hidden = true;
+    const data = new FormData(form);
+    let schema: unknown;
+    try {
+      schema = JSON.parse(String(data.get('schema')));
+    } catch {
+      return showError('Schema must be valid JSON.');
+    }
+
+    const button = form.querySelector('button')!;
+    button.disabled = true;
+    try {
+      const plugin = await api<{ key: string }>('/api/plugins/', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: data.get('name'),
+          desc: data.get('desc'),
+          hint: data.get('hint'),
+          schema,
+        }),
+      });
+      keyValue.textContent = plugin.key;
+      keyBox.hidden = false;
+      form.hidden = true;
+    } catch (err) {
+      showError(err instanceof ApiError ? err.message : 'Something went wrong.');
+      button.disabled = false;
+    }
+  });
+
+  document.getElementById('copy')!.addEventListener('click', () => {
+    navigator.clipboard.writeText(keyValue.textContent ?? '');
+  });
+</script>

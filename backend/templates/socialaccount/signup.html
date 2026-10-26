@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Finish sign up{% endblock %}
+{% block content %}
+<h1>Finish signing up</h1>
+<div class="box">
+  <div class="box-body">
+    <p class="muted">Confirm the details for your Iris account.</p>
+    <form method="post" action="{% url 'socialaccount_signup' %}">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      {% for field in form.visible_fields %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+          {% for error in field.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+      {% endfor %}
+      <button class="btn btn-primary btn-block" type="submit">Create account</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
