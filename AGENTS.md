@@ -41,8 +41,9 @@ Google Pub/Sub (inbox events). Python 3.13, uv.
 
 ## Invariants (do not break)
 
-- Never store email bodies, headers, or addresses. Only structured `Result`
-  output.
+- Never store email bodies or headers. Only structured `Result` output.
+  User account addresses (`CustomUser.email`, required and unique) are
+  stored for Pub/Sub matching.
 - API keys are stored as SHA-256 only (`Plugin.key`), never plaintext; auth
   goes through `Plugin.auth_key()` (prefix lookup + `compare_digest`).
   Return the full key exactly once, from `rot_key()`.
