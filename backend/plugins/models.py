@@ -16,7 +16,9 @@ class UserTier(models.IntegerChoices):
 
 class CustomUser(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
+    email = models.EmailField(unique=True)
     tier = models.PositiveSmallIntegerField(choices=UserTier.choices, default=UserTier.BASE)
+    hist_id = models.PositiveBigIntegerField(null=True, blank=True)
 
 
 class Plugin(models.Model):
@@ -100,10 +102,17 @@ class Result(models.Model):
     user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="results")
     plugin = models.ForeignKey(to=Plugin, on_delete=models.CASCADE, related_name="results")
     output = models.JSONField(default=dict)
+    message = models.BinaryField(max_length=8)
     fetched = models.BooleanField(default=False)
     time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=("user", "message", "plugin"),
+                name="unique_result_per_message",
+            ),
+        )
         indexes = (
             models.Index(
                 fields=("plugin", "-time"),
