@@ -25,13 +25,16 @@ The email never stays with Iris. Only the answer does.
 1. A developer creates a plugin and defines the fields it should extract.
 2. Iris issues an API key for that plugin — shown once, stored only as a hash.
 3. A user signs in with Google and grants read access to their inbox via OAuth.
-4. The user enables the plugin from their dashboard.
+4. The developer adds users to the plugin. The subscription starts off; the
+   user turns it on from their marketplace, after a prompt warning that
+   extracted data goes to the developer.
 5. New mail arrives through Google Pub/Sub.
 6. Duplicate messages are dropped before any work is done.
 7. A background worker hands the message to Laya, which extracts the fields
    described by the plugin's schema.
 8. The structured result is stored. The email is discarded.
-9. The developer reads the results with their API key.
+9. The developer reads the results with their API key. Results are marked as
+   fetched once they are read.
 
 ## Made for developers
 
@@ -71,5 +74,6 @@ The email never stays with Iris. Only the answer does.
 
 ## Status
 
-Iris is in early development. The data model and plugin authentication are in
-place; the ingestion pipeline and public API are being built.
+Iris is in early development. The plugin API and dashboard, the marketplace,
+and the ingestion pipeline are in place. Still to do: the Docker setup, Valkey
+deduplication and schema validation.

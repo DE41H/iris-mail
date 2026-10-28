@@ -53,10 +53,20 @@ Google Pub/Sub (inbox events). Python 3.13, uv.
 
 ## Current state
 
-Scaffolding. Models, key helpers, DRF views/serializers/auth/throttling, and
-the Google OAuth adapter exist. `settings.py` is wired for Postgres, Valkey,
-allauth, DRF, and Procrastinate. Known gaps: the DB host is hardcoded to `db`
-(the compose service name), no migrations are committed, the Docker setup is
-not written, and the Laya and Pub/Sub pipeline is not built. No test suite yet.
+Built, not yet run against live Google OAuth or Pub/Sub:
+
+- Developers: create, list, view, edit, delete and rotate keys for plugins
+  (API under `/api/plugins/`, dashboard under `/plugins`).
+- Developers add users to a plugin with `POST /api/subscriptions/` (API key).
+  Subscriptions start inactive; users turn them on from the marketplace after
+  a consent prompt. Users see their plugins at `/api/marketplace/`.
+- Ingestion: Pub/Sub push (`PubSubView`) defers `process`, which fetches Gmail
+  history, dedupes in the DB, calls Laya and stores `Result`s. `Result.fetched`
+  flips to true when the developer reads results.
+- Admin: all models registered in `plugins/admin.py`.
+
+Known gaps: Valkey dedupe (the cache is configured but unused), schema
+validation on `Plugin.schema`, the DB host is hardcoded to `db`, the Docker
+setup is not written (`docker/` files are empty), no test suite.
 
 See `README.md` for the product overview.
