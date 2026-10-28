@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='result',
             name='message',
-            field=models.BinaryField(),
+            field=models.BinaryField(max_length=8),
         ),
         migrations.AddConstraint(
             model_name='result',
