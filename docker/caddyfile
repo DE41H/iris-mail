@@ -1,0 +1,16 @@
+{$SITE_ADDRESS} {
+	handle_path /static/* {
+		root * /srv/static
+		file_server
+	}
+
+	@django path /api/* /accounts/* /admin/* /signup/*
+	handle @django {
+		reverse_proxy backend:8000
+	}
+
+	handle {
+		root * /srv
+		file_server
+	}
+}
