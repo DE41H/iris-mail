@@ -1,8 +1,14 @@
+import json
+from base64 import b64decode
+from secrets import compare_digest
+
+from django.conf import settings
 from rest_framework import mixins, viewsets
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from plugins.authentication import PluginKeyAuthentication
 from plugins.models import CustomUser, Plugin, Result, Subscription
@@ -13,6 +19,7 @@ from plugins.serializers import (
     ResultSerializer,
     SubscriptionSerializer,
 )
+from plugins.tasks import process_notification
 
 
 class PluginViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -71,3 +78,24 @@ class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return CustomUser.objects.filter(subscriptions__plugin=self.request.auth, subscriptions__active=True)  # pyright: ignore[reportAttributeAccessIssue]
+
+
+class PubSubView(APIView):
+    authentication_classes = ()
+    permission_classes = ()
+    throttle_classes = ()
+
+    def post(self, request):
+        expected: str = settings.PUBSUB_PUSH_TOKEN
+        token: str = request.GET.get("token", "")
+        if not expected or not compare_digest(token.encode("utf-8"), expected.encode("utf-8")):
+            return Response(status=403)
+        try:
+            event = json.loads(b64decode(request.data["message"]["data"]))
+            email, history_id = event["emailAddress"], int(event["historyId"])
+        except (KeyError, TypeError, ValueError):
+            return Response(status=400)
+        user_id = CustomUser.objects.filter(email=email).values_list("id", flat=True).first()
+        if user_id:
+            process_notification.defer(user_id=str(user_id), history_id=history_id)
+        return Response(status=204)
