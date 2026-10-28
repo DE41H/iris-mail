@@ -1,3 +1,5 @@
+from datetime import UTC
+
 from allauth.socialaccount.models import SocialToken
 from django.conf import settings
 from django.utils import timezone
@@ -24,6 +26,16 @@ def client(user: CustomUser):
         )
     )
 
+def save_token(user: CustomUser, gmail: Gmail):
+    creds = gmail.creds
+    if creds.token is None or creds.expiry is None: return
+    SocialToken.objects.filter(account__user=user, account__provider="google").update(
+        token=creds.token, expires_at=creds.expiry.replace(tzinfo=UTC)
+    )
+
 def watch(user: CustomUser):
+    gmail = client(user)
     body = {"topicName": settings.GMAIL_PUBSUB_TOPIC, "labelIds": ["INBOX"]}
-    return client(user).service.users().watch(userId="me", body=body).execute()  # type: ignore[attr-defined]
+    response = gmail.service.users().watch(userId="me", body=body).execute()  # type: ignore[attr-defined]
+    save_token(user, gmail)
+    return response

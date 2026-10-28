@@ -10,7 +10,7 @@ from laya.structured import SchemaError
 from procrastinate.contrib.django import app
 from simplegmail import Gmail
 
-from plugins.gmail import client, watch
+from plugins.gmail import client, save_token, watch
 from plugins.models import CustomUser, Result, Subscription
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,8 @@ def process(user_id, hist_id):
         if error.resp.status != 404: raise
         logger.warning("Gmail history expired for user %s, restarting from notification", user_id)
         msgs, latest = _get_msgs(gmail, hist_id - 1)
-    done = {(bytes(b), p) for b, p in Result.objects.filter(user=user, message__in=[bytes.fromhex(m.id) for m in msgs]).values_list("message", "plugin_id")}
+    save_token(user, gmail)
+    done ={(bytes(b), p) for b, p in Result.objects.filter(user=user, message__in=[bytes.fromhex(m.id) for m in msgs]).values_list("message", "plugin_id")}
     subs = tuple(Subscription.objects.filter(user=user, active=True).select_related("plugin"))
     results = []
     for message in msgs:
