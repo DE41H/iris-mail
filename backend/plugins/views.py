@@ -22,7 +22,14 @@ from plugins.serializers import (
 from plugins.tasks import process
 
 
-class PluginViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+class PluginViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
     serializer_class = PluginSerializer
 
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -34,6 +41,10 @@ class PluginViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Cre
         plugin = serializer.save(developer=request.user)
         key = plugin.rot_key()
         return Response({**serializer.data, "key": key}, status=201)
+
+    @action(detail=True, methods=["post"])
+    def rotate_key(self, request, pk=None):
+        return Response({"key": self.get_object().rot_key()})
 
 
 class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -69,6 +80,12 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         if fetched.lower() not in ("true", "false"):
             raise ValidationError({"fetched": "Use true or false."})
         return queryset.filter(fetched=fetched.lower() == "true")
+
+    def paginate_queryset(self, queryset):
+        page = super().paginate_queryset(queryset)
+        if page is not None:
+            Result.objects.filter(pk__in=[result.pk for result in page]).update(fetched=True)
+        return page
 
 
 class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
