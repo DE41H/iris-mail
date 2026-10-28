@@ -10,6 +10,8 @@ DEBUG = getenv('DJANGO_DEBUG', 'False') == 'True'
 SECRET_KEY = getenv('DJANGO_SECRET_KEY') or ('django-insecure-dev-only-key' if DEBUG else None)
 ALLOWED_HOSTS = [ host.strip() for host in getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') ]
 CSRF_TRUSTED_ORIGINS = [ origin.strip() for origin in getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip() ]
+PUBSUB_PUSH_TOKEN = getenv('PUBSUB_PUSH_TOKEN', '')
+GMAIL_PUBSUB_TOPIC = getenv('GMAIL_PUBSUB_TOPIC', '')
 
 SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
