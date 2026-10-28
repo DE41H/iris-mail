@@ -7,7 +7,7 @@ structured results. Raw email is never persisted.
 
 ## Stack
 
-Docker, Django 6.1 + DRF, Valkey (cache and dedupe), Procrastinate (background
+Docker, Django 6.1 + DRF, Valkey (cache), Procrastinate (background
 tasks, Postgres-backed), PostgreSQL, Laya (extraction), Google OAuth (allauth),
 Google Pub/Sub (inbox events). Python 3.13, uv.
 
@@ -57,16 +57,21 @@ Built, not yet run against live Google OAuth or Pub/Sub:
 
 - Developers: create, list, view, edit, delete and rotate keys for plugins
   (API under `/api/plugins/`, dashboard under `/plugins`).
-- Developers add users to a plugin with `POST /api/subscriptions/` (API key).
+- Users sign in with Google first; that creates their account. Developers then
+  add a user to a plugin with `POST /api/subscriptions/` (API key, user UUID).
+  Developers see the email and username of each subscribed user (`/api/users/`).
   Subscriptions start inactive; users turn them on at `/subscriptions` after
   a consent prompt. Users list their subscriptions at `/api/subscriptions/`.
 - Ingestion: Pub/Sub push (`PubSubView`) defers `process`, which fetches Gmail
-  history, dedupes in the DB, calls Laya and stores `Result`s. `Result.fetched`
-  flips to true when the developer reads results.
+  history, skips messages already stored for that user and plugin (unique
+  `Result` per user, message and plugin), calls Laya and stores `Result`s.
+  `Result.fetched` flips to true when the developer reads results. Refreshed
+  Google access tokens are saved back to `SocialToken`.
 - Admin: all models registered in `plugins/admin.py`.
 
-Known gaps: Valkey dedupe (the cache is configured but unused), schema
-validation on `Plugin.schema`, the DB host is hardcoded to `db`, the Docker
-setup is not written (`docker/` files are empty), no test suite.
+Known gaps: schema validation on `Plugin.schema`, the DB host is hardcoded to
+`db`, the Docker setup is not written (`docker/` files are empty), no test
+suite, and no way for a developer to search for a user by email or username
+(`/api/users/` lists only subscribed users).
 
 See `README.md` for the product overview.

@@ -25,11 +25,12 @@ The email never stays with Iris. Only the answer does.
 1. A developer creates a plugin and defines the fields it should extract.
 2. Iris issues an API key for that plugin — shown once, stored only as a hash.
 3. A user signs in with Google and grants read access to their inbox via OAuth.
-4. The developer adds users to the plugin. The subscription starts off; the
-   user turns it on from the subscriptions page, after a prompt warning that
-   extracted data goes to the developer.
+4. Once a user has signed in, the developer adds them to the plugin. The
+   subscription starts off; the user turns it on from the subscriptions page,
+   after a prompt warning that extracted data goes to the developer.
 5. New mail arrives through Google Pub/Sub.
-6. Duplicate messages are dropped before any work is done.
+6. A message already stored for that user and plugin is skipped, so Laya never
+   runs twice on it.
 7. A background worker hands the message to Laya, which extracts the fields
    described by the plugin's schema.
 8. The structured result is stored. The email is discarded.
@@ -48,13 +49,17 @@ The email never stays with Iris. Only the answer does.
 ## Private by design
 
 - Email contents are never stored.
+- Developers see the email address and username of each user subscribed to
+  their plugin, so they can find the user they want to add. Extracted results
+  are the only mail-derived data they receive.
 - Inbox access is granted through OAuth and can be revoked by the user.
 - API keys exist in plaintext only once, at creation.
 - Users see exactly which plugins are enabled and can turn any of them off.
 
 ## Built to keep up
 
-- Emails are deduplicated in Valkey before they cost any processing time.
+- Each result is unique per user, message and plugin, so a duplicate message
+  is never extracted twice.
 - Procrastinate keeps ingestion asynchronous and absorbs bursts.
 - Postgres stores only results, with indexes tuned for "what's new".
 - The whole path — Pub/Sub to result — is designed to scale horizontally.
@@ -67,7 +72,7 @@ The email never stays with Iris. Only the answer does.
 | API & dashboard | Django, Django REST Framework |
 | Storage | PostgreSQL |
 | Background tasks | Procrastinate |
-| Cache & deduplication | Valkey |
+| Cache | Valkey |
 | Inbox events | Google Pub/Sub |
 | Authorization | Google OAuth |
 | Extraction | Laya |
@@ -75,5 +80,5 @@ The email never stays with Iris. Only the answer does.
 ## Status
 
 Iris is in early development. The plugin API and dashboard, the subscriptions
-page, and the ingestion pipeline are in place. Still to do: the Docker setup, Valkey
-deduplication and schema validation.
+page, and the ingestion pipeline are in place. Still to do: the Docker setup and
+schema validation.
