@@ -22,13 +22,15 @@ The email never stays with Iris. Only the answer does.
 
 ## How it works
 
-1. A developer creates a plugin and defines the fields it should extract.
+1. A developer creates a plugin and defines the fields it should extract. Each
+   field is a choice, a yes/no, or a scale, and the builder writes the schema
+   Laya expects.
 2. Iris issues an API key for that plugin — shown once, stored only as a hash.
 3. A user signs in with Google and grants read access to their inbox via OAuth.
 4. Once a user has signed in, the developer adds them to the plugin. The
    subscription starts off; the user turns it on from the subscriptions page,
    after a prompt warning that extracted data goes to the developer.
-5. New mail arrives through Google Pub/Sub.
+5. Iris checks each subscribed user's inbox for new mail every three minutes.
 6. A message already stored for that user and plugin is skipped, so Laya never
    runs twice on it.
 7. A background worker hands the message to Laya, which extracts the fields
@@ -62,7 +64,7 @@ The email never stays with Iris. Only the answer does.
   is never extracted twice.
 - Procrastinate keeps ingestion asynchronous and absorbs bursts.
 - Postgres stores only results, with indexes tuned for "what's new".
-- The whole path — Pub/Sub to result — is designed to scale horizontally.
+- The whole path — poll to result — is designed to scale horizontally.
 
 ## Stack
 
@@ -73,12 +75,14 @@ The email never stays with Iris. Only the answer does.
 | Storage | PostgreSQL |
 | Background tasks | Procrastinate |
 | Cache | Valkey |
-| Inbox events | Google Pub/Sub |
+| Inbox polling | Gmail API (history) |
+| Frontend | Astro, TypeScript |
 | Authorization | Google OAuth |
 | Extraction | Laya |
 
 ## Status
 
 Iris is in early development. The plugin API and dashboard, the subscriptions
-page, and the ingestion pipeline are in place. Still to do: the Docker setup and
-schema validation.
+page, and the ingestion pipeline are in place. The Docker files are written but
+have not been run end to end. Still to do: server-side schema validation and
+finding users by email or username.
