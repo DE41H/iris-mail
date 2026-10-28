@@ -4,52 +4,66 @@ import Layout from '../../layouts/Layout.astro';
 
 <Layout title="New plugin">
   <div class="page-head">
-    <h1>New plugin</h1>
+    <div>
+      <h1>New plugin</h1>
+      <p class="muted">Describe what Laya should pull from each email. You get an API key when it's created.</p>
+    </div>
   </div>
-  <div class="box">
-    <div class="box-body">
-      <div id="error" class="alert alert-danger" hidden></div>
-      <div id="key" class="key-box" hidden>
-        <strong>Your API key</strong>
-        <p class="muted">Copy it now. It will not be shown again.</p>
-        <code id="key-value"></code>
-        <button class="btn btn-sm" id="copy" type="button">Copy key</button>
-        <a class="btn btn-sm" href="/plugins">Done</a>
-      </div>
-      <form id="form">
-        <div class="field">
-          <label for="name">Name</label>
-          <input id="name" name="name" type="text" required pattern="[-a-z0-9_]+" />
-          <div class="help">Lowercase letters, numbers, hyphens and underscores. Unique to you.</div>
-        </div>
-        <div class="field">
-          <label for="desc">Description</label>
-          <input id="desc" name="desc" type="text" />
+  <form id="form" class="stack">
+    <section class="card">
+      <div class="card-body">
+        <div class="grid-2">
+          <div class="field">
+            <label for="name">Name</label>
+            <input id="name" name="name" class="mono" type="text" required pattern="[-a-z0-9_]+" autocomplete="off" spellcheck="false" aria-describedby="name-help" />
+            <div id="name-help" class="help">Lowercase letters, numbers, - and _. Unique to you.</div>
+          </div>
+          <div class="field">
+            <label for="desc">Description</label>
+            <input id="desc" name="desc" type="text" />
+          </div>
         </div>
         <div class="field">
           <label for="hint">Hint</label>
           <input id="hint" name="hint" type="text" />
           <div class="help">Helps Laya know what to look for in an email.</div>
         </div>
-        <div class="field">
-          <label for="schema">Schema</label>
-          <textarea id="schema" name="schema" spellcheck="false">{'{"fields": []}'}</textarea>
-          <div class="help">JSON describing the fields to extract.</div>
-        </div>
-        <button class="btn btn-primary" type="submit">Create plugin</button>
-        <a class="btn" href="/plugins">Cancel</a>
-      </form>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">Fields</div>
+      <div class="card-body">
+        <p class="muted">Each field is one question Laya answers per email. Pick a type, then define its answers.</p>
+        <div id="builder"></div>
+      </div>
+    </section>
+
+    <div id="error" class="alert alert-danger" role="alert" hidden></div>
+    <div class="actions">
+      <a class="btn" href="/plugins">Cancel</a>
+      <button class="btn btn-primary" type="submit">Create plugin</button>
     </div>
-  </div>
+  </form>
+  <div id="result" hidden></div>
 </Layout>
 
 <script>
-  import { api, ApiError, type Page } from '../../lib/api';
+  import { api, ApiError, el } from '../../lib/api';
+  import { mountBuilder } from '../../lib/builder';
+  import { keyCard } from '../../lib/keycard';
+  import { toSchema } from '../../lib/schema';
 
   const form = document.getElementById('form') as HTMLFormElement;
   const error = document.getElementById('error')!;
-  const keyBox = document.getElementById('key')!;
-  const keyValue = document.getElementById('key-value')!;
+  const result = document.getElementById('result')!;
+  const field = (name: string) => form.elements.namedItem(name) as HTMLInputElement;
+  const submit = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+  const builder = mountBuilder(document.getElementById('builder')!, [], () => {
+    if (!builder.problems().length) error.hidden = true;
+  });
+
   const showError = (message: string) => {
     error.textContent = message;
     error.hidden = false;
@@ -58,36 +72,31 @@ import Layout from '../../layouts/Layout.astro';
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     error.hidden = true;
-    const data = new FormData(form);
-    let schema: unknown;
-    try {
-      schema = JSON.parse(String(data.get('schema')));
-    } catch {
-      return showError('Schema must be valid JSON.');
-    }
+    if (builder.problems().length) return showError('Fix the fields above before creating the plugin.');
 
-    const button = form.querySelector('button')!;
-    button.disabled = true;
+    submit.disabled = true;
+    submit.textContent = 'Creating…';
     try {
-      const plugin = await api<{ key: string }>('/api/plugins/', {
+      const plugin = await api<{ id: string; key: string }>('/api/plugins/', {
         method: 'POST',
         body: JSON.stringify({
-          name: data.get('name'),
-          desc: data.get('desc'),
-          hint: data.get('hint'),
-          schema,
+          name: field('name').value,
+          desc: field('desc').value,
+          hint: field('hint').value,
+          schema: toSchema(builder.fields()),
         }),
       });
-      keyValue.textContent = plugin.key;
-      keyBox.hidden = false;
+      const open = el('a', 'btn btn-sm', 'Open plugin');
+      open.setAttribute('href', `/plugins/detail?id=${plugin.id}`);
+      const all = el('a', 'btn btn-sm', 'All plugins');
+      all.setAttribute('href', '/plugins');
       form.hidden = true;
+      result.replaceChildren(keyCard(plugin.key, open, all));
+      result.hidden = false;
     } catch (err) {
       showError(err instanceof ApiError ? err.message : 'Something went wrong.');
-      button.disabled = false;
+      submit.disabled = false;
+      submit.textContent = 'Create plugin';
     }
-  });
-
-  document.getElementById('copy')!.addEventListener('click', () => {
-    navigator.clipboard.writeText(keyValue.textContent ?? '');
   });
 </script>

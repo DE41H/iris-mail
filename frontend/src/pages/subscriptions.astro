@@ -4,9 +4,14 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title="Subscriptions">
   <div class="page-head">
-    <h1>Subscriptions</h1>
+    <div>
+      <h1>Subscriptions</h1>
+      <p class="muted">Plugins that run on your email. Turn one on to start receiving its results.</p>
+    </div>
   </div>
-  <div class="box" id="subscriptions"><div class="empty">Loading…</div></div>
+  <ul class="card list" id="subscriptions">
+    <li class="empty">Loading…</li>
+  </ul>
 </Layout>
 
 <script>
@@ -15,36 +20,76 @@ import Layout from '../layouts/Layout.astro';
   interface Subscription {
     id: string;
     plugin: string;
+    plugin_name: string;
+    plugin_desc: string;
     active: boolean;
   }
 
   const list = document.getElementById('subscriptions')!;
 
-  const render = (sub: Subscription) => {
-    const row = el('div', 'row');
-    row.dataset.id = sub.id;
+  // Turning a plugin on shares extracted data with its creator, so it asks first, inline.
+  // Turning one off takes effect right away.
+  const render = (sub: Subscription): HTMLElement => {
+    const item = el('li', 'row sub');
     const info = el('div', 'grow');
-    info.append(el('div', 'title mono', sub.plugin));
-    const toggle = el('button', 'btn btn-sm', sub.active ? 'Disable' : 'Enable');
-    toggle.type = 'button';
-    row.append(info, el('span', sub.active ? 'label label-on' : 'label', sub.active ? 'Active' : 'Inactive'), toggle);
-    toggle.addEventListener('click', async () => {
-      if (!sub.active && !confirm('Caution: enabling this plugin shares data extracted from your emails with its creator. Raw emails are never shared. Enable it?')) return;
-      toggle.disabled = true;
-      const updated = await api<Subscription>(`/api/subscriptions/${sub.id}/toggle/`, { method: 'POST' });
-      row.replaceWith(render(updated));
-    });
-    return row;
+    info.append(el('div', 'title mono', sub.plugin_name), el('div', 'muted', sub.plugin_desc || 'No description'));
+
+    const label = el('label', 'switch');
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.setAttribute('role', 'switch');
+    box.checked = sub.active;
+    const track = el('span', 'track');
+    track.setAttribute('aria-hidden', 'true');
+    label.append(box, track, el('span', 'switch-text', sub.active ? 'On' : 'Off'));
+
+    const status = el('div', 'sub-status');
+    item.append(info, label, status);
+
+    const flip = async () => {
+      status.replaceChildren();
+      item.setAttribute('aria-busy', 'true');
+      box.disabled = true;
+      try {
+        const updated = await api<Subscription>(`/api/subscriptions/${sub.id}/toggle/`, { method: 'POST' });
+        item.replaceWith(render(updated));
+      } catch (err) {
+        box.checked = sub.active;
+        box.disabled = false;
+        item.removeAttribute('aria-busy');
+        status.replaceChildren(el('div', 'alert alert-danger', err instanceof Error ? err.message : 'Something went wrong.'));
+      }
+    };
+
+    const askConsent = () => {
+      box.checked = false;
+      const yes = el('button', 'btn btn-primary btn-sm', 'Enable');
+      yes.type = 'button';
+      yes.addEventListener('click', flip);
+      const no = el('button', 'btn btn-sm', 'Cancel');
+      no.type = 'button';
+      no.addEventListener('click', () => status.replaceChildren());
+      const panel = el('div', 'consent');
+      panel.append(
+        el('p', '', `Enabling ${sub.plugin_name} shares what Laya extracts from your emails with its creator. Raw emails are never shared.`),
+        el('div', 'actions', ''),
+      );
+      panel.lastElementChild!.append(no, yes);
+      status.replaceChildren(panel);
+      yes.focus();
+    };
+
+    box.addEventListener('change', () => (box.checked && !sub.active ? askConsent() : flip()));
+    return item;
   };
 
   api<Page<Subscription>>('/api/subscriptions/')
     .then(({ results }) => {
-      list.replaceChildren();
       if (!results.length) {
-        list.append(el('div', 'empty', 'No subscriptions. Plugins you enable will appear here.'));
+        list.replaceChildren(el('li', 'empty', 'No subscriptions yet. Plugins that a developer adds to your account appear here.'));
         return;
       }
-      list.append(...results.map(render));
+      list.replaceChildren(...results.map(render));
     })
-    .catch((err) => list.replaceChildren(el('div', 'empty', err.message)));
+    .catch((err) => list.replaceChildren(el('li', 'empty', err.message)));
 </script>

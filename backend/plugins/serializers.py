@@ -24,10 +24,13 @@ class PluginSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
+    plugin_name = serializers.CharField(source="plugin.name", read_only=True)
+    plugin_desc = serializers.CharField(source="plugin.desc", read_only=True)
+
     class Meta:
         model = Subscription
-        fields = ("id", "user", "plugin", "active", "time")
-        read_only_fields = ("id", "plugin", "active", "time")
+        fields = ("id", "user", "plugin", "plugin_name", "plugin_desc", "active", "time")
+        read_only_fields = ("id", "plugin", "plugin_name", "plugin_desc", "active", "time")
 
     def validate(self, attrs):
         plugin = self.context["request"].auth

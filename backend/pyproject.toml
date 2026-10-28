@@ -16,6 +16,7 @@ dependencies = [
     "torch",
     "simplegmail>=5.0.0",
     "uuid6>=2025.0.1",
+    "pyjwt[crypto]>=2.0",
 ]
 
 [[tool.uv.index]]

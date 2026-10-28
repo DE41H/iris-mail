@@ -1,5 +1,6 @@
 from rest_framework import mixins, viewsets
 from rest_framework.authentication import SessionAuthentication
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -79,6 +80,11 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         if page is not None:
             Result.objects.filter(pk__in=[result.pk for result in page]).update(fetched=True)
         return page
+
+
+class MeView(APIView):
+    def get(self, request):
+        return Response(CustomUserSerializer(request.user).data)
 
 
 class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):

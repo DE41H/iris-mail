@@ -1,6 +1,8 @@
+from django.urls import path
 from rest_framework.routers import SimpleRouter
 
 from plugins.views import (
+    MeView,
     PluginViewSet,
     ResultViewSet,
     SubscriptionViewSet,
@@ -13,4 +15,4 @@ r.register(r'subscriptions', SubscriptionViewSet, basename='subscription')
 r.register(r'results', ResultViewSet, basename='results')
 r.register(r'users', UserViewSet, basename='users')
 
-urlpatterns: list = r.urls
+urlpatterns: list = [path("me/", MeView.as_view(), name="me"), *r.urls]

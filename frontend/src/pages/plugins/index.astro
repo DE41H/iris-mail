@@ -4,10 +4,15 @@ import Layout from '../../layouts/Layout.astro';
 
 <Layout title="Plugins">
   <div class="page-head">
-    <h1>Plugins</h1>
+    <div>
+      <h1>Plugins</h1>
+      <p class="muted">Schemas that Laya runs on each email you subscribe to.</p>
+    </div>
     <a class="btn btn-primary" href="/plugins/new">New plugin</a>
   </div>
-  <div class="box" id="plugins"><div class="empty">Loading…</div></div>
+  <ul class="card list" id="plugins">
+    <li class="empty">Loading…</li>
+  </ul>
 </Layout>
 
 <script>
@@ -25,21 +30,22 @@ import Layout from '../../layouts/Layout.astro';
 
   api<Page<Plugin>>('/api/plugins/')
     .then(({ results }) => {
-      list.replaceChildren();
       if (!results.length) {
-        list.append(el('div', 'empty', 'No plugins yet. Create one to get an API key.'));
+        list.replaceChildren(el('li', 'empty', 'No plugins yet. Create one to get an API key.'));
         return;
       }
-      for (const plugin of results) {
-        const row = el('div', 'row');
-        const info = el('div', 'grow');
-        const title = el('a', 'title', plugin.name);
-        title.setAttribute('href', `/plugins/detail?id=${plugin.id}`);
-        info.append(title, el('div', 'muted', plugin.desc || plugin.hint || 'No description'));
-        row.append(info);
-        if (plugin.prefix) row.append(el('span', 'mono muted', `${plugin.prefix}…`));
-        list.append(row);
-      }
+      list.replaceChildren(
+        ...results.map((plugin) => {
+          const row = el('li', 'row');
+          const info = el('div', 'grow');
+          const title = el('a', 'title mono', plugin.name);
+          title.setAttribute('href', `/plugins/detail?id=${plugin.id}`);
+          info.append(title, el('div', 'muted', plugin.desc || plugin.hint || 'No description'));
+          row.append(info);
+          if (plugin.prefix) row.append(el('span', 'mono muted', `${plugin.prefix}…`));
+          return row;
+        }),
+      );
     })
-    .catch((err) => list.replaceChildren(el('div', 'empty', err.message)));
+    .catch((err) => list.replaceChildren(el('li', 'empty', err.message)));
 </script>
