@@ -19,7 +19,7 @@ from plugins.serializers import (
     ResultSerializer,
     SubscriptionSerializer,
 )
-from plugins.tasks import process_notification
+from plugins.tasks import process
 
 
 class PluginViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -92,10 +92,10 @@ class PubSubView(APIView):
             return Response(status=403)
         try:
             event = json.loads(b64decode(request.data["message"]["data"]))
-            email, history_id = event["emailAddress"], int(event["historyId"])
+            email, hist_id = event["emailAddress"], int(event["historyId"])
         except (KeyError, TypeError, ValueError):
             return Response(status=400)
         user_id = CustomUser.objects.filter(email=email).values_list("id", flat=True).first()
         if user_id:
-            process_notification.defer(user_id=str(user_id), history_id=history_id)
+            process.defer(user_id=str(user_id), hist_id=hist_id)
         return Response(status=204)
