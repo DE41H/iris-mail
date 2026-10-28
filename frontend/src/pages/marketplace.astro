@@ -1,0 +1,51 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Marketplace">
+  <div class="page-head">
+    <h1>Marketplace</h1>
+  </div>
+  <div class="box" id="plugins"><div class="empty">Loading…</div></div>
+</Layout>
+
+<script>
+  import { api, el, type Page } from '../lib/api';
+
+  interface Listing {
+    id: string;
+    name: string;
+    desc: string;
+    active: boolean;
+  }
+
+  const list = document.getElementById('plugins')!;
+
+  const render = (listing: Listing) => {
+    const row = el('div', 'row');
+    row.dataset.id = listing.id;
+    const info = el('div', 'grow');
+    info.append(el('div', 'title', listing.name), el('div', 'muted', listing.desc || 'No description'));
+    const toggle = el('button', 'btn btn-sm', listing.active ? 'Disable' : 'Enable');
+    toggle.type = 'button';
+    row.append(info, el('span', listing.active ? 'label label-on' : 'label', listing.active ? 'Active' : 'Inactive'), toggle);
+    toggle.addEventListener('click', async () => {
+      if (!listing.active && !confirm('Caution: enabling this plugin shares data extracted from your emails with its creator. Raw emails are never shared. Enable it?')) return;
+      toggle.disabled = true;
+      const updated = await api<Listing>(`/api/subscriptions/${listing.id}/toggle/`, { method: 'POST' });
+      row.replaceWith(render(updated));
+    });
+    return row;
+  };
+
+  api<Page<Listing>>('/api/marketplace/')
+    .then(({ results }) => {
+      list.replaceChildren();
+      if (!results.length) {
+        list.append(el('div', 'empty', 'No plugins are available to you yet.'));
+        return;
+      }
+      list.append(...results.map(render));
+    })
+    .catch((err) => list.replaceChildren(el('div', 'empty', err.message)));
+</script>

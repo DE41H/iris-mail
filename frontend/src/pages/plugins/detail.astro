@@ -1,0 +1,140 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="Plugin">
+  <div class="page-head">
+    <h1 id="title">Plugin</h1>
+    <a class="btn" href="/plugins">Back</a>
+  </div>
+  <div id="error" class="alert alert-danger" hidden></div>
+  <div id="notice" class="alert alert-success" hidden></div>
+  <div id="key" class="key-box" hidden>
+    <strong>Your new API key</strong>
+    <p class="muted">Copy it now. It will not be shown again.</p>
+    <code id="key-value"></code>
+    <button class="btn btn-sm" id="copy" type="button">Copy key</button>
+  </div>
+  <div class="box">
+    <div class="box-body">
+      <form id="form">
+        <div class="field">
+          <label for="name">Name</label>
+          <input id="name" name="name" type="text" required pattern="[-a-z0-9_]+" />
+        </div>
+        <div class="field">
+          <label for="desc">Description</label>
+          <input id="desc" name="desc" type="text" />
+        </div>
+        <div class="field">
+          <label for="hint">Hint</label>
+          <input id="hint" name="hint" type="text" />
+        </div>
+        <div class="field">
+          <label for="schema">Schema</label>
+          <textarea id="schema" name="schema" spellcheck="false"></textarea>
+        </div>
+        <button class="btn btn-primary" type="submit">Save changes</button>
+      </form>
+    </div>
+  </div>
+  <div class="box">
+    <div class="box-body">
+      <p class="muted mono" id="prefix"></p>
+      <button class="btn" id="rotate" type="button">Rotate key</button>
+      <button class="btn btn-danger" id="delete" type="button">Delete plugin</button>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { api, ApiError } from '../../lib/api';
+
+  interface Plugin {
+    id: string;
+    name: string;
+    desc: string;
+    hint: string;
+    schema: unknown;
+    prefix: string | null;
+  }
+
+  const id = new URLSearchParams(location.search).get('id');
+  const form = document.getElementById('form') as HTMLFormElement;
+  const field = (name: string) => form.elements.namedItem(name) as HTMLInputElement;
+  const error = document.getElementById('error')!;
+  const notice = document.getElementById('notice')!;
+  const keyBox = document.getElementById('key')!;
+  const keyValue = document.getElementById('key-value')!;
+
+  const fail = (err: unknown) => {
+    notice.hidden = true;
+    error.textContent = err instanceof ApiError ? err.message : 'Something went wrong.';
+    error.hidden = false;
+  };
+  const succeed = (message: string) => {
+    error.hidden = true;
+    notice.textContent = message;
+    notice.hidden = false;
+  };
+
+  const fill = (plugin: Plugin) => {
+    document.getElementById('title')!.textContent = plugin.name;
+    field('name').value = plugin.name;
+    field('desc').value = plugin.desc;
+    field('hint').value = plugin.hint;
+    field('schema').value = JSON.stringify(plugin.schema, null, 2);
+    document.getElementById('prefix')!.textContent = plugin.prefix ? `Key prefix ${plugin.prefix}…` : '';
+  };
+
+  if (!id) {
+    location.href = '/plugins';
+  } else {
+    api<Plugin>(`/api/plugins/${id}/`).then(fill).catch(fail);
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    let schema: unknown;
+    try {
+      schema = JSON.parse(field('schema').value);
+    } catch {
+      return fail(new ApiError('Schema must be valid JSON.'));
+    }
+    try {
+      const plugin = await api<Plugin>(`/api/plugins/${id}/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name: field('name').value, desc: field('desc').value, hint: field('hint').value, schema }),
+      });
+      fill(plugin);
+      succeed('Changes saved.');
+    } catch (err) {
+      fail(err);
+    }
+  });
+
+  document.getElementById('rotate')!.addEventListener('click', async () => {
+    if (!confirm('Rotate the key? The current key stops working immediately.')) return;
+    try {
+      const { key } = await api<{ key: string }>(`/api/plugins/${id}/rotate_key/`, { method: 'POST' });
+      keyValue.textContent = key;
+      keyBox.hidden = false;
+    } catch (err) {
+      fail(err);
+    }
+  });
+
+  document.getElementById('delete')!.addEventListener('click', async () => {
+    if (!confirm('Delete this plugin? Its subscriptions and results will be deleted too.')) return;
+    try {
+      await api(`/api/plugins/${id}/`, { method: 'DELETE' });
+      location.href = '/plugins';
+    } catch (err) {
+      fail(err);
+    }
+  });
+
+  document.getElementById('copy')!.addEventListener('click', () => {
+    navigator.clipboard.writeText(keyValue.textContent ?? '');
+  });
+</script>

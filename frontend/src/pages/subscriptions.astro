@@ -29,6 +29,7 @@ import Layout from '../layouts/Layout.astro';
     toggle.type = 'button';
     row.append(info, el('span', sub.active ? 'label label-on' : 'label', sub.active ? 'Active' : 'Inactive'), toggle);
     toggle.addEventListener('click', async () => {
+      if (!sub.active && !confirm('Caution: enabling this plugin shares data extracted from your emails with its creator. Raw emails are never shared. Enable it?')) return;
       toggle.disabled = true;
       const updated = await api<Subscription>(`/api/subscriptions/${sub.id}/toggle/`, { method: 'POST' });
       row.replaceWith(render(updated));

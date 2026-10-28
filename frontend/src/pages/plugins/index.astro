@@ -33,7 +33,9 @@ import Layout from '../../layouts/Layout.astro';
       for (const plugin of results) {
         const row = el('div', 'row');
         const info = el('div', 'grow');
-        info.append(el('div', 'title', plugin.name), el('div', 'muted', plugin.desc || plugin.hint || 'No description'));
+        const title = el('a', 'title', plugin.name);
+        title.setAttribute('href', `/plugins/detail?id=${plugin.id}`);
+        info.append(title, el('div', 'muted', plugin.desc || plugin.hint || 'No description'));
         row.append(info);
         if (plugin.prefix) row.append(el('span', 'mono muted', `${plugin.prefix}…`));
         list.append(row);
