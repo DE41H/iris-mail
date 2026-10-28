@@ -10,3 +10,7 @@ RUN npm run build
 FROM caddy:2-alpine
 
 COPY --from=build /app/dist /srv
+
+ENV XDG_CONFIG_HOME=/config XDG_DATA_HOME=/data
+RUN chown -R 10002:10002 /config /data
+USER 10002

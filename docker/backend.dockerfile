@@ -9,5 +9,7 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-install-project
 
 COPY . .
+RUN useradd --system --uid 10001 app && mkdir staticfiles && chown app staticfiles
+USER app
 
 EXPOSE 8000

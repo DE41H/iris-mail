@@ -1,0 +1,69 @@
+services:
+  db:
+    image: postgres:17-alpine
+    env_file: .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      retries: 10
+
+  valkey:
+    image: valkey/valkey:8-alpine
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../docker/backend.dockerfile
+    env_file: .env
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+      python manage.py collectstatic --noinput &&
+      granian --interface wsgi --http 1 --no-ws --respawn-failed-workers --workers 2 --host 0.0.0.0 --port 8000 cfg.wsgi:application"
+    volumes:
+      - static:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+      valkey:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8000))"]
+      interval: 5s
+      retries: 20
+      start_period: 10s
+
+  worker:
+    build:
+      context: ../backend
+      dockerfile: ../docker/backend.dockerfile
+    env_file: .env
+    command: python manage.py procrastinate worker
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  caddy:
+    build:
+      context: ../frontend
+      dockerfile: ../docker/frontend.dockerfile
+    env_file: .env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddyfile:/etc/caddy/Caddyfile:ro
+      - static:/srv/static:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  static:
+  caddy_data:
+  caddy_config:
