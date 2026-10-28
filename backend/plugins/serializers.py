@@ -18,7 +18,7 @@ class PluginSerializer(serializers.ModelSerializer):
 
     def validate_name(self, value):
         user = self.context["request"].user
-        if Plugin.objects.filter(developer=user, name=value).exists():
+        if Plugin.objects.filter(developer=user, name=value).exclude(pk=getattr(self.instance, "pk", None)).exists():
             raise serializers.ValidationError("You already have a plugin with this name.")
         return value
 
