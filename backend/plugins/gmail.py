@@ -33,9 +33,8 @@ def save_token(user: CustomUser, gmail: Gmail):
         token=creds.token, expires_at=creds.expiry.replace(tzinfo=UTC)
     )
 
-def watch(user: CustomUser):
+def get_hist_id(user: CustomUser) -> int:
     gmail = client(user)
-    body = {"topicName": settings.GMAIL_PUBSUB_TOPIC, "labelIds": ["INBOX"]}
-    response = gmail.service.users().watch(userId="me", body=body).execute()  # type: ignore[attr-defined]
+    response = gmail.service.users().getProfile(userId="me").execute()  # type: ignore[attr-defined]
     save_token(user, gmail)
-    return response
+    return int(response["historyId"])
