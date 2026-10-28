@@ -26,7 +26,7 @@ The email never stays with Iris. Only the answer does.
 2. Iris issues an API key for that plugin — shown once, stored only as a hash.
 3. A user signs in with Google and grants read access to their inbox via OAuth.
 4. The developer adds users to the plugin. The subscription starts off; the
-   user turns it on from their marketplace, after a prompt warning that
+   user turns it on from the subscriptions page, after a prompt warning that
    extracted data goes to the developer.
 5. New mail arrives through Google Pub/Sub.
 6. Duplicate messages are dropped before any work is done.
@@ -74,6 +74,6 @@ The email never stays with Iris. Only the answer does.
 
 ## Status
 
-Iris is in early development. The plugin API and dashboard, the marketplace,
-and the ingestion pipeline are in place. Still to do: the Docker setup, Valkey
+Iris is in early development. The plugin API and dashboard, the subscriptions
+page, and the ingestion pipeline are in place. Still to do: the Docker setup, Valkey
 deduplication and schema validation.

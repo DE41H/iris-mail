@@ -58,8 +58,8 @@ Built, not yet run against live Google OAuth or Pub/Sub:
 - Developers: create, list, view, edit, delete and rotate keys for plugins
   (API under `/api/plugins/`, dashboard under `/plugins`).
 - Developers add users to a plugin with `POST /api/subscriptions/` (API key).
-  Subscriptions start inactive; users turn them on from the marketplace after
-  a consent prompt. Users see their plugins at `/api/marketplace/`.
+  Subscriptions start inactive; users turn them on at `/subscriptions` after
+  a consent prompt. Users list their subscriptions at `/api/subscriptions/`.
 - Ingestion: Pub/Sub push (`PubSubView`) defers `process`, which fetches Gmail
   history, dedupes in the DB, calls Laya and stores `Result`s. `Result.fetched`
   flips to true when the developer reads results.
