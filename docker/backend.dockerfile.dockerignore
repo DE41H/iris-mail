@@ -1,0 +1,12 @@
+*
+!cfg
+!plugins
+!templates
+!static
+!manage.py
+!pyproject.toml
+!uv.lock
+!.python-version
+
+**/__pycache__
+**/*.pyc
