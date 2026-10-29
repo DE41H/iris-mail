@@ -34,7 +34,8 @@ export function problems(fields: Field[]): string[] {
     if (f.kind === 'choice') {
       if (f.options.length < 2) out.push(`${at}: add at least two options.`);
       if (f.options.length > 32) out.push(`${at}: at most 32 options.`);
-      if (new Set(f.options).size !== f.options.length) out.push(`${at}: options must be unique.`);
+      if (f.options.some((option) => !option.trim())) out.push(`${at}: fill in or remove blank answers.`);
+      if (new Set(f.options.map((option) => option.trim())).size !== f.options.length) out.push(`${at}: answers must be unique.`);
     }
     if (f.kind === 'scale') {
       if (!Number.isInteger(f.min) || !Number.isInteger(f.max)) out.push(`${at}: min and max must be whole numbers.`);

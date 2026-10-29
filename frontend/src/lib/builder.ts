@@ -35,14 +35,23 @@ export function mountBuilder(root: HTMLElement, initial: Field[], onChange: () =
   const issues = el('ul', 'problems');
   issues.setAttribute('role', 'status');
   const preview = el('pre', 'preview mono');
+  const previewHead = el('div', 'preview-head');
+  previewHead.append(el('span', 'eyebrow', 'LIVE OUTPUT'), el('span', 'muted', 'JSON schema'));
+  const previewPanel = el('section', 'schema-preview');
+  previewPanel.append(previewHead, preview);
   const add = el('button', 'btn btn-sm', 'Add field');
   add.type = 'button';
-  root.replaceChildren(list, add, issues, preview);
+  const builderHead = el('div', 'builder-head');
+  const count = el('span', 'field-count');
+  builderHead.append(el('div', '', 'Questions'), count);
+  root.replaceChildren(builderHead, list, add, issues, previewPanel);
 
   const sync = () => {
     const found = problems(fields);
     issues.replaceChildren(...found.map((message) => el('li', '', message)));
     preview.textContent = JSON.stringify(toSchema(fields), null, 2);
+    count.textContent = `${fields.length} / ${MAX_FIELDS} fields`;
+    add.disabled = fields.length >= MAX_FIELDS;
     onChange();
   };
 
@@ -57,9 +66,11 @@ export function mountBuilder(root: HTMLElement, initial: Field[], onChange: () =
 
   const card = (f: Field, i: number, group: number) => {
     const node = el('div', 'field-card');
+    node.style.setProperty('--field-index', String(i));
     const top = el('div', 'field-top');
 
     const name = text(f.name, 'field_name', true);
+    name.className = 'mono field-name';
     name.setAttribute('aria-label', `Field ${i + 1} name`);
     name.addEventListener('input', () => { f.name = name.value; sync(); });
 
@@ -86,26 +97,35 @@ export function mountBuilder(root: HTMLElement, initial: Field[], onChange: () =
     remove.setAttribute('aria-label', `Remove field ${i + 1}`);
     remove.addEventListener('click', () => { fields = fields.filter((_, j) => j !== i); render(); });
 
-    top.append(name, seg, remove);
+    top.append(el('span', 'field-index', String(i + 1).padStart(2, '0')), name, seg, remove);
 
     const question = text(f.question, 'Question for Laya, e.g. Is this a receipt?');
+    question.className = 'field-question';
     question.setAttribute('aria-label', `Field ${i + 1} question`);
     question.addEventListener('input', () => { f.question = question.value; sync(); });
     node.append(top, question);
 
     if (f.kind === 'choice') {
-      const options = document.createElement('textarea');
-      options.className = 'mono';
-      options.value = f.options.join('\n');
-      options.placeholder = 'One option per line';
-      options.rows = Math.max(3, f.options.length + 1);
-      options.spellcheck = false;
-      options.setAttribute('aria-label', `Field ${i + 1} options`);
-      options.addEventListener('input', () => {
-        f.options = options.value.split('\n').map((o) => o.trim()).filter(Boolean);
-        sync();
+      const optionBox = el('div', 'option-box');
+      optionBox.append(el('div', 'option-title', 'Possible answers'));
+      const optionList = el('div', 'option-list');
+      f.options.forEach((option, optionIndex) => {
+        const line = el('div', 'option-line');
+        const input = text(option, `Option ${optionIndex + 1}`);
+        input.setAttribute('aria-label', `Field ${i + 1} option ${optionIndex + 1}`);
+        input.addEventListener('input', () => { f.options[optionIndex] = input.value.trim(); sync(); });
+        const removeOption = el('button', 'option-remove', '×');
+        removeOption.type = 'button';
+        removeOption.setAttribute('aria-label', `Remove option ${optionIndex + 1}`);
+        removeOption.addEventListener('click', () => { f.options.splice(optionIndex, 1); render(); });
+        line.append(input, removeOption);
+        optionList.append(line);
       });
-      node.append(options);
+      const addOption = el('button', 'btn btn-sm option-add', '+ Add answer');
+      addOption.type = 'button';
+      addOption.addEventListener('click', () => { f.options.push(''); render(); optionList.lastElementChild?.querySelector('input')?.focus(); });
+      optionBox.append(optionList, addOption);
+      node.append(optionBox);
     } else if (f.kind === 'scale') {
       const range = el('div', 'range');
       const from = document.createElement('input');
@@ -122,7 +142,7 @@ export function mountBuilder(root: HTMLElement, initial: Field[], onChange: () =
       range.append(el('span', 'muted', 'From'), from, el('span', 'muted', 'to'), to);
       node.append(range);
     } else {
-      node.append(el('div', 'help', 'Laya answers yes or no.'));
+      node.append(el('div', 'type-note', 'A clear yes or no for each email.'));
     }
     return node;
   };

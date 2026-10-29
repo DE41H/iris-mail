@@ -5,11 +5,13 @@ import Layout from '../layouts/Layout.astro';
 <Layout title="Subscriptions">
   <div class="page-head">
     <div>
+      <div class="eyebrow">YOUR INBOX, ON YOUR TERMS <span class="live-dot"></span></div>
       <h1>Subscriptions</h1>
-      <p class="muted">Plugins that run on your email. Turn one on to start receiving its results.</p>
+      <p class="muted">Choose the signals you want your inbox to notice.</p>
     </div>
   </div>
-  <ul class="card list" id="subscriptions">
+  <div class="workspace-strip"><span>CONNECTED AGENTS</span><span>CONSENT REQUIRED TO ENABLE</span></div>
+  <ul class="card list subscription-list" id="subscriptions">
     <li class="empty">Loading…</li>
   </ul>
 </Layout>
@@ -31,8 +33,9 @@ import Layout from '../layouts/Layout.astro';
   // Turning one off takes effect right away.
   const render = (sub: Subscription): HTMLElement => {
     const item = el('li', 'row sub');
+    item.classList.add('subscription-row');
     const info = el('div', 'grow');
-    info.append(el('div', 'title mono', sub.plugin_name), el('div', 'muted', sub.plugin_desc || 'No description'));
+    info.append(el('span', 'row-kicker', 'SIGNAL SOURCE'), el('div', 'title mono', sub.plugin_name), el('div', 'muted', sub.plugin_desc || 'No description'));
 
     const label = el('label', 'switch');
     const box = document.createElement('input');

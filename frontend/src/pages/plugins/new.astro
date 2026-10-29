@@ -5,8 +5,9 @@ import Layout from '../../layouts/Layout.astro';
 <Layout title="New plugin">
   <div class="page-head">
     <div>
-      <h1>New plugin</h1>
-      <p class="muted">Describe what Laya should pull from each email. You get an API key when it's created.</p>
+      <div class="eyebrow">PLUGIN STUDIO / NEW</div>
+      <h1>Create an email agent</h1>
+      <p class="muted">Give it a purpose, then write the questions it should answer.</p>
     </div>
   </div>
   <form id="form" class="stack">
@@ -32,9 +33,9 @@ import Layout from '../../layouts/Layout.astro';
     </section>
 
     <section class="card">
-      <div class="card-head">Fields</div>
+      <div class="card-head"><span>01 / QUESTION DESIGN</span><span class="muted">Up to 32 questions</span></div>
       <div class="card-body">
-        <p class="muted">Each field is one question Laya answers per email. Pick a type, then define its answers.</p>
+        <p class="muted">Each question becomes one structured value in your results.</p>
         <div id="builder"></div>
       </div>
     </section>

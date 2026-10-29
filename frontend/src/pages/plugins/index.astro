@@ -5,12 +5,14 @@ import Layout from '../../layouts/Layout.astro';
 <Layout title="Plugins">
   <div class="page-head">
     <div>
+      <div class="eyebrow">YOUR WORKSPACE <span class="live-dot"></span></div>
       <h1>Plugins</h1>
-      <p class="muted">Schemas that Laya runs on each email you subscribe to.</p>
+      <p class="muted">Small, focused agents that turn email into useful data.</p>
     </div>
-    <a class="btn btn-primary" href="/plugins/new">New plugin</a>
+    <a class="btn btn-primary" href="/plugins/new"><span>＋</span> Create plugin</a>
   </div>
-  <ul class="card list" id="plugins">
+  <div class="workspace-strip"><span>PLUGIN STUDIO</span><span>DESIGN · CONNECT · EXTRACT</span></div>
+  <ul class="card list plugin-list" id="plugins">
     <li class="empty">Loading…</li>
   </ul>
 </Layout>
@@ -37,10 +39,11 @@ import Layout from '../../layouts/Layout.astro';
       list.replaceChildren(
         ...results.map((plugin) => {
           const row = el('li', 'row');
+          row.classList.add('plugin-row');
           const info = el('div', 'grow');
           const title = el('a', 'title mono', plugin.name);
           title.setAttribute('href', `/plugins/detail?id=${plugin.id}`);
-          info.append(title, el('div', 'muted', plugin.desc || plugin.hint || 'No description'));
+          info.append(el('span', 'row-kicker', 'EMAIL AGENT'), title, el('div', 'muted', plugin.desc || plugin.hint || 'No description yet'));
           row.append(info);
           if (plugin.prefix) row.append(el('span', 'mono muted', `${plugin.prefix}…`));
           return row;
