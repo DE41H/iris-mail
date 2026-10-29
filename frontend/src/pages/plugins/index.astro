@@ -11,14 +11,13 @@ import Layout from '../../layouts/Layout.astro';
     </div>
     <a class="btn btn-primary" href="/plugins/new"><span>＋</span> Create plugin</a>
   </div>
-  <div class="workspace-strip"><span>PLUGIN STUDIO</span><span>DESIGN · CONNECT · EXTRACT</span></div>
   <ul class="card list plugin-list" id="plugins">
     <li class="empty">Loading…</li>
   </ul>
 </Layout>
 
 <script>
-  import { api, el, type Page } from '../../lib/api';
+  import { el, listAll } from '../../lib/api';
 
   interface Plugin {
     id: string;
@@ -30,14 +29,14 @@ import Layout from '../../layouts/Layout.astro';
 
   const list = document.getElementById('plugins')!;
 
-  api<Page<Plugin>>('/api/plugins/')
-    .then(({ results }) => {
-      if (!results.length) {
+  listAll<Plugin>('/api/plugins/')
+    .then((plugins) => {
+      if (!plugins.length) {
         list.replaceChildren(el('li', 'empty', 'No plugins yet. Create one to get an API key.'));
         return;
       }
       list.replaceChildren(
-        ...results.map((plugin) => {
+        ...plugins.map((plugin) => {
           const row = el('li', 'row');
           row.classList.add('plugin-row');
           const info = el('div', 'grow');

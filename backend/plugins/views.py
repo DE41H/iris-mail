@@ -1,4 +1,4 @@
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, serializers, viewsets
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -55,9 +55,9 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewse
         serializer.save(plugin=self.request.auth)  # pyright: ignore[reportAttributeAccessIssue]
 
     @action(detail=True, methods=["post"])
-    def toggle(self, request, pk=None):
+    def set_active(self, request, pk=None):
         subscription = self.get_object()
-        subscription.toggle()
+        subscription.set_active(serializers.BooleanField().run_validation(request.data.get("active")))
         return Response(self.get_serializer(subscription).data)
 
 

@@ -10,14 +10,13 @@ import Layout from '../layouts/Layout.astro';
       <p class="muted">Choose the signals you want your inbox to notice.</p>
     </div>
   </div>
-  <div class="workspace-strip"><span>CONNECTED AGENTS</span><span>CONSENT REQUIRED TO ENABLE</span></div>
   <ul class="card list subscription-list" id="subscriptions">
     <li class="empty">Loading…</li>
   </ul>
 </Layout>
 
 <script>
-  import { api, el, type Page } from '../lib/api';
+  import { api, el, listAll } from '../lib/api';
 
   interface Subscription {
     id: string;
@@ -49,12 +48,16 @@ import Layout from '../layouts/Layout.astro';
     const status = el('div', 'sub-status');
     item.append(info, label, status);
 
-    const flip = async () => {
+    // Sends the state the user chose, not a flip, so a stale tab cannot turn sharing on or off by mistake.
+    const flip = async (active: boolean) => {
       status.replaceChildren();
       item.setAttribute('aria-busy', 'true');
       box.disabled = true;
       try {
-        const updated = await api<Subscription>(`/api/subscriptions/${sub.id}/toggle/`, { method: 'POST' });
+        const updated = await api<Subscription>(`/api/subscriptions/${sub.id}/set_active/`, {
+          method: 'POST',
+          body: JSON.stringify({ active }),
+        });
         item.replaceWith(render(updated));
       } catch (err) {
         box.checked = sub.active;
@@ -68,7 +71,7 @@ import Layout from '../layouts/Layout.astro';
       box.checked = false;
       const yes = el('button', 'btn btn-primary btn-sm', 'Enable');
       yes.type = 'button';
-      yes.addEventListener('click', flip);
+      yes.addEventListener('click', () => flip(true));
       const no = el('button', 'btn btn-sm', 'Cancel');
       no.type = 'button';
       no.addEventListener('click', () => status.replaceChildren());
@@ -82,17 +85,17 @@ import Layout from '../layouts/Layout.astro';
       yes.focus();
     };
 
-    box.addEventListener('change', () => (box.checked && !sub.active ? askConsent() : flip()));
+    box.addEventListener('change', () => (box.checked ? askConsent() : flip(false)));
     return item;
   };
 
-  api<Page<Subscription>>('/api/subscriptions/')
-    .then(({ results }) => {
-      if (!results.length) {
+  listAll<Subscription>('/api/subscriptions/')
+    .then((subscriptions) => {
+      if (!subscriptions.length) {
         list.replaceChildren(el('li', 'empty', 'No subscriptions yet. Plugins that a developer adds to your account appear here.'));
         return;
       }
-      list.replaceChildren(...results.map(render));
+      list.replaceChildren(...subscriptions.map(render));
     })
     .catch((err) => list.replaceChildren(el('li', 'empty', err.message)));
 </script>

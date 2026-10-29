@@ -31,7 +31,19 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   return data as T;
 }
 
-export const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text = '') => {
+// Walks the cursor pages so a list longer than one page comes back whole.
+export async function listAll<T>(path: string): Promise<T[]> {
+  const items: T[] = [];
+  let next: string | null = path;
+  while (next) {
+    const page: Page<T> = await api<Page<T>>(next);
+    items.push(...page.results);
+    next = page.next ? path + new URL(page.next).search : null;
+  }
+  return items;
+}
+
+export const el =<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text = '') => {
   const node = document.createElement(tag);
   if (className) node.className = className;
   node.textContent = text;

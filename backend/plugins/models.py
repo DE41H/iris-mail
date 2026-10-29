@@ -92,8 +92,8 @@ class Subscription(models.Model):
             models.Index(fields=("user", "active")),
         )
 
-    def toggle(self):
-        self.__class__.objects.filter(pk=self.pk).update(active=~models.F("active"))
+    def set_active(self, active: bool):
+        self.__class__.objects.filter(pk=self.pk).update(active=active)
         self.refresh_from_db(fields=("active",))
 
 
