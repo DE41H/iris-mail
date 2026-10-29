@@ -15,6 +15,10 @@ class PluginSerializer(serializers.ModelSerializer):
         model = Plugin
         fields = ("id", "developer", "name", "desc", "schema", "hint", "prefix")
         read_only_fields = ("id", "developer", "prefix")
+        extra_kwargs = {  # noqa: RUF012
+            "desc": {"allow_blank": True},
+            "hint": {"allow_blank": True},
+        }
 
     def validate_name(self, value):
         user = self.context["request"].user
