@@ -1,9 +1,9 @@
 from rest_framework import mixins, viewsets
 from rest_framework.authentication import SessionAuthentication
-from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from plugins.authentication import PluginKeyAuthentication
 from plugins.models import CustomUser, Plugin, Result, Subscription
@@ -94,4 +94,3 @@ class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return CustomUser.objects.filter(subscriptions__plugin=self.request.auth, subscriptions__active=True)  # pyright: ignore[reportAttributeAccessIssue]
-
