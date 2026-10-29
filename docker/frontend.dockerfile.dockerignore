@@ -4,3 +4,4 @@
 !vite.config.ts
 !tsconfig.json
 !src
+!scripts
