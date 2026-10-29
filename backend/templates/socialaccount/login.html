@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Sign in with Google{% endblock %}
+{% block content %}
+<h1>Sign in with Google</h1>
+<div class="box">
+  <div class="box-body">
+    <p class="muted">You are about to sign in using your Google account.</p>
+    <form method="post">
+      {% csrf_token %}
+      <button class="btn btn-primary btn-block" type="submit">Continue</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
