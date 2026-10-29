@@ -13,7 +13,7 @@ const prop = (f: Field) => {
   const description = f.question.trim() || undefined;
   if (f.kind === 'boolean') return { type: 'boolean', description };
   if (f.kind === 'scale') return { type: 'integer', minimum: f.min, maximum: f.max, description };
-  return { type: 'string', enum: f.options, description };
+  return { type: 'string', enum: f.options.map((option) => option.trim()), description };
 };
 
 export const toSchema = (fields: Field[]) => ({
@@ -43,6 +43,18 @@ export function problems(fields: Field[]): string[] {
       else if (f.max - f.min + 1 > MAX_LEVELS) out.push(`${at}: at most ${MAX_LEVELS} levels.`);
     }
   });
+  return out;
+}
+
+// Mirrors the Plugin model: a slug name of at most 255 characters, desc of 1024, hint of 512.
+// Uniqueness per developer is only checked by the server.
+export function pluginProblems(name: string, desc: string, hint: string): string[] {
+  const out: string[] = [];
+  if (!name) out.push('Name is required.');
+  else if (!/^[-a-z0-9_]+$/.test(name)) out.push('Name: use only lowercase letters, numbers, - and _.');
+  else if (name.length > 255) out.push('Name: at most 255 characters.');
+  if (desc.length > 1024) out.push('Description: at most 1024 characters.');
+  if (hint.length > 512) out.push('Hint: at most 512 characters.');
   return out;
 }
 

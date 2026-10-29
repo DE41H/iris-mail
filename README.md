@@ -76,7 +76,7 @@ The email never stays with Iris. Only the answer does.
 | Background tasks | Procrastinate |
 | Cache | Valkey |
 | Inbox polling | Gmail API (history) |
-| Frontend | Astro, TypeScript |
+| Frontend | SvelteKit, Svelte, TypeScript |
 | Authorization | Google OAuth |
 | Extraction | Laya |
 

@@ -4,7 +4,17 @@ export interface Page<T> {
   results: T[];
 }
 
+export interface Subscription {
+  id: string;
+  plugin: string;
+  plugin_name: string;
+  plugin_desc: string;
+  active: boolean;
+}
+
 export class ApiError extends Error {}
+
+const NOT_SIGNED_IN = 'Authentication credentials were not provided.';
 
 const csrfToken = () =>
   document.cookie.split('; ').find((c) => c.startsWith('csrftoken='))?.split('=')[1] ?? '';
@@ -22,11 +32,13 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (method !== 'GET') headers['X-CSRFToken'] = csrfToken();
 
   const res = await fetch(path, { ...init, method, headers, credentials: 'same-origin' });
-  if (res.status === 401 || res.status === 403) {
+  const data = await res.json().catch(() => null);
+  // DRF answers 403 for a signed-out visitor too, so only that reason means sign in. Other 403s (CSRF) are errors.
+  const detail = (data as { detail?: unknown } | null)?.detail;
+  if (res.status === 401 || (res.status === 403 && detail === NOT_SIGNED_IN)) {
     location.href = `/accounts/login/?next=${encodeURIComponent(location.pathname)}`;
     throw new ApiError('Sign in required.');
   }
-  const data = await res.json().catch(() => null);
   if (!res.ok) throw new ApiError(describe(data));
   return data as T;
 }
@@ -42,10 +54,3 @@ export async function listAll<T>(path: string): Promise<T[]> {
   }
   return items;
 }
-
-export const el =<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text = '') => {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  node.textContent = text;
-  return node;
-};

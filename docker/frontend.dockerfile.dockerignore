@@ -1,5 +1,6 @@
 *
 !package.json
 !package-lock.json
-!astro.config.mjs
+!vite.config.ts
+!tsconfig.json
 !src
