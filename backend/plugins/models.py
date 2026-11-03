@@ -61,7 +61,7 @@ class Plugin(models.Model):
     def auth_key(cls, key: str):
         if not key or not key.startswith("iris_") or len(key) != 60: return None
         hash = cls.gen_hash(key)
-        plugin = cls.objects.prefetch_related("developer").filter(prefix__isnull=False, prefix=key[:16]).first()
+        plugin = cls.objects.select_related("developer").filter(prefix__isnull=False, prefix=key[:16]).first()
         return plugin if plugin and compare_digest(bytes(plugin.key), hash) else None
 
     def rot_key(self):
@@ -69,7 +69,7 @@ class Plugin(models.Model):
         while True:
             try:
                 with atomic():
-                    updated = self.__class__.objects.filter(pk=self.pk).invalidated_update(key=hash, prefix=pre)  # pyright: ignore[reportAttributeAccessIssue]
+                    updated = self.__class__.objects.filter(pk=self.pk).update(key=hash, prefix=pre)
                     if updated: self.refresh_from_db(fields=("key", "prefix"))
                     return full if updated else None
             except IntegrityError:
@@ -95,7 +95,7 @@ class Subscription(models.Model):
         )
 
     def set_active(self, active: bool):
-        self.__class__.objects.filter(pk=self.pk).invalidated_update(active=active)  # pyright: ignore[reportAttributeAccessIssue]
+        self.__class__.objects.filter(pk=self.pk).update(active=active)
         self.refresh_from_db(fields=("active",))
 
 

@@ -32,7 +32,6 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'procrastinate.contrib.django',
-    'cacheops',
     'rest_framework',
     'drf_spectacular',
     'plugins',
@@ -93,16 +92,6 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         'LOCATION': getenv('VALKEY_URL', 'redis://127.0.0.1:6379/1'),
     }
-}
-
-CACHEOPS_REDIS = getenv('CACHEOPS_URL', 'redis://127.0.0.1:6379/2')
-CACHEOPS_DEGRADE_ON_FAILURE = True
-CACHEOPS_DEFAULTS = {'timeout': 60 * 15}
-CACHEOPS = {
-    'plugins.customuser': {'ops': 'all'},
-    'plugins.plugin': {'ops': 'all'},
-    'plugins.subscription': {'ops': 'all'},
-    'plugins.result': {'ops': ()},
 }
 
 

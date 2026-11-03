@@ -19,7 +19,6 @@ services:
     env_file: .env
     command: >
       sh -c "python manage.py migrate --noinput &&
-      python manage.py invalidate all &&
       python manage.py collectstatic --noinput &&
       granian --interface wsgi --http 1 --no-ws --respawn-failed-workers --workers 2 --host 0.0.0.0 --port 8000 cfg.wsgi:application"
     volumes:
