@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import SubscriptionList from '../components/SubscriptionList.svelte';
+import DeleteAccount from '../components/DeleteAccount.svelte';
 ---
 
 <Layout title="Subscriptions">
@@ -11,6 +12,7 @@ import SubscriptionList from '../components/SubscriptionList.svelte';
         <h1>What reads your inbox<span class="cursor"></span></h1>
         <p>Only answers are shared, never emails.</p>
       </div>
+      <DeleteAccount client:only="svelte" />
     </div>
     <SubscriptionList client:only="svelte" />
   </div>

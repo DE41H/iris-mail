@@ -1,4 +1,7 @@
+import logging
 from datetime import UTC
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 from allauth.socialaccount.models import SocialToken
 from django.conf import settings
@@ -8,7 +11,10 @@ from simplegmail import Gmail
 
 from plugins.models import CustomUser
 
+logger = logging.getLogger(__name__)
+
 TOKEN_URI = "https://oauth2.googleapis.com/token"
+REVOKE_URI = "https://oauth2.googleapis.com/revoke"
 
 def client(user: CustomUser):
     token = SocialToken.objects.select_related("account").get(
@@ -38,3 +44,11 @@ def get_hist_id(user: CustomUser) -> int:
     response = gmail.service.users().getProfile(userId="me").execute()  # type: ignore[attr-defined]
     save_token(user, gmail)
     return int(response["historyId"])
+
+def revoke(user: CustomUser):
+    token = SocialToken.objects.filter(account__user=user, account__provider="google").first()
+    if token is None: return
+    try:
+        urlopen(Request(REVOKE_URI, data=urlencode({"token": token.token_secret or token.token}).encode()), timeout=10)
+    except OSError:
+        logger.warning("Google token revoke failed", extra={"user_id": user.id}, exc_info=True)

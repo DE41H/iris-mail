@@ -1,3 +1,6 @@
+import logging
+
+from django.contrib.auth import logout
 from django.db.models import Count, Q
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -11,9 +14,9 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from plugins.authentication import PluginKeyAuthentication
+from plugins.gmail import revoke
 from plugins.models import CustomUser, Plugin, Result, Subscription
 from plugins.permissions import PluginKeyAuth, SessionPermission
 from plugins.serializers import (
@@ -22,6 +25,8 @@ from plugins.serializers import (
     ResultSerializer,
     SubscriptionSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @extend_schema(exclude=True)
@@ -50,7 +55,10 @@ class PluginViewSet(
 
     @action(detail=True, methods=["post"])
     def rotate_key(self, request, pk=None):
-        return Response({"key": self.get_object().rot_key()})
+        plugin = self.get_object()
+        key = plugin.rot_key()
+        logger.info("API key rotated", extra={"plugin_id": plugin.pk, "user_id": request.user.pk})
+        return Response({"key": key})
 
 
 @extend_schema_view(
@@ -78,10 +86,16 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
     def perform_create(self, serializer):
         serializer.save(plugin=self.request.auth)  # pyright: ignore[reportAttributeAccessIssue]
 
+    def perform_destroy(self, instance):
+        by = "developer" if isinstance(self.request.auth, Plugin) else "user"  # pyright: ignore[reportAttributeAccessIssue]
+        logger.info("Subscription removed", extra={"subscription_id": instance.pk, "plugin_id": instance.plugin_id, "user_id": instance.user_id, "by": by})
+        instance.delete()
+
     @action(detail=True, methods=["post"])
     def set_active(self, request, pk=None):
         subscription = self.get_object()
         subscription.set_active(serializers.BooleanField().run_validation(request.data.get("active")))
+        logger.info("Sharing changed", extra={"subscription_id": subscription.pk, "plugin_id": subscription.plugin_id, "user_id": subscription.user_id, "active": subscription.active})
         return Response(self.get_serializer(subscription).data)
 
 
@@ -117,9 +131,17 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
 
 @extend_schema(exclude=True)
-class MeView(APIView):
-    def get(self, request):
-        return Response(CustomUserSerializer(request.user).data)
+class MeViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    serializer_class = CustomUserSerializer
+
+    def get_object(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+        return self.request.user
+
+    def perform_destroy(self, instance):
+        logger.info("Deleting account", extra={"user_id": instance.pk})
+        revoke(instance)
+        logout(self.request)
+        instance.delete()
 
 
 class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
