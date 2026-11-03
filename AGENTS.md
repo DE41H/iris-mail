@@ -1,108 +1,58 @@
 # AGENTS.md
 
-Iris: email intelligence infrastructure. Developers define a schema-driven
-plugin and get an API key; end users OAuth their Gmail and enable plugins. Mail
-is polled from Gmail, deduplicated, queued, extracted by Laya, and stored as
-structured results. Raw email is never persisted.
+Iris: email intelligence infrastructure. A developer defines a plugin (questions as a JSON schema) and
+gets an API key. A user signs in with Google and turns the plugin on. New Gmail mail is polled,
+deduplicated, answered by Laya, and only the answers are stored as `Result`s.
 
-## Stack
-
-Docker, Django 6.1 + DRF, Valkey (cache), Procrastinate (background
-tasks, Postgres-backed), PostgreSQL, Laya (extraction), Google OAuth (allauth),
-Gmail API history polling (inbox events), Astro + Svelte 5 islands + TypeScript (site and dashboard).
-Python 3.13, uv.
+Stack: Django 6.1 + DRF, PostgreSQL, Procrastinate (tasks), Valkey (cache), allauth (Google OAuth),
+Laya, Astro + Svelte 5 + TypeScript, Caddy, Docker. Python 3.13 with uv.
 
 ## Layout
 
-    backend/
-      cfg/        settings, urls, wsgi/asgi
-      plugins/    models, views, urls, admin (domain lives here)
-      static/     iris.css, shared by the dashboard and the Django auth pages
-      templates/  allauth pages
-    frontend/     Astro static site (output to build/), Svelte 5 islands, TypeScript
-      src/lib/    api (fetch, DRF errors), schema (Laya rules), presets
-                  (templates, ready-made questions, answer sets), session
-      src/components/ Svelte islands (PluginEditor, Builder, FieldCard, KeyCard, ...)
-      src/pages/  index (landing), plugins/, plugins/new, plugins/detail, subscriptions
-    docker/       compose file and Dockerfiles
+    backend/cfg/        settings, urls, security headers
+    backend/plugins/    models, views, serializers, tasks (polling + Laya), gmail, validation
+    backend/static/     iris.css: theme for the dashboard and the Django auth pages
+    backend/templates/  allauth pages
+    frontend/src/       pages/ (Astro), components/ (Svelte islands), lib/ (api, schema, presets, session)
+    docker/             compose, Dockerfiles, caddyfile
 
 ## Commands
 
-    cd backend
-    uv sync
-    uv run manage.py migrate
-    uv run manage.py runserver
-    uv run manage.py procrastinate worker
-
-    cd frontend
-    npm install
-    npm run dev      # :4321, proxies /api, /accounts, /static, /admin to :8000
+    cd backend && uv sync && uv run manage.py migrate && uv run manage.py runserver
+    cd backend && uv run manage.py procrastinate worker
+    cd frontend && npm install && npm run dev     # :4321, proxies /api /accounts /static /admin to :8000
+    cd docker && docker compose up -d --build     # full stack behind Caddy
 
 ## Conventions
 
-- No tests and no unnecessary code. Verify changes by hand (run the app, hit the endpoint, check the shell) and do not add test files.
-- Models: `uuid7` PKs, `UUIDField(primary_key=True, editable=False)`.
-- Hot writes use `.update()` / `F()` expressions, then `refresh_from_db`.
-- Add a DB index whenever a new query pattern appears; keep partial indexes
-  for filtered sets (see `Result`'s unfetched index).
-- Unique constraints belong in `Meta.constraints`, not `unique=True`, when
-  they span fields.
-- Plugin names are slugs, unique per developer.
-- Endpoints live in `plugins/views.py`, routes in `plugins/urls.py` under
-  `/api/`; DRF for new endpoints.
-- Frontend: Astro pages in `frontend/src/pages/` mount Svelte 5 islands from
-  `frontend/src/components/` with `client:only="svelte"`. Shared logic is
-  TypeScript in `frontend/src/lib/`. Theme and motion live in
-  `backend/static/iris.css` (dark, black and green); page transitions use
-  native cross-document view transitions. `schema.ts` mirrors the rules of
-  Laya's `structured.py` (at most 32 properties; enum, boolean, or integer
-  range of at most 10 levels). Update it in step when Laya changes.
-- Destructive or sharing actions get an inline confirmation, not `confirm()`.
+- No test files. Verify by hand: run the app, hit the endpoint, check the shell or browser.
+- Keep code simple, modular and lightly commented.
+- Models use `uuid7` PKs. Hot writes use `.update()` / `F()`, then `refresh_from_db`.
+- Every new query pattern gets an index; filtered sets get partial indexes.
+- Constraints across fields go in `Meta.constraints`.
+- Endpoints in `plugins/views.py`, routes in `plugins/urls.py` under `/api/`, built with DRF.
+- Frontend: Astro pages mount Svelte islands with `client:only="svelte"`. Each page fits one screen and
+  scrolls inside its panels. Keep copy short.
+- CSP: no inline `<script>` or `style="…"` attributes in `.astro` files. Astro hashes its own inline
+  code into a meta CSP, and Caddy blocks anything else. Svelte `style:` directives are fine.
+- `Plugin.schema` is validated by Laya's own `plan_from_json_schema` (`plugins/validation.py`).
+  `frontend/src/lib/schema.ts` mirrors those rules for the builder; update both when Laya changes.
+- Destructive or sharing actions get an inline confirmation, never `confirm()`.
 
-## Invariants (do not break)
+## Invariants
 
-- Never store email bodies or headers. Only structured `Result` output.
-  User account addresses (`CustomUser.email`, required and unique) are
-  stored.
-- API keys are stored as SHA-256 only (`Plugin.key`), never plaintext; auth
-  goes through `Plugin.auth_key()` (prefix lookup + `compare_digest`).
-  Return the full key exactly once, from `rot_key()`.
-- Respect `Subscription.active`; extract only for enabled plugins.
-- Deduplicate before inference — no duplicate Laya calls.
-- Secrets come from env; never commit keys or `.env`.
+- Never store email bodies or headers; only `Result.output`.
+- API keys are stored as SHA-256 only, checked via `Plugin.auth_key()`, and shown once from `rot_key()`.
+- Extract only for subscriptions with `active=True`.
+- Deduplicate before inference: never call Laya twice for the same user, message and plugin.
+- Secrets come from env. Never commit keys or `.env`.
 
-## Current state
+## Status and work
 
-Built, not yet run against live Google OAuth:
+Built and running in Docker; not yet tested against live Google OAuth. Open work, bugs and ideas live in
+`TODO.md` by priority. Update it when you finish or find something.
 
-- Developers: create, list, view, edit, delete and rotate keys for plugins
-  (API under `/api/plugins/`, dashboard under `/plugins`). Create and edit use a
-  field builder (choice, yes/no, scale) that writes Laya's schema and previews
-  the JSON. A saved schema the builder cannot represent is shown with the
-  reason, and saving is disabled so no property is dropped.
-- Users sign in with Google first; that creates their account. `/api/me/`
-  returns the signed-in user, and the header reads it to show Sign in or the
-  account with Sign out. Developers then add a user to a plugin with
-  `POST /api/subscriptions/` (API key, user UUID). Developers see the email and
-  username of each subscribed user (`/api/users/`).
-- Subscriptions start inactive. Users list them at `/api/subscriptions/`, which
-  include each plugin's name and description. On `/subscriptions`, turning a
-  plugin on shows an inline consent prompt; turning it off takes effect at once.
-- Ingestion: a periodic task (`poll_inboxes`, every three minutes) defers
-  `process` for each Google user with an active subscription. `process` fetches
-  Gmail history, skips messages already stored for that user and plugin (unique
-  `Result` per user, message and plugin), calls Laya and stores `Result`s.
-  `Result.fetched` flips to true when the developer reads results. Refreshed
-  Google access tokens are saved back to `SocialToken`.
-- Admin: all models registered in `plugins/admin.py`.
+## Keep in sync
 
-`Plugin.schema` is validated on write by `plugins/validation.py`, which runs
-Laya's own `plan_from_json_schema`, so the API accepts exactly what Laya can
-answer (the builder covers a subset of it).
-
-Known gaps: The DB host defaults to `db` (set `POSTGRES_HOST` to change it). The
-Docker files are written but have not been run end to end. No test suite. No
-way for a developer to search for a user by email or username (`/api/users/`
-lists only subscribed users).
-
-See `README.md` for the product overview.
+`AGENTS.md` and `CLAUDE.md` describe the same project. When you change one, update the other in the
+same change.
