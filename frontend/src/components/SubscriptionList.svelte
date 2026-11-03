@@ -17,7 +17,7 @@
     <div class="card-head"><span>{subs.length} {subs.length === 1 ? 'plugin' : 'plugins'}</span><span class="green">{active} on</span></div>
     {#if subs.length}
       <ul class="grow scroll">
-        {#each subs as _, i (subs[i].id)}<SubscriptionRow bind:sub={subs[i]} />{/each}
+        {#each subs as _, i (subs[i].id)}<SubscriptionRow bind:sub={subs[i]} onremove={() => (subs = subs!.filter((s) => s.id !== subs![i].id))} />{/each}
       </ul>
     {:else}
       <div class="empty">Nothing yet. Plugins you're added to show up here.</div>

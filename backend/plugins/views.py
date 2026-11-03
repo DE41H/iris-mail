@@ -53,15 +53,26 @@ class PluginViewSet(
         return Response({"key": self.get_object().rot_key()})
 
 
-@extend_schema_view(list=extend_schema(exclude=True), set_active=extend_schema(exclude=True))
-class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+@extend_schema_view(
+    list=extend_schema(exclude=True),
+    set_active=extend_schema(exclude=True),
+    destroy=extend_schema(
+        description="Remove a user's subscription to this plugin. Their results stay until you delete the plugin.",
+        parameters=[OpenApiParameter("id", OpenApiTypes.UUID, OpenApiParameter.PATH)],
+    ),
+)
+class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     serializer_class = SubscriptionSerializer
     authentication_classes = (PluginKeyAuthentication, SessionAuthentication)
 
     def get_permissions(self):
+        if self.action == "destroy":
+            return [(PluginKeyAuth | SessionPermission)()]
         return [PluginKeyAuth()] if self.action == "create" else [SessionPermission()]
 
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+        if isinstance(self.request.auth, Plugin):  # pyright: ignore[reportAttributeAccessIssue]
+            return Subscription.objects.filter(plugin=self.request.auth)  # pyright: ignore[reportAttributeAccessIssue]
         return Subscription.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):

@@ -1,8 +1,9 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
   import { api, message, type Subscription } from '../lib/api';
+  import ConfirmButton from './ConfirmButton.svelte';
 
-  let { sub = $bindable() }: { sub: Subscription } = $props();
+  let { sub = $bindable(), onremove }: { sub: Subscription; onremove: () => void } = $props();
 
   let asking = $state(false);
   let busy = $state(false);
@@ -19,6 +20,16 @@
       error = message(err);
     } finally {
       busy = false;
+    }
+  }
+
+  async function remove() {
+    error = '';
+    try {
+      await api(`/api/subscriptions/${sub.id}/`, { method: 'DELETE' });
+      onremove();
+    } catch (err) {
+      error = message(err);
     }
   }
 
@@ -41,6 +52,7 @@
     <span class="track" aria-hidden="true"></span>
     <span class="state">{sub.active ? 'on' : 'off'}</span>
   </label>
+  <ConfirmButton label="remove" confirm="remove?" danger onconfirm={remove} />
 
   {#if asking}
     <div class="consent" transition:slide={{ duration: 220 }}>
