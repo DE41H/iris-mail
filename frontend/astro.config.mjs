@@ -10,6 +10,19 @@ export default defineConfig({
   outDir: './build',
   integrations: [svelte()],
   devToolbar: { enabled: false },
+  // Hashes Astro's inline scripts and styles into a CSP meta tag; Caddy adds frame-ancestors.
+  security: {
+    csp: {
+      directives: [
+        "default-src 'self'",
+        "img-src 'self' data:",
+        "connect-src 'self'",
+        "base-uri 'self'",
+        "object-src 'none'",
+        "form-action 'self'",
+      ],
+    },
+  },
   server: { port: 4321 },
   vite: {
     server: {
