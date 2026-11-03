@@ -34,7 +34,7 @@
 <li class="row" class:on={sub.active} aria-busy={busy}>
   <div class="info">
     <div class="name">{sub.plugin_name}</div>
-    <p class="muted">{sub.plugin_desc || 'No description'}</p>
+    {#if sub.plugin_desc}<p class="muted">{sub.plugin_desc}</p>{/if}
   </div>
   <label class="switch">
     <input type="checkbox" role="switch" checked={sub.active} disabled={busy || asking} onchange={toggle} aria-label={`Share ${sub.plugin_name} results`} />
@@ -44,10 +44,7 @@
 
   {#if asking}
     <div class="consent" transition:slide={{ duration: 220 }}>
-      <p>
-        Turning on <strong>{sub.plugin_name}</strong> sends what Laya extracts from your new emails to its creator.
-        Your emails themselves are never stored or shared.
-      </p>
+      <p><strong>{sub.plugin_name}</strong>'s creator will receive answers from your new emails. Never the emails.</p>
       <div class="actions">
         <button type="button" class="btn btn-sm" onclick={() => (asking = false)}>cancel</button>
         <!-- svelte-ignore a11y_autofocus -->

@@ -73,7 +73,7 @@
       <textarea class="mono" rows="6" bind:value={pasted} placeholder={'{ "type": "object", "properties": { … } }'} aria-label="JSON schema to import"></textarea>
       {#if importError}<div class="error">{importError}</div>{/if}
       <div class="actions">
-        <span class="help">Replaces the questions below. Only choice, boolean and integer range properties are supported.</span>
+        <span class="help">Replaces all questions.</span>
         <button type="button" class="btn btn-sm btn-primary" disabled={!pasted.trim()} onclick={load}>import</button>
       </div>
     </div>
@@ -92,22 +92,19 @@
         />
       </div>
     {:else}
-      <div class="empty">
-        <p>No questions yet.</p>
-        <p class="help">Each question is one value Laya fills in for every email. Pick a type above, or a ready-made one.</p>
-      </div>
+      <div class="empty">No questions yet. Add one above.</div>
     {/each}
   </div>
 </div>
 
 <style>
-  .builder { display: grid; gap: 12px; }
+  .builder { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
   .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   .toolbar select { width: auto; max-width: 260px; padding-top: 4px; padding-bottom: 4px; font-size: 12px; }
   .count { margin-left: auto; font: 12px var(--mono); color: var(--muted); }
   .count.full { color: var(--amber); }
   .import { display: grid; gap: 8px; }
   .import .actions { justify-content: space-between; }
-  .list { display: grid; gap: 12px; }
-  .empty { border: 1px dashed var(--border-strong); border-radius: var(--radius); display: grid; gap: 6px; }
+  .list { display: grid; align-content: start; gap: 10px; flex: 1; min-height: 0; overflow: auto; padding-right: 2px; }
+  .empty { border: 1px dashed var(--border-strong); border-radius: var(--radius); }
 </style>

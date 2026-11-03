@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { fade } from 'svelte/transition';
   import { api, message, type Plugin } from '../lib/api';
   import { fromSchema, toSchema, type Draft } from '../lib/schema';
   import ConfirmButton from './ConfirmButton.svelte';
@@ -60,46 +61,37 @@
   }
 </script>
 
-<svelte:window onbeforeunload={(e) => dirty && e.preventDefault()} />
+<svelte:window onbeforeunload={(e) => dirty && e.preventDefault()} onkeydown={(e) => e.key === 'Escape' && (key = '')} />
 
-<div class="page-head reveal">
-  <div>
-    <div class="eyebrow"><a href="/plugins">plugins</a> / {plugin?.name ?? '…'}</div>
-    <h1 class="mono">{plugin?.name ?? 'loading'}<span class="cursor"></span></h1>
-    <p>Edit the questions, rotate the key, or delete the plugin.</p>
-  </div>
-  {#if notice}<div class="alert alert-success" role="status">✓ {notice}</div>{/if}
+{#if notice}<div class="alert alert-success toast" role="status">✓ {notice}</div>{/if}
+
+<div class="screen">
+  {#if error}<div class="alert alert-danger" role="alert">{error}</div>{/if}
+  {#if plugin}
+    <PluginEditor bind:draft submit="save" onsubmit={save} {dirty} {locked}>
+      {#snippet head()}
+        <div class="eyebrow"><a href="/plugins">plugins</a> / {plugin!.prefix ? `${plugin!.prefix}…` : 'no key'}</div>
+        <h1 class="mono">{plugin!.name}<span class="cursor"></span></h1>
+      {/snippet}
+      {#if dirty}<button type="button" class="btn btn-ghost" onclick={() => fill(plugin!)}>discard</button>{/if}
+      <ConfirmButton label="rotate key" confirm="confirm rotate" onconfirm={rotate} />
+      <ConfirmButton label="delete" confirm="really delete?" danger onconfirm={remove} />
+    </PluginEditor>
+  {/if}
 </div>
 
-{#if error}<div class="alert alert-danger" role="alert">{error}</div>{/if}
-
-{#if plugin}
-  <div class="stack">
-    <PluginEditor bind:draft submit="save changes" onsubmit={save} {dirty} {locked}>
-      {#if dirty}<button type="button" class="btn btn-ghost" onclick={() => fill(plugin!)}>discard</button>{/if}
-    </PluginEditor>
-
-    <div class="grid-2 lower">
-      <section class="card reveal" style:--i={4}>
-        <div class="card-head"><span>03 / access</span><span class="mono">{plugin.prefix ? `${plugin.prefix}…` : 'no key'}</span></div>
-        <div class="card-body stack">
-          <p class="muted">Rotating issues a new key. The current one stops working immediately.</p>
-          <div><ConfirmButton label="rotate key" confirm="confirm rotate" onconfirm={rotate} /></div>
-        </div>
-      </section>
-      <section class="card danger reveal" style:--i={5}>
-        <div class="card-head"><span>04 / danger zone</span></div>
-        <div class="card-body stack">
-          <p class="muted">Deletes the plugin, its subscriptions and its results. This cannot be undone.</p>
-          <div><ConfirmButton label="delete plugin" confirm="really delete?" danger onconfirm={remove} /></div>
-        </div>
-      </section>
+{#if key}
+  <div class="overlay" transition:fade={{ duration: 150 }}>
+    <div class="sheet">
+      <KeyCard {key} />
+      <div class="actions"><button type="button" class="btn" onclick={() => (key = '')}>done</button></div>
     </div>
-    {#if key}<KeyCard {key} />{/if}
   </div>
 {/if}
 
 <style>
-  .lower { align-items: stretch; }
   .eyebrow a { color: inherit; }
+  .toast { position: fixed; top: 68px; left: 50%; translate: -50% 0; z-index: 20; }
+  .overlay { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 16px; background: rgba(5, 8, 7, 0.8); backdrop-filter: blur(6px); }
+  .sheet { width: min(720px, 100%); display: grid; gap: 12px; }
 </style>

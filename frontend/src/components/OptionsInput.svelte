@@ -53,14 +53,14 @@
       onkeydown={keydown}
       onpaste={paste}
       onblur={() => draft && add(draft)}
-      placeholder={options.length ? 'add another…' : 'type an answer, press enter'}
+      placeholder={options.length ? 'add…' : 'answers, comma separated'}
       aria-label={label}
       autocomplete="off"
       spellcheck="false"
     />
   </div>
   <select class="mono" onchange={useSet} aria-label="Fill answers from a common set">
-    <option value="">use a set…</option>
+    <option value="">set…</option>
     {#each Object.entries(OPTION_SETS) as [name, values]}
       <option value={name}>{name} · {values.length}</option>
     {/each}
@@ -73,14 +73,14 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 6px;
+    padding: 3px;
     border: 1px solid var(--border-strong);
     border-radius: 6px;
     background: var(--bg);
     transition: border-color 0.2s, box-shadow 0.2s;
   }
   .box:focus-within { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
-  .box input { flex: 1 0 140px; border: 0; padding: 4px 6px; background: none; box-shadow: none; }
+  .box input { flex: 1 0 120px; border: 0; padding: 3px 6px; background: none; box-shadow: none; }
   .tag {
     display: inline-flex;
     align-items: center;

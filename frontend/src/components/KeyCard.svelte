@@ -22,9 +22,8 @@
 </script>
 
 <section class="card key">
-  <div class="card-head"><span class="green">● api key issued</span><span>shown once</span></div>
+  <div class="card-head"><span class="green">● api key issued</span><span class="amber">shown once · copy it now</span></div>
   <div class="card-body stack">
-    <p class="muted">Copy it now and keep it secret. Iris stores only a hash, so it can't be shown again. Rotate it any time.</p>
     <div class="row">
       <code>{shown}</code>
       <CopyButton text={key} label="copy key" />
@@ -53,4 +52,5 @@
     word-break: break-all;
   }
   .small { font-size: 12px; color: var(--text); }
+  .amber { color: var(--amber); }
 </style>

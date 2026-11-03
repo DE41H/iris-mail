@@ -4,12 +4,14 @@ import SubscriptionList from '../components/SubscriptionList.svelte';
 ---
 
 <Layout title="Subscriptions">
-  <div class="page-head reveal">
-    <div>
-      <div class="eyebrow">you / subscriptions</div>
-      <h1>What can read your inbox<span class="cursor"></span></h1>
-      <p>Plugins start off. Only the answers they extract are shared, never your emails, and you can turn any of them off at any time.</p>
+  <div class="screen">
+    <div class="page-head reveal">
+      <div>
+        <div class="eyebrow">subscriptions</div>
+        <h1>What reads your inbox<span class="cursor"></span></h1>
+        <p>Only answers are shared, never emails.</p>
+      </div>
     </div>
+    <SubscriptionList client:only="svelte" />
   </div>
-  <SubscriptionList client:only="svelte" />
 </Layout>

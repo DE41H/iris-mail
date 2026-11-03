@@ -57,7 +57,7 @@ export interface Template {
 export const TEMPLATES: Template[] = [
   {
     title: 'Blank',
-    blurb: 'Start from nothing and add your own questions.',
+    blurb: 'Your own questions.',
     name: '',
     desc: '',
     hint: '',

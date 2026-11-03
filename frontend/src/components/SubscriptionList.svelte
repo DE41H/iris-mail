@@ -13,14 +13,14 @@
 {#if error}
   <div class="alert alert-danger" role="alert">{error}</div>
 {:else if subs}
-  <section class="card reveal">
+  <section class="card reveal list">
     <div class="card-head"><span>{subs.length} {subs.length === 1 ? 'plugin' : 'plugins'}</span><span class="green">{active} on</span></div>
     {#if subs.length}
-      <ul>
+      <ul class="grow scroll">
         {#each subs as _, i (subs[i].id)}<SubscriptionRow bind:sub={subs[i]} />{/each}
       </ul>
     {:else}
-      <div class="empty">No subscriptions yet. When a developer adds you to a plugin, it shows up here, turned off.</div>
+      <div class="empty">Nothing yet. Plugins you're added to show up here.</div>
     {/if}
   </section>
 {:else}
@@ -28,6 +28,7 @@
 {/if}
 
 <style>
+  .list { display: flex; flex-direction: column; min-height: 0; }
   ul { list-style: none; margin: 0; padding: 0; }
   ul :global(li:first-child) { border-top: 0; }
 </style>
