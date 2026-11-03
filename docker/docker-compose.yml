@@ -48,6 +48,8 @@ services:
       dockerfile: ../docker/backend.dockerfile
     env_file: .env
     command: python manage.py procrastinate worker
+    volumes:
+      - models:/models
     logging: *logging
     cap_drop: [ALL]
     depends_on:
@@ -76,5 +78,6 @@ services:
 volumes:
   pgdata:
   static:
+  models:
   caddy_data:
   caddy_config:
