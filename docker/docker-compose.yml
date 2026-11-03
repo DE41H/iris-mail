@@ -1,9 +1,13 @@
+x-logging: &logging
+  driver: local
+
 services:
   db:
     image: postgres:17-alpine
     env_file: .env
     volumes:
       - pgdata:/var/lib/postgresql/data
+    logging: *logging
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -11,6 +15,7 @@ services:
 
   valkey:
     image: valkey/valkey:8-alpine
+    logging: *logging
 
   backend:
     build:
@@ -24,6 +29,7 @@ services:
       granian --interface wsgi --http 1 --no-ws --respawn-failed-workers --workers 2 --host 0.0.0.0 --port 8000 cfg.wsgi:application"
     volumes:
       - static:/app/staticfiles
+    logging: *logging
     depends_on:
       db:
         condition: service_healthy
@@ -41,6 +47,7 @@ services:
       dockerfile: ../docker/backend.dockerfile
     env_file: .env
     command: python manage.py procrastinate worker
+    logging: *logging
     depends_on:
       backend:
         condition: service_healthy
@@ -58,6 +65,7 @@ services:
       - static:/srv/static:ro
       - caddy_data:/data
       - caddy_config:/config
+    logging: *logging
     cap_drop: [ALL]
     cap_add: [NET_BIND_SERVICE]
     depends_on:

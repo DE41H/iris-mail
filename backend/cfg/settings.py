@@ -196,3 +196,19 @@ SPECTACULAR_SETTINGS = {
     # Documented endpoints are the plugin API, so hide session auth from the docs.
     'AUTHENTICATION_WHITELIST': ['plugins.authentication.PluginKeyAuthentication'],
 }
+
+
+# Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {'json': {
+        '()': 'pythonjsonlogger.json.JsonFormatter',
+        'fmt': ['levelname', 'name', 'message'],
+        'rename_fields': {'levelname': 'level', 'name': 'logger', 'exc_info': 'exception'},
+        'timestamp': 'time',
+    }},
+    'handlers': {'json': {'class': 'logging.StreamHandler', 'formatter': 'json'}},
+    'root': {'handlers': ['json'], 'level': 'INFO'},
+    'loggers': {name: {'handlers': [], 'propagate': True} for name in ('django', 'django.server')},
+}
