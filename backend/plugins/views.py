@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from plugins.authentication import PluginKeyAuthentication
 from plugins.models import CustomUser, Plugin, Result, Subscription
+from plugins.pagination import AckCursorPagination
 from plugins.permissions import PluginKeyAuth, SessionPermission
 from plugins.serializers import (
     CustomUserSerializer,
@@ -63,6 +64,7 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewse
 
 class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = ResultSerializer
+    pagination_class = AckCursorPagination
     authentication_classes = (PluginKeyAuthentication,)
     permission_classes = (PluginKeyAuth,)
 
@@ -74,12 +76,6 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         if fetched.lower() not in ("true", "false"):
             raise ValidationError({"fetched": "Use true or false."})
         return queryset.filter(fetched=fetched.lower() == "true")
-
-    def paginate_queryset(self, queryset):
-        page = super().paginate_queryset(queryset)
-        if page is not None:
-            Result.objects.filter(pk__in=[result.pk for result in page]).update(fetched=True)
-        return page
 
 
 class MeView(APIView):
