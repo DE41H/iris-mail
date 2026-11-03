@@ -2,15 +2,6 @@
 
 @AGENTS.md
 
-## Notes for Claude
-
-- Read `TODO.md` before starting work; pick up and update the matching item.
-- Check UI changes in a real browser against the built site (`npm run build`), not only `npm run dev`:
-  the CSP is enforced only in production.
-- Changes to `backend/static/iris.css` reach Docker only after rebuilding the backend image
-  (`collectstatic` runs at startup). Frontend changes need the caddy image rebuilt.
-
-## Keep in sync
-
-This file imports `AGENTS.md`. Put shared project rules there, and only Claude-specific notes here.
-When you change either file, check the other still agrees in the same change.
+- Read `TODO.md` first; update it when you finish or find something.
+- Check UI in a browser against `npm run build`: the CSP is enforced only in production.
+- Docker: `iris.css` changes need the backend image rebuilt, frontend changes the caddy image.
