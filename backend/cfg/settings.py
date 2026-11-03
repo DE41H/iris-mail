@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     'procrastinate.contrib.django',
     'rest_framework',
+    'drf_spectacular',
     'plugins',
 ]
 
@@ -173,4 +174,14 @@ REST_FRAMEWORK = {
     },
     'DEFAULT_PAGINATION_CLASS': 'plugins.pagination.UUIDCursorPagination',
     'PAGE_SIZE': 50,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Iris API',
+    'DESCRIPTION': 'Plugin endpoints authenticate with `Authorization: Bearer <api key>`.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # Documented endpoints are the plugin API, so hide session auth from the docs.
+    'AUTHENTICATION_WHITELIST': ['plugins.authentication.PluginKeyAuthentication'],
 }

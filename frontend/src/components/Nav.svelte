@@ -12,6 +12,7 @@
 </script>
 
 <nav aria-label="Account">
+  <a href="/docs" aria-current={current('/docs')}>docs</a>
   {#if $session}
     <a href="/plugins" aria-current={current('/plugins')}>plugins</a>
     <a href="/subscriptions" aria-current={current('/subscriptions')}>subscriptions</a>

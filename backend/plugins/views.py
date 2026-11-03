@@ -1,4 +1,11 @@
 from django.db.models import Count, Q
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    extend_schema_view,
+    inline_serializer,
+)
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
@@ -17,6 +24,7 @@ from plugins.serializers import (
 )
 
 
+@extend_schema(exclude=True)
 class PluginViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -45,6 +53,7 @@ class PluginViewSet(
         return Response({"key": self.get_object().rot_key()})
 
 
+@extend_schema_view(list=extend_schema(exclude=True), set_active=extend_schema(exclude=True))
 class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     serializer_class = SubscriptionSerializer
     authentication_classes = (PluginKeyAuthentication, SessionAuthentication)
@@ -65,6 +74,10 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewse
         return Response(self.get_serializer(subscription).data)
 
 
+@extend_schema_view(list=extend_schema(parameters=[
+    OpenApiParameter("user", OpenApiTypes.UUID, description="Only this user's results."),
+    OpenApiParameter("fetched", bool, description="Filter by whether the result was acknowledged."),
+]))
 class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = ResultSerializer
     authentication_classes = (PluginKeyAuthentication,)
@@ -81,6 +94,10 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             raise ValidationError({"fetched": "Use true or false."})
         return queryset.filter(fetched=fetched.lower() == "true")
 
+    @extend_schema(
+        request=inline_serializer("Ack", {"ids": serializers.ListField(child=serializers.UUIDField(), min_length=1, max_length=500)}),
+        responses=inline_serializer("Acknowledged", {"acknowledged": serializers.IntegerField()}),
+    )
     @action(detail=False, methods=["post"])
     def ack(self, request):
         ids = serializers.ListField(child=serializers.UUIDField(), allow_empty=False, max_length=500).run_validation(request.data.get("ids"))
@@ -88,6 +105,7 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         return Response({"acknowledged": acked})
 
 
+@extend_schema(exclude=True)
 class MeView(APIView):
     def get(self, request):
         return Response(CustomUserSerializer(request.user).data)

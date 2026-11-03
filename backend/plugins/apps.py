@@ -5,4 +5,4 @@ class PluginsConfig(AppConfig):
     name = 'plugins'
 
     def ready(self):
-        from plugins import signals  # noqa: F401  registers the receivers
+        from plugins import schema, signals  # noqa: F401  registers the receivers and the OpenAPI auth extension
