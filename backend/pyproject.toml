@@ -17,6 +17,7 @@ dependencies = [
     "uuid6>=2025.0.1",
     "pyjwt[crypto]>=2.0",
     "drf-spectacular>=0.30.0",
+    "django-cacheops>=7.2",
 ]
 
 [[tool.uv.index]]
