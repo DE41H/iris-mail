@@ -30,6 +30,7 @@ services:
     volumes:
       - static:/app/staticfiles
     logging: *logging
+    cap_drop: [ALL]
     depends_on:
       db:
         condition: service_healthy
@@ -48,6 +49,7 @@ services:
     env_file: .env
     command: python manage.py procrastinate worker
     logging: *logging
+    cap_drop: [ALL]
     depends_on:
       backend:
         condition: service_healthy
