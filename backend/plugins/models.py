@@ -117,9 +117,10 @@ class Result(models.Model):
         )
         indexes = (
             models.Index(
-                fields=("plugin", "-time"),
+                fields=("plugin", "-id"),
                 condition=models.Q(fetched=False),
-                name="result_plugin_time_idx",
+                name="result_plugin_unfetched_idx",
             ),
             models.Index(fields=("plugin", "-id")),
+            models.Index(fields=("plugin", "user", "-id")),
         )

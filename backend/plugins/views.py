@@ -7,7 +7,6 @@ from rest_framework.views import APIView
 
 from plugins.authentication import PluginKeyAuthentication
 from plugins.models import CustomUser, Plugin, Result, Subscription
-from plugins.pagination import AckCursorPagination
 from plugins.permissions import PluginKeyAuth, SessionPermission
 from plugins.serializers import (
     CustomUserSerializer,
@@ -64,18 +63,25 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewse
 
 class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = ResultSerializer
-    pagination_class = AckCursorPagination
     authentication_classes = (PluginKeyAuthentication,)
     permission_classes = (PluginKeyAuth,)
 
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         queryset = Result.objects.filter(plugin=self.request.auth)  # pyright: ignore[reportAttributeAccessIssue]
+        if user := self.request.GET.get("user"):
+            queryset = queryset.filter(user=serializers.UUIDField().run_validation(user))  # pyright: ignore[reportArgumentType]
         fetched = self.request.GET.get("fetched")
         if fetched is None:
             return queryset
         if fetched.lower() not in ("true", "false"):
             raise ValidationError({"fetched": "Use true or false."})
         return queryset.filter(fetched=fetched.lower() == "true")
+
+    @action(detail=False, methods=["post"])
+    def ack(self, request):
+        ids = serializers.ListField(child=serializers.UUIDField(), allow_empty=False, max_length=500).run_validation(request.data.get("ids"))
+        acked = Result.objects.filter(plugin=request.auth, pk__in=ids).update(fetched=True)
+        return Response({"acknowledged": acked})
 
 
 class MeView(APIView):
