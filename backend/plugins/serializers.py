@@ -18,6 +18,7 @@ class PluginSerializer(serializers.ModelSerializer):
         extra_kwargs = {  # noqa: RUF012
             "desc": {"allow_blank": True},
             "hint": {"allow_blank": True},
+            "schema": {"required": True},
         }
 
     def validate_name(self, value):

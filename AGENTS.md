@@ -96,9 +96,11 @@ Built, not yet run against live Google OAuth:
   Google access tokens are saved back to `SocialToken`.
 - Admin: all models registered in `plugins/admin.py`.
 
-Known gaps: `Plugin.schema` is validated only in the frontend builder; the API
-accepts any JSON, and a schema Laya rejects is logged and skipped at processing
-time. The DB host defaults to `db` (set `POSTGRES_HOST` to change it). The
+`Plugin.schema` is validated on write by `plugins/validation.py`, which runs
+Laya's own `plan_from_json_schema`, so the API accepts exactly what Laya can
+answer (the builder covers a subset of it).
+
+Known gaps: The DB host defaults to `db` (set `POSTGRES_HOST` to change it). The
 Docker files are written but have not been run end to end. No test suite. No
 way for a developer to search for a user by email or username (`/api/users/`
 lists only subscribed users).
