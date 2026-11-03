@@ -12,9 +12,12 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
 
 class PluginSerializer(serializers.ModelSerializer):
+    subscriber_count = serializers.IntegerField(read_only=True)
+    result_count = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = Plugin
-        fields = ("id", "developer", "name", "desc", "schema", "hint", "prefix")
+        fields = ("id", "developer", "name", "desc", "schema", "hint", "prefix", "subscriber_count", "result_count")
         read_only_fields = ("id", "developer", "prefix")
         extra_kwargs = {  # noqa: RUF012
             "desc": {"allow_blank": True},

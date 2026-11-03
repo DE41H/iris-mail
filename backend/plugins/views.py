@@ -1,3 +1,4 @@
+from django.db.models import Count, Q
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
@@ -27,7 +28,10 @@ class PluginViewSet(
     serializer_class = PluginSerializer
 
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
-        return Plugin.objects.filter(developer=self.request.user)
+        return Plugin.objects.filter(developer=self.request.user).annotate(
+            subscriber_count=Count("subscribers", filter=Q(subscribers__active=True), distinct=True),
+            result_count=Count("results", distinct=True),
+        )
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

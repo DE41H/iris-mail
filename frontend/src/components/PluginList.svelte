@@ -14,6 +14,7 @@
     return 'fields' in parsed ? parsed.fields : [];
   };
   const icon = (kind: string) => KINDS.find((k) => k.kind === kind)?.icon;
+  const plural = (n: number | undefined, word: string) => (n === 1 ? word : `${word}s`);
 </script>
 
 {#if error}
@@ -41,8 +42,12 @@
           {#each fields.slice(0, 5) as f}<span class="chip"><span class="green">{icon(f.kind)}</span>{f.name}</span>{/each}
           {#if fields.length > 5}<span class="chip">+{fields.length - 5}</span>{/if}
         </div>
+        <div class="stats">
+          <span><b>{p.subscriber_count ?? 0}</b> {plural(p.subscriber_count, 'subscriber')}</span>
+          <span><b>{p.result_count ?? 0}</b> {plural(p.result_count, 'result')}</span>
+        </div>
         <div class="foot mono">
-          <span>{fields.length} {fields.length === 1 ? 'question' : 'questions'}</span>
+          <span>{fields.length} {plural(fields.length, 'question')}</span>
           {#if p.prefix}<span>{p.prefix}…</span>{/if}
         </div>
       </a>
@@ -73,11 +78,14 @@
   .plugin:hover { color: var(--text); border-color: var(--green); transform: translateY(-3px); box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45); }
   .plugin:hover::after { transform: translateX(100%); }
   .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .top .chip { flex-shrink: 0; white-space: nowrap; }
   .name { font: 600 15px var(--mono); overflow: hidden; text-overflow: ellipsis; }
   .desc { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .fields { display: flex; flex-wrap: wrap; gap: 4px; }
+  .stats { display: flex; gap: 16px; font: 12px var(--mono); color: var(--muted); }
+  .stats b { color: var(--green); font-weight: 600; }
   .foot { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); padding-top: 10px; border-top: 1px solid var(--border); }
-  .skeleton { height: 170px; background: linear-gradient(90deg, var(--surface) 0%, var(--surface-2) 50%, var(--surface) 100%) 0 0 / 200% 100%; animation: shimmer 1.4s linear infinite; }
+  .skeleton { height: 195px; background: linear-gradient(90deg, var(--surface) 0%, var(--surface-2) 50%, var(--surface) 100%) 0 0 / 200% 100%; animation: shimmer 1.4s linear infinite; }
   @keyframes shimmer { to { background-position: -200% 0; } }
   .empty { display: grid; gap: 10px; justify-items: center; }
 </style>
