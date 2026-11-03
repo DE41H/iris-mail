@@ -5,14 +5,11 @@ Remove an item when it ships; add new findings here instead of in AGENTS.md.
 
 ## P0 — launch blockers
 
-- [ ] **Run the full flow against live Google OAuth.** Sign in, add a user with `POST /api/subscriptions/`,
+- [ ] **Run the full flow against live Google OAuth.** Sign in, add a user with `POST /api/subscriptions/` (`{"email": ...}`),
   turn the plugin on, receive mail, fetch `/api/results/`. Nothing past sign-in has run for real.
 - [ ] **Google restricted-scope review.** `gmail.readonly` is a restricted scope: public use needs Google's
   OAuth verification plus a CASA security assessment, and a privacy policy and terms page linked from
   the consent screen. Neither page exists yet.
-- [ ] **Users cannot find their own user ID.** Developers add users by UUID (`POST /api/subscriptions/`),
-  but the UI never shows it, and `/api/users/` lists only users who are already subscribed. Show the ID
-  with a copy button on `/subscriptions` (from `/api/me/`), or let developers invite by email.
 
 ## P1 — bugs and privacy
 

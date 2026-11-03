@@ -27,7 +27,8 @@ The email never stays with Iris. Only the answer does.
    Laya expects.
 2. Iris issues an API key for that plugin — shown once, stored only as a hash.
 3. A user signs in with Google and grants read access to their inbox via OAuth.
-4. Once a user has signed in, the developer adds them to the plugin. The
+4. Once a user has signed in, the developer adds them to the plugin by email
+   or user ID (`POST /api/subscriptions/`). The
    subscription starts off; the user turns it on from the subscriptions page,
    after a prompt warning that extracted data goes to the developer.
 5. Iris checks each subscribed user's inbox for new mail every three minutes.

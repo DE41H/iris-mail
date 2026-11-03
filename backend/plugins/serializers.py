@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from plugins.models import CustomUser, Plugin, Result, Subscription
@@ -31,13 +32,20 @@ class PluginSerializer(serializers.ModelSerializer):
 class SubscriptionSerializer(serializers.ModelSerializer):
     plugin_name = serializers.CharField(source="plugin.name", read_only=True)
     plugin_desc = serializers.CharField(source="plugin.desc", read_only=True)
+    email = serializers.EmailField(write_only=True, required=False)
 
     class Meta:
         model = Subscription
-        fields = ("id", "user", "plugin", "plugin_name", "plugin_desc", "active", "time")
+        fields = ("id", "user", "email", "plugin", "plugin_name", "plugin_desc", "active", "time")
         read_only_fields = ("id", "plugin", "plugin_name", "plugin_desc", "active", "time")
+        extra_kwargs = {"user": {"required": False}}  # noqa: RUF012
 
     def validate(self, attrs):
+        email = attrs.pop("email", None)
+        if ("user" in attrs) == (email is not None):
+            raise serializers.ValidationError("Give either user or email.")
+        if email is not None:
+            attrs["user"] = get_object_or_404(CustomUser, email=email)
         plugin = self.context["request"].auth
         if Subscription.objects.filter(user=attrs["user"], plugin=plugin).exists():
             raise serializers.ValidationError("This user already has a subscription to this plugin.")
