@@ -1,77 +1,67 @@
 # TODO
 
-Priorities: **P0** blocks a real launch · **P1** bug or privacy gap · **P2** should do soon · **P3** nice to have.
-Remove an item when it ships; add new findings here instead of in AGENTS.md.
+**P0** blocks launch · **P1** bug, security or privacy gap · **P2** should do soon · **P3** nice to have.
+Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
-## P0 — launch blockers
+## P0: launch blockers
 
-- [ ] **Run the full flow against live Google OAuth.** Sign in, add a user with `POST /api/subscriptions/` (`{"email": ...}`),
-  turn the plugin on, receive mail, fetch `/api/results/`. Nothing past sign-in has run for real.
-- [ ] **Google restricted-scope review.** `gmail.readonly` is a restricted scope: public use needs Google's
-  OAuth verification plus a CASA security assessment, and a privacy policy and terms page linked from
-  the consent screen. Neither page exists yet.
+- [ ] **Test the full flow against live Google OAuth.** Sign in, add a user with `POST /api/subscriptions/`,
+  turn the plugin on, receive mail, read `/api/results/`. Nothing past sign-in has run for real.
+- [ ] **Pass Google's restricted-scope review.** `gmail.readonly` needs OAuth verification, a CASA security
+  assessment, and a privacy policy and terms page linked from the consent screen. Neither page exists.
 
-## P1 — bugs and privacy
+## P1: bugs, security and privacy
 
-- [ ] **A deleted message wipes out a whole poll** (`tasks.process`). `_get_msgs` fetches each message
-  inside the same `try`. A message deleted between the history entry and the fetch raises `HttpError`
-  404, which is read as "history expired": `hist_id` is reset and every other new message in that batch
-  is skipped. Catch the 404 per message and skip only that message; keep the reset for a 404 on
-  `history().list`.
-- [ ] **Mail received while sharing was off gets shared later** (`tasks.poll_inboxes`, `process`).
-  Polling stops when a user has no active subscription, so `hist_id` freezes. Turning a plugin back on
-  then processes every message since the freeze. Fix: when `set_active(True)` leaves the user with
-  exactly one active subscription, reset `hist_id` to the current Gmail history ID. Or store an
-  `activated_at` per subscription and skip messages older than it.
-- [ ] **`process` holds a transaction and row lock across network calls and inference.** It is
-  `@atomic` with `select_for_update`, then calls Gmail and Laya for every message. A slow batch keeps
-  a DB connection and lock open for minutes, and any failure rolls back finished Laya work, so the retry
-  runs Laya again (against "no duplicate Laya calls"). Fetch and infer outside the transaction, then
-  write results and `hist_id` in a short atomic block, using `bulk_create(ignore_conflicts=True)`.
-- [ ] **Polls pile up.** `poll_inboxes` defers `process` for every user every 3 minutes, even if the
-  last job is still queued or running. Use `process.configure(queueing_lock=user_id).defer(...)` and
-  ignore `AlreadyEnqueued`.
-- [ ] **A revoked Google token retries forever.** `google.auth.exceptions.RefreshError` is not caught,
-  so the job fails with 3 retries every 3 minutes for good. Catch it, deactivate that user's
-  subscriptions (or flag the account), and show "reconnect Google" in the UI.
-- [ ] **OAuth tokens are stored in plain text.** `SocialToken.token` and `token_secret` (the refresh
-  token, i.e. read access to the inbox) are plain DB columns. Encrypt them at rest with a key from env,
-  or at least restrict DB access and backups.
-- [ ] **Results are marked fetched before the developer receives them** (`ResultViewSet.paginate_queryset`).
-  If the response is lost, those results never show up under `?fetched=false` again. Add an explicit ack
-  (`POST /api/results/ack/` with IDs), or mark them on the next request with a cursor.
+- [ ] **Old mail gets shared when a plugin is turned on.** `hist_id` is set at sign-up and freezes while a
+  user has no active subscription (`tasks.poll_inboxes`). Turning a plugin on later processes all mail since
+  then (up to Gmail's ~1 week of history). Fix: reset `hist_id` to the current Gmail history id when a
+  user goes from zero to one active subscription, or store `activated_at` and skip older messages.
+- [ ] **A revoked Google token fails forever.** `google.auth.exceptions.RefreshError` is not caught in
+  `process`, so the job fails 3 times every 3 minutes for good. Catch it, deactivate the user's
+  subscriptions, and show "reconnect Google" in the UI.
+- [ ] **One bad message stops a user's inbox for good.** Any Laya error other than `SchemaError` fails the
+  whole `process` job before `hist_id` advances, so every later poll hits the same message again. Catch
+  errors per message, log them, and move on.
+- [ ] **OAuth tokens are stored in plain text.** `SocialToken.token_secret` (the refresh token, i.e. inbox
+  access) is a plain column, and allauth's admin shows it. Encrypt it at rest with a key from env.
+- [ ] **`/admin/` is public.** Caddy proxies it to the internet, and it shows tokens and results. Restrict
+  it to an IP allowlist or a private port, or remove it from the Caddyfile.
+- [ ] **Polls pile up.** `poll_inboxes` queues `process` for every user every 3 minutes. `lock=` only stops
+  two jobs from running at once, so a slow worker builds an endless queue. Use `queueing_lock=user_id`
+  and ignore `AlreadyEnqueued`.
+- [ ] **Containers do not restart.** No service in `docker-compose.yml` has a `restart:` policy, so a
+  crash or reboot takes the app down. Add `restart: unless-stopped`.
 
-## P2 — should do soon
+## P2: should do soon
 
-- [ ] **The unfetched index does not match the query.** Pagination orders by `-id`, but the partial
-  index is `(plugin, -time) WHERE fetched = false`. uuid7 IDs are time-ordered, so change the index to
-  `(plugin, -id) WHERE fetched = false`, plus a migration.
-- [ ] **HTML-only emails reach Laya with an empty body.** `process` passes `message.plain or ""`. Fall
-  back to `message.html` stripped to text, and pass `sender=` to `laya.email_state`.
-- [ ] **Batch inference.** Each message is answered one plugin at a time with `laya.decide`. Group the
-  messages per plugin and use `laya.decide_batch`.
-- [ ] **Laya model weights.** Check whether `laya.Router()` downloads weights on first use; if it does,
-  mount a cache volume for the worker or bake the weights into the image, so a restart does not fetch
-  them again.
-- [ ] **Users cannot leave or delete.** There is no way to remove a subscription, disconnect Gmail
-  (revoke the token), or delete the account and its results. Google's user-data policy expects this.
-- [ ] **Developer dashboard gaps.** Plugin pages show no subscriber count, no recent results and no API
-  reference. Add a short docs page for `POST /api/subscriptions/`, `GET /api/results/` and
-  `GET /api/users/`.
-- [ ] **Local dev against Docker.** `npm run dev` proxies to `:8000`, but compose does not publish the
-  backend port. Add a `docker/*.local.yml` override that publishes 8000, or document running the
-  backend with `uv`.
-- [ ] **Logging and errors.** There is no `LOGGING` config and no error tracking; task failures only
-  reach worker stdout.
+<!--- [ ] **Developers must grant Gmail access.** Every sign-in asks for `gmail.readonly`, even for developers
+  who only build plugins. Ask for basic scopes at sign-in and for Gmail only when a user turns a plugin on
+  (incremental auth).-->
+- [ ] **Any developer can probe and spam users.** `POST /api/subscriptions/` with an email returns 404 or
+  201, which reveals whether that email has an account, and adds the plugin to that user's list without
+  asking them. Use an invite link the user accepts, or return the same response either way.
+- [ ] **HTML-only emails reach Laya with an empty body.** `process` passes `message.plain or ""`. Fall back
+  to `message.html` stripped to text, and pass `sender=` to `laya.email_state`.
+- [ ] **One worker answers every inbox in turn.** The worker runs with Procrastinate's default concurrency
+  of 1, and calls `laya.decide` once per message per plugin. Group messages per plugin with
+  `laya.decide_batch`, then size concurrency and worker memory for the models (`max_loaded`).
+- [ ] **The job table grows forever.** Procrastinate keeps finished jobs, and a new one is added per user
+  every 3 minutes. Schedule the built-in `remove_old_jobs` task as a periodic job.
+- [ ] **Results are kept forever.** Fetched results, and results for removed subscriptions, are never
+  deleted. Set a retention period (for example 30 days after ack) and delete older results on a schedule.
 
-## P3 — nice to have
+## P3: nice to have
 
-- [ ] Pin `astral/uv` and `node` image versions instead of `latest` / `22-alpine`.
-- [ ] Move `django-stubs` to a dev dependency group; replace the placeholder `description` in
-  `pyproject.toml`.
-- [ ] Raise `SECURE_HSTS_SECONDS` once HTTPS is confirmed in production (it is 3600 now).
-- [ ] Add a favicon and an Astro `404.astro`, with Caddy `handle_errors` serving it.
-- [ ] Check the dashboard on mobile widths: the one-screen layout only applies above 960 × 600.
-- [ ] Filter `/api/results/` by user, and send results to developers by webhook instead of polling.
-- [ ] Use Gmail push notifications (`users.watch` + Pub/Sub) instead of polling every inbox every 3 minutes.
-- [ ] Postgres backups for the `pgdata` volume.
+- [ ] Pin image versions: `astral/uv:latest`, `node:22-alpine`, `caddy:2-alpine`.
+- [ ] Pin the Laya model revision (`LAYA_REVISION`) so a Hub update cannot change answers silently.
+- [ ] Raise `SECURE_HSTS_SECONDS` (3600 now) once HTTPS works in production.
+<!--- [ ] Back up the `pgdata` volume.-->
+- [ ] Run `clearsessions` on a schedule; expired sessions are never deleted.
+- [ ] Add `prefetch_related("plugin")` to the user's subscription list (`plugin_name` is one query per row
+  when the cache is cold), and a partial index on `Subscription(active=True)` for `poll_inboxes`.
+- [ ] Drop `prompt: consent` for returning users; Google shows the consent screen on every sign-in.
+- [ ] Version plugin schemas: editing a schema mixes old and new result shapes in `/api/results/`.
+<!--- [ ] `PluginViewSet` counts all results per plugin on every request; store a counter if it gets slow.-->
+<!--- [ ] Show developers their subscribers and recent results in the dashboard, not just counts.-->
+- [ ] Check the dashboard at mobile widths; the one-screen layout is only tuned above 960 × 600.
+<!--- [ ] Send results to developers by webhook, and use Gmail push (`users.watch`) instead of polling.-->
