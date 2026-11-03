@@ -124,6 +124,6 @@
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
   }
   @media (max-width: 960px) {
-    .cols, .ident { grid-template-columns: 1fr; }
+    .cols, .ident { grid-template-columns: minmax(0, 1fr); }
   }
 </style>

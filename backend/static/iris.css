@@ -110,6 +110,11 @@ code, pre, kbd { font-family: var(--mono); }
 .topbar nav > a:not(.btn) { color: var(--muted); padding: 6px 10px; border-radius: 6px; transition: color 0.2s, background 0.2s; }
 .topbar nav > a:not(.btn):hover,
 .topbar nav > a[aria-current="page"] { color: var(--text); background: var(--surface-2); }
+@media (max-width: 640px) {
+  .topbar { padding: 0 12px; gap: 8px; }
+  .topbar nav { gap: 0; font-size: 12px; }
+  .topbar nav > a:not(.btn) { padding: 6px; }
+}
 
 /* Layout */
 .container { max-width: 1180px; margin: 0 auto; padding: 24px; }

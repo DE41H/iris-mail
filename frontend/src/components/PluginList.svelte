@@ -51,7 +51,7 @@
 {/if}
 
 <style>
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); align-content: start; gap: 14px; padding: 4px; margin: -4px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); align-content: start; gap: 14px; padding: 4px; margin: -4px; }
   .plugin {
     display: grid;
     gap: 10px;

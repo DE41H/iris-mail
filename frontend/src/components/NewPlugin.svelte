@@ -72,7 +72,7 @@
 {/if}
 
 <style>
-  .templates { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); align-content: start; gap: 14px; padding: 4px; margin: -4px; }
+  .templates { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); align-content: start; gap: 14px; padding: 4px; margin: -4px; }
   .tpl {
     display: grid;
     align-content: start;

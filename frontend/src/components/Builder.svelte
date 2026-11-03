@@ -100,7 +100,7 @@
 <style>
   .builder { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
   .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .toolbar select { width: auto; max-width: 260px; padding-top: 4px; padding-bottom: 4px; font-size: 12px; }
+  .toolbar select { width: auto; max-width: min(260px, 100%); padding-top: 4px; padding-bottom: 4px; font-size: 12px; }
   .count { margin-left: auto; font: 12px var(--mono); color: var(--muted); }
   .count.full { color: var(--amber); }
   .import { display: grid; gap: 8px; }
