@@ -1,0 +1,8 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import NewPlugin from '../../components/NewPlugin.svelte';
+---
+
+<Layout title="New plugin" wide>
+  <NewPlugin client:only="svelte" />
+</Layout>

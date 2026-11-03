@@ -9,7 +9,7 @@ structured results. Raw email is never persisted.
 
 Docker, Django 6.1 + DRF, Valkey (cache), Procrastinate (background
 tasks, Postgres-backed), PostgreSQL, Laya (extraction), Google OAuth (allauth),
-Gmail API history polling (inbox events), SvelteKit + TypeScript (dashboard).
+Gmail API history polling (inbox events), Astro + Svelte 5 islands + TypeScript (site and dashboard).
 Python 3.13, uv.
 
 ## Layout
@@ -19,10 +19,11 @@ Python 3.13, uv.
       plugins/    models, views, urls, admin (domain lives here)
       static/     iris.css, shared by the dashboard and the Django auth pages
       templates/  allauth pages
-    frontend/     SvelteKit static site (adapter-static), Svelte 5, TypeScript
-      src/lib/    api (fetch, DRF errors), schema (Laya rules), session
-                  (signed-in user), components/ (Builder, KeyCard, SubscriptionRow)
-      src/routes/ plugins/, plugins/new/, plugins/detail/, subscriptions/
+    frontend/     Astro static site (output to build/), Svelte 5 islands, TypeScript
+      src/lib/    api (fetch, DRF errors), schema (Laya rules), presets
+                  (templates, ready-made questions, answer sets), session
+      src/components/ Svelte islands (PluginEditor, Builder, FieldCard, KeyCard, ...)
+      src/pages/  index (landing), plugins/, plugins/new, plugins/detail, subscriptions
     docker/       compose file and Dockerfiles
 
 ## Commands
@@ -49,9 +50,11 @@ Python 3.13, uv.
 - Plugin names are slugs, unique per developer.
 - Endpoints live in `plugins/views.py`, routes in `plugins/urls.py` under
   `/api/`; DRF for new endpoints.
-- Frontend: SvelteKit routes in `frontend/src/routes/` (prerendered, `ssr = false`)
-  with Svelte 5 components in `frontend/src/lib/components/`. Shared logic is
-  TypeScript in `frontend/src/lib/`. `schema.ts` mirrors the rules of
+- Frontend: Astro pages in `frontend/src/pages/` mount Svelte 5 islands from
+  `frontend/src/components/` with `client:only="svelte"`. Shared logic is
+  TypeScript in `frontend/src/lib/`. Theme and motion live in
+  `backend/static/iris.css` (dark, black and green); page transitions use
+  native cross-document view transitions. `schema.ts` mirrors the rules of
   Laya's `structured.py` (at most 32 properties; enum, boolean, or integer
   range of at most 10 levels). Update it in step when Laya changes.
 - Destructive or sharing actions get an inline confirmation, not `confirm()`.

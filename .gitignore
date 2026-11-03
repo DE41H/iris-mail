@@ -48,4 +48,4 @@ Thumbs.db
 
 # frontend
 frontend/node_modules/
-frontend/.svelte-kit/
+frontend/.astro/

@@ -54,3 +54,14 @@ export async function listAll<T>(path: string): Promise<T[]> {
   }
   return items;
 }
+
+export const message = (err: unknown) => (err instanceof Error ? err.message : 'Something went wrong.');
+
+export interface Plugin {
+  id: string;
+  name: string;
+  desc: string;
+  hint: string;
+  schema: unknown;
+  prefix: string | null;
+}

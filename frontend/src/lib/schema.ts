@@ -3,11 +3,19 @@
 
 export const MAX_FIELDS = 32;
 export const MAX_LEVELS = 10;
+export const MAX_OPTIONS = 32;
 
 export type Field =
   | { kind: 'choice'; name: string; question: string; options: string[] }
   | { kind: 'boolean'; name: string; question: string }
   | { kind: 'scale'; name: string; question: string; min: number; max: number };
+
+export interface Draft {
+  name: string;
+  desc: string;
+  hint: string;
+  fields: Field[];
+}
 
 const prop = (f: Field) => {
   const description = f.question.trim() || undefined;
@@ -21,29 +29,53 @@ export const toSchema = (fields: Field[]) => ({
   properties: Object.fromEntries(fields.map((f) => [f.name, prop(f)])),
 });
 
+export function fieldProblems(f: Field, fields: Field[]): string[] {
+  const out: string[] = [];
+  if (!/^[a-z][a-z0-9_]*$/.test(f.name)) out.push('Key must start with a letter and use only a-z, 0-9 and _.');
+  else if (fields.some((g) => g !== f && g.name === f.name)) out.push('Key is already used by another question.');
+  if (f.kind === 'choice') {
+    if (f.options.length < 2) out.push('Add at least two answers.');
+    if (f.options.length > MAX_OPTIONS) out.push(`At most ${MAX_OPTIONS} answers.`);
+    if (f.options.some((option) => !option.trim())) out.push('Fill in or remove blank answers.');
+    if (new Set(f.options.map((option) => option.trim())).size !== f.options.length) out.push('Answers must be unique.');
+  }
+  if (f.kind === 'scale') {
+    if (!Number.isInteger(f.min) || !Number.isInteger(f.max)) out.push('Min and max must be whole numbers.');
+    else if (f.max < f.min) out.push('Max must be at least min.');
+    else if (f.max - f.min + 1 > MAX_LEVELS) out.push(`At most ${MAX_LEVELS} levels.`);
+  }
+  return out;
+}
+
 export function problems(fields: Field[]): string[] {
   const out: string[] = [];
-  if (!fields.length) out.push('Add at least one field.');
-  if (fields.length > MAX_FIELDS) out.push(`Use at most ${MAX_FIELDS} fields.`);
-  const names = new Set<string>();
-  fields.forEach((f, i) => {
-    const at = f.name ? `"${f.name}"` : `Field ${i + 1}`;
-    if (!/^[a-z][a-z0-9_]*$/.test(f.name)) out.push(`${at}: name must start with a letter and use only a-z, 0-9 and _.`);
-    if (names.has(f.name)) out.push(`${at}: name is already used.`);
-    names.add(f.name);
-    if (f.kind === 'choice') {
-      if (f.options.length < 2) out.push(`${at}: add at least two options.`);
-      if (f.options.length > 32) out.push(`${at}: at most 32 options.`);
-      if (f.options.some((option) => !option.trim())) out.push(`${at}: fill in or remove blank answers.`);
-      if (new Set(f.options.map((option) => option.trim())).size !== f.options.length) out.push(`${at}: answers must be unique.`);
-    }
-    if (f.kind === 'scale') {
-      if (!Number.isInteger(f.min) || !Number.isInteger(f.max)) out.push(`${at}: min and max must be whole numbers.`);
-      else if (f.max < f.min) out.push(`${at}: max must be at least min.`);
-      else if (f.max - f.min + 1 > MAX_LEVELS) out.push(`${at}: at most ${MAX_LEVELS} levels.`);
-    }
-  });
+  if (!fields.length) out.push('Add at least one question.');
+  if (fields.length > MAX_FIELDS) out.push(`Use at most ${MAX_FIELDS} questions.`);
+  fields.forEach((f, i) => fieldProblems(f, fields).forEach((p) => out.push(`${f.name || `#${i + 1}`}: ${p}`)));
   return out;
+}
+
+// What Laya builds from each property (structured.py): choice, noul (yes/no) or score.
+export const toQuestions = (fields: Field[]) =>
+  Object.fromEntries(
+    fields.map((f) => {
+      const q = f.question.trim();
+      if (f.kind === 'boolean') return [f.name, { type: 'noul', instructions: q || `Is \`${f.name}\` true?` }];
+      if (f.kind === 'scale') {
+        const criteria = Number.isInteger(f.min) && f.max >= f.min ? Array.from({ length: f.max - f.min + 1 }, (_, i) => String(f.min + i)) : [];
+        return [f.name, { type: 'score', instructions: q || `Score \`${f.name}\` from ${f.min} to ${f.max}`, criteria }];
+      }
+      return [f.name, { type: 'choice', instructions: q || `What is \`${f.name}\`?`, criteria: Object.fromEntries(f.options.map((o) => [o.trim(), null])) }];
+    }),
+  );
+
+const FILLER = new Set('a an the is are was this that it its does do did what which how who of for to in on from email mail message me my i you your there any be'.split(' '));
+
+// Suggests a result key from the question: "Is this email a receipt?" -> "receipt".
+export function slug(question: string) {
+  const words = question.toLowerCase().replace(/['’]/g, '').split(/[^a-z0-9]+/).filter(Boolean);
+  const kept = words.filter((w) => !FILLER.has(w));
+  return (kept.length ? kept : words).slice(0, 4).join('_').replace(/^[^a-z]+/, '').slice(0, 40);
 }
 
 // Mirrors the Plugin model: a slug name of at most 255 characters, desc of 1024, hint of 512.

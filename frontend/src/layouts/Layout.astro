@@ -1,0 +1,30 @@
+---
+import Nav from '../components/Nav.svelte';
+
+interface Props {
+  title: string;
+  wide?: boolean;
+}
+
+const { title, wide = false } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#050807" />
+    <title>{title} · Iris</title>
+    <link rel="stylesheet" href="/static/iris.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/">iris</a>
+      <Nav client:only="svelte" />
+    </header>
+    <main class:list={['container', { narrow: !wide }]}>
+      <slot />
+    </main>
+  </body>
+</html>

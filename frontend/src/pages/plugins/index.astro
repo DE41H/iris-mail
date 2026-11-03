@@ -1,0 +1,16 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PluginList from '../../components/PluginList.svelte';
+---
+
+<Layout title="Plugins" wide>
+  <div class="page-head reveal">
+    <div>
+      <div class="eyebrow">workspace / plugins</div>
+      <h1>Your plugins<span class="cursor"></span></h1>
+      <p>Each plugin asks a set of questions about every new email and returns the answers as JSON.</p>
+    </div>
+    <a class="btn btn-primary" href="/plugins/new">+ new plugin</a>
+  </div>
+  <PluginList client:only="svelte" />
+</Layout>
