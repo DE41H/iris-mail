@@ -13,14 +13,6 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P1: bugs, security and privacy
 
-Found in the 2026-11-05 audit (run against Postgres + Valkey with a faked Gmail; Laya not loaded):
-
-- [ ] **One deleted email stops a user's mail for a week.** `gmail.fetch` falls back to `get()` per id when
-  any message 404s, and `get()` returns `None` for the gone one. `_extract` then does `m.id` on `None`
-  (`AttributeError`), `hist_id` never moves, and every poll fails the same way until Gmail's history
-  expires (~1 week). Then `reset_hist` skips that whole week for every plugin. Reproduced: 3 new messages,
-  one deleted before fetch. Common in real life (spam filters, quick deletes). Fix in `gmail.py:83`:
-  `return [m for m in (get(gmail, id) for id in ids) if m]`.
 - [ ] **Developers cannot remove users.** `DELETE /api/subscriptions/{id}/` needs a subscription id, but an
   API key can't list subscriptions (403), `POST` by email returns no body, and `GET /api/users/` returns
   user ids. Reproduced: `DELETE /api/subscriptions/<user id>/` returns 404. The README says developers can
@@ -38,11 +30,9 @@ Found in the 2026-11-05 audit (run against Postgres + Valkey with a faked Gmail;
 
 ## P2: should do soon
 
-- [ ] **Chunked processing is untested.** `process` now fetches and answers mail 200 messages at a time and
+<!--- [ ] **Chunked processing is untested.** `process` now fetches and answers mail 200 messages at a time and
   moves `hist_id` to just before the next chunk, so a backlog no longer loads into memory at once. Run it
-  against live Gmail with a backlog over 200 (see P0) and watch `docker stats` on the worker.
-
-
+  against live Gmail with a backlog over 200 (see P0) and watch `docker stats` on the worker.-->
 <!--- [ ] **Rule matches have no size limit.** `_match` stores every `findall` hit. A 20 KB email and the rule `.`
   made a 100 KB `Result.output`; a long newsletter makes megabytes per result, per user, and the API pages
   50 of them. Fix: keep the first 20 hits per rule (`found[:20]`), say so in the result `output` help text,

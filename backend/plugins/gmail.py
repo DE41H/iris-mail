@@ -80,7 +80,7 @@ def fetch(gmail: Gmail, ids):
         return gmail._get_messages_from_refs("me", [{"id": i} for i in ids], attachments="ignore")
     except HttpError as error:
         if error.resp.status != 404: raise
-    return [ get(gmail, id) for id in ids ]
+    return [m for m in (get(gmail, id) for id in ids) if m]
 
 def revoke(user: CustomUser):
     token = SocialToken.objects.filter(account__user=user, account__provider="google").first()
