@@ -61,7 +61,6 @@ export interface Plugin {
   id: string;
   name: string;
   desc: string;
-  hint: string;
   schema: unknown;
   version: number;
   prefix: string | null;

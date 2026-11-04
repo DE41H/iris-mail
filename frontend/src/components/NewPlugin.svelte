@@ -10,7 +10,7 @@
   let created = $state<(Plugin & { key: string }) | null>(null);
 
   function start(t: Template) {
-    draft = clone({ name: t.name, desc: t.desc, hint: t.hint, fields: t.fields });
+    draft = clone({ name: t.name, desc: t.desc, fields: t.fields });
     scrollTo({ top: 0, behavior: 'smooth' });
   }
 

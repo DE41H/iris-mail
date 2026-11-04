@@ -29,7 +29,6 @@ class Plugin(models.Model):
     name = models.SlugField(max_length=255)
     desc = models.TextField(max_length=1024, default="")
     schema = models.JSONField(default=dict, validators=[SchemaValidator()])
-    hint = models.CharField(max_length=512, default="")
     version = models.PositiveSmallIntegerField(default=1, editable=False)
     key = models.BinaryField(max_length=32, unique=True, blank=True, null=True)
     prefix = models.CharField(max_length=16, unique=True, blank=True, null=True)

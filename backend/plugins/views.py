@@ -67,7 +67,7 @@ class PluginViewSet(
     list=extend_schema(exclude=True),
     set_active=extend_schema(exclude=True),
     destroy=extend_schema(
-        description="Remove a user's subscription to this plugin. Their results stay until you delete the plugin.",
+        description="Remove a user's subscription to this plugin. Their results are deleted after 30 days.",
         parameters=[OpenApiParameter("id", OpenApiTypes.UUID, OpenApiParameter.PATH)],
     ),
 )
@@ -104,7 +104,7 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
         return Response(self.get_serializer(subscription).data)
 
 
-@extend_schema_view(list=extend_schema(parameters=[
+@extend_schema_view(list=extend_schema(description="Acknowledged results are deleted once they are 30 days old. Every result is deleted at 100 days, acknowledged or not.", parameters=[
     OpenApiParameter("user", OpenApiTypes.UUID, description="Only this user's results."),
     OpenApiParameter("version", int, description="Only results made with this plugin version."),
     OpenApiParameter("fetched", bool, description="Filter by whether the result was acknowledged."),

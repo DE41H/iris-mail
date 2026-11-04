@@ -50,7 +50,6 @@ export interface Template {
   blurb: string;
   name: string;
   desc: string;
-  hint: string;
   fields: Field[];
 }
 
@@ -60,7 +59,6 @@ export const TEMPLATES: Template[] = [
     blurb: 'Your own questions.',
     name: '',
     desc: '',
-    hint: '',
     fields: [],
   },
   {
@@ -68,7 +66,6 @@ export const TEMPLATES: Template[] = [
     blurb: 'Spot purchases and sort spending.',
     name: 'receipts',
     desc: 'Finds receipts and invoices and sorts them by spend category.',
-    hint: 'Order confirmations, invoices and payment receipts from shops and services.',
     fields: [
       { kind: 'boolean', name: 'receipt', question: 'Is this email a receipt or invoice?' },
       { kind: 'choice', name: 'spend_category', question: 'What was bought?', options: ['groceries', 'food', 'travel', 'software', 'shopping', 'bills', 'other'] },
@@ -80,7 +77,6 @@ export const TEMPLATES: Template[] = [
     blurb: 'Route customer mail to the right team.',
     name: 'support-triage',
     desc: 'Routes incoming support mail by team, urgency and mood.',
-    hint: 'Customer emails to a support inbox about accounts, payments and bugs.',
     fields: [
       { kind: 'choice', name: 'department', question: 'Which team should handle this email?', options: OPTION_SETS['Department'] },
       { kind: 'scale', name: 'urgency', question: 'How urgent is this? 0 is not at all, 4 is an outage.', min: 0, max: 4 },
@@ -93,7 +89,6 @@ export const TEMPLATES: Template[] = [
     blurb: 'Follow applications from apply to offer.',
     name: 'job-hunt',
     desc: 'Tracks where each job application stands.',
-    hint: 'Emails from recruiters, hiring platforms and company HR teams.',
     fields: [
       { kind: 'boolean', name: 'job_related', question: 'Is this email about a job application?' },
       { kind: 'choice', name: 'status', question: 'What stage is the application at?', options: OPTION_SETS['Application status'] },
@@ -105,7 +100,6 @@ export const TEMPLATES: Template[] = [
     blurb: 'Decide what needs you and what can wait.',
     name: 'inbox-zero',
     desc: 'Scores each email so the important ones surface first.',
-    hint: 'A busy personal inbox with work mail, newsletters and notifications.',
     fields: [
       { kind: 'scale', name: 'importance', question: 'How important is this email to me, from 1 to 5?', min: 1, max: 5 },
       { kind: 'boolean', name: 'needs_reply', question: 'Does this email need a reply from me?' },

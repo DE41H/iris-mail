@@ -1,3 +1,4 @@
+// Same rules as backend/plugins/validation.py, which also checks what Laya itself rejects.
 // Laya reads a flat JSON Schema: one property per question. Each property is an enum (choice),
 // a boolean (yes/no), or an integer range of at most MAX_LEVELS (scale). Nothing else is accepted.
 
@@ -13,7 +14,6 @@ export type Field =
 export interface Draft {
   name: string;
   desc: string;
-  hint: string;
   fields: Field[];
 }
 
@@ -78,15 +78,14 @@ export function slug(question: string) {
   return (kept.length ? kept : words).slice(0, 4).join('_').replace(/^[^a-z]+/, '').slice(0, 40);
 }
 
-// Mirrors the Plugin model: a slug name of at most 255 characters, desc of 1024, hint of 512.
+// Mirrors the Plugin model: a slug name of at most 255 characters and desc of 1024.
 // Uniqueness per developer is only checked by the server.
-export function pluginProblems(name: string, desc: string, hint: string): string[] {
+export function pluginProblems(name: string, desc: string): string[] {
   const out: string[] = [];
   if (!name) out.push('Name is required.');
   else if (!/^[-a-z0-9_]+$/.test(name)) out.push('Name: use only lowercase letters, numbers, - and _.');
   else if (name.length > 255) out.push('Name: at most 255 characters.');
   if (desc.length > 1024) out.push('Description: at most 1024 characters.');
-  if (hint.length > 512) out.push('Hint: at most 512 characters.');
   return out;
 }
 

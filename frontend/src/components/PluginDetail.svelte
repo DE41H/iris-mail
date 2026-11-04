@@ -9,7 +9,7 @@
 
   const id = new URLSearchParams(location.search).get('id');
   let plugin = $state<Plugin | null>(null);
-  let draft = $state<Draft>({ name: '', desc: '', hint: '', fields: [] });
+  let draft = $state<Draft>({ name: '', desc: '', fields: [] });
   let locked = $state('');
   let saved = $state('');
   let key = $state('');
@@ -23,7 +23,7 @@
     plugin = p;
     const parsed = fromSchema(p.schema);
     locked = 'error' in parsed ? parsed.error : '';
-    draft = { name: p.name, desc: p.desc, hint: p.hint, fields: 'fields' in parsed ? parsed.fields : [] };
+    draft = { name: p.name, desc: p.desc, fields: 'fields' in parsed ? parsed.fields : [] };
     saved = snapshot();
   }
 

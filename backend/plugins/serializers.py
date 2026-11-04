@@ -29,11 +29,10 @@ class PluginSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plugin
-        fields = ("id", "developer", "name", "desc", "schema", "hint", "version", "prefix", "subscriber_count", "result_count")
+        fields = ("id", "developer", "name", "desc", "schema", "version", "prefix", "subscriber_count", "result_count")
         read_only_fields = ("id", "developer", "version", "prefix")
         extra_kwargs = {  # noqa: RUF012
             "desc": {"allow_blank": True},
-            "hint": {"allow_blank": True},
             "schema": {"required": True},
         }
 

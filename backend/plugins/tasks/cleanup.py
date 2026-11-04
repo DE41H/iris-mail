@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 JOB_KEEP_FOR_HRS = 7 * 24
 RESULT_KEEP_FOR = 30
+RESULT_MAX_AGE = 100
 
 @app.periodic(cron="0 3 * * *")
 @app.task(name="plugins.tasks.cleanup")
@@ -21,8 +22,11 @@ async def cleanup(timestamp):
         nb_hours=JOB_KEEP_FOR_HRS, include_failed=True, include_cancelled=True, include_aborted=True,
     )
     subscribed = Exists(Subscription.objects.filter(user=OuterRef("user"), plugin=OuterRef("plugin")))
-    cutoff = now() - timedelta(days=RESULT_KEEP_FOR)
-    clean_results = Result.objects.filter(Q(fetched=True) | ~subscribed, time__lte=cutoff).adelete()
+    cond_1 = Q(time__lte=now() - timedelta(days=RESULT_MAX_AGE))
+    cond_2 = (Q(fetched=True) | ~subscribed)
+    cond_3 = Q(time__lte=now() - timedelta(days=RESULT_KEEP_FOR))
+    condition = (cond_1) | (cond_2 & cond_3)
+    clean_results = Result.objects.filter(condition).adelete()
     (count, _), _ = await gather(clean_results, delete_jobs)
     logger.info("Cleaned up old jobs and results", extra={"results_deleted": count})
 

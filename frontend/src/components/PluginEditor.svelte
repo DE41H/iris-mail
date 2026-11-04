@@ -21,7 +21,7 @@
   let busy = $state(false);
   let error = $state('');
   let open = $state(false);
-  const issues = $derived([...pluginProblems(draft.name, draft.desc, draft.hint), ...(locked ? [] : problems(draft.fields))]);
+  const issues = $derived([...pluginProblems(draft.name, draft.desc), ...(locked ? [] : problems(draft.fields))]);
 
   const slugify = (e: Event) =>
     (draft.name = (e.currentTarget as HTMLInputElement).value.toLowerCase().replace(/\s+/g, '-').replace(/[^-a-z0-9_]/g, ''));
@@ -75,10 +75,6 @@
         <label>
           <span class="label">description</span>
           <input type="text" bind:value={draft.desc} placeholder="Shown to users" maxlength="1024" />
-        </label>
-        <label>
-          <span class="label">hint for laya</span>
-          <input type="text" bind:value={draft.hint} placeholder="What kind of email?" maxlength="512" />
         </label>
       </section>
 

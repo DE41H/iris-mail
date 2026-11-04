@@ -24,7 +24,8 @@ The full API reference is at `/docs`.
 - Users can turn a plugin off, remove it, or delete their account. Deleting revokes Google access
   and removes everything Iris holds about them.
 - If a user revokes Google access, Iris turns all their plugins off until they sign in again.
-- Answers older than 30 days are deleted once acknowledged, or once the plugin is removed.
+- Answers older than 30 days are deleted once acknowledged, or once the plugin is removed. Every answer
+  is deleted after 100 days, acknowledged or not.
 - Developers can remove a subscription with `DELETE /api/subscriptions/{id}/` and list active
   subscribers with `GET /api/users/`.
 
