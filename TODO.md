@@ -17,14 +17,11 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
   then (up to Gmail's ~1 week of history). Fix: reset `hist_id` to the current Gmail history id when a
   user goes from zero to one active subscription, or store `activated_at` and skip older messages.
 - [ ] **A revoked Google token fails forever.** `google.auth.exceptions.RefreshError` is not caught in
-  `process`, so the job fails 3 times every 3 minutes for good. Catch it, deactivate the user's
+  `process`, so the job fails every 3 minutes for good. Catch it, deactivate the user's
   subscriptions, and show "reconnect Google" in the UI.
 - [ ] **One bad message stops a user's inbox for good.** Any Laya error other than `SchemaError` fails the
   whole `process` job before `hist_id` advances, so every later poll hits the same message again. Catch
   errors per message, log them, and move on.
-- [ ] **Polls pile up.** `poll_inboxes` queues `process` for every user every 3 minutes. `lock=` only stops
-  two jobs from running at once, so a slow worker builds an endless queue. Use `queueing_lock=user_id`
-  and ignore `AlreadyEnqueued`.
 
 ## P2: should do soon
 
