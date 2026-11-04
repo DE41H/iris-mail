@@ -105,6 +105,6 @@
   .count.full { color: var(--amber); }
   .import { display: grid; gap: 8px; }
   .import .actions { justify-content: space-between; }
-  .list { display: grid; align-content: start; gap: 10px; flex: 1; min-height: 0; overflow: auto; padding-right: 2px; }
+  .list { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 10px; flex: 1; min-height: 0; overflow: auto; padding-right: 2px; }
   .empty { border: 1px dashed var(--border-strong); border-radius: var(--radius); }
 </style>

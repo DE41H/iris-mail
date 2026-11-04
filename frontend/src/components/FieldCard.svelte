@@ -106,12 +106,12 @@
 </article>
 
 <style>
-  .field { display: grid; gap: 8px; padding: 10px 12px; transition: border-color 0.25s, box-shadow 0.25s; }
+  .field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 10px 12px; transition: border-color 0.25s, box-shadow 0.25s; }
   .field:focus-within { border-color: var(--border-strong); box-shadow: 0 0 0 1px var(--green-soft), 0 12px 32px rgba(0, 0, 0, 0.35); }
   .field.bad { border-color: rgba(255, 95, 95, 0.4); }
   .line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .num { font: 600 12px var(--mono); color: var(--green); }
-  .q { flex: 1 1 220px; width: auto; }
+  .q { flex: 1 1 220px; width: auto; min-width: 0; }
   .tools { display: flex; gap: 2px; }
   .del:hover { color: var(--danger); }
 
@@ -123,14 +123,15 @@
   .seg label + label span { border-left: 1px solid var(--border-strong); }
   .seg input:checked + span { background: var(--green-soft); color: var(--green); }
   .seg input:focus-visible + span { outline: 2px solid var(--green); outline-offset: -2px; }
+  @media (max-width: 340px) { .seg i { display: none; } }
 
-  .key { display: flex; align-items: center; gap: 6px; font: 13px var(--mono); padding-left: 22px; }
-  .key input { width: 170px; padding-top: 6px; padding-bottom: 6px; }
+  .key { display: flex; align-items: center; gap: 6px; font: 13px var(--mono); padding-left: 22px; max-width: 100%; }
+  .key input { flex: 0 1 170px; width: 170px; min-width: 0; padding-top: 6px; padding-bottom: 6px; }
   .answer { flex: 1 1 280px; min-width: 0; }
 
   .range { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .range input { width: 64px; padding-top: 6px; padding-bottom: 6px; }
-  .range select { width: auto; padding-top: 6px; padding-bottom: 6px; }
+  .range select { width: auto; max-width: 100%; padding-top: 6px; padding-bottom: 6px; }
   .ticks { display: flex; gap: 3px; flex: 1; min-width: 120px; }
   .ticks span {
     flex: 1;

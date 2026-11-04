@@ -15,7 +15,7 @@
   <a href="/docs" aria-current={current('/docs')}>docs</a>
   {#if $session}
     <a href="/plugins" aria-current={current('/plugins')}>plugins</a>
-    <a href="/subscriptions" aria-current={current('/subscriptions')}>subscriptions</a>
+    <a href="/subscriptions" aria-current={current('/subscriptions')}><span class="long">subscriptions</span><span class="short">inbox</span></a>
     <span class="who" title={$session.email}>{$session.email}</span>
     <a class="btn btn-sm" href="/accounts/logout/">sign out</a>
   {:else if $session === null}
@@ -34,7 +34,13 @@
     border-left: 1px solid var(--border);
     margin-left: 8px;
   }
+  .short { display: none; }
   @media (max-width: 640px) {
     .who { display: none; }
+  }
+  /* The full nav needs ~360px; phones narrower than 400px get the short label. */
+  @media (max-width: 400px) {
+    .long { display: none; }
+    .short { display: inline; }
   }
 </style>

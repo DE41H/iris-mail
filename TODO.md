@@ -48,7 +48,7 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P3: nice to have
 
-- [ ] Set `DJANGO_HSTS_SECONDS=31536000` in production `.env` once HTTPS works (defaults to 3600).
+<!--- [ ] Set `DJANGO_HSTS_SECONDS=31536000` in production `.env` once HTTPS works (defaults to 3600).-->
 <!--- [ ] Back up the `pgdata` volume.-->
 - [ ] Run `clearsessions` on a schedule; expired sessions are never deleted.
 - [ ] Add `prefetch_related("plugin")` to the user's subscription list (`plugin_name` is one query per row
@@ -57,5 +57,4 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 - [ ] Version plugin schemas: editing a schema mixes old and new result shapes in `/api/results/`.
 <!--- [ ] `PluginViewSet` counts all results per plugin on every request; store a counter if it gets slow.-->
 <!--- [ ] Show developers their subscribers and recent results in the dashboard, not just counts.-->
-- [ ] Check the dashboard at mobile widths; the one-screen layout is only tuned above 960 × 600.
 <!--- [ ] Send results to developers by webhook, and use Gmail push (`users.watch`) instead of polling.-->

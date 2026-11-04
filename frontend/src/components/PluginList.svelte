@@ -82,6 +82,7 @@
   .name { font: 600 15px var(--mono); overflow: hidden; text-overflow: ellipsis; }
   .desc { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .fields { display: flex; flex-wrap: wrap; gap: 4px; }
+  .fields .chip { overflow-wrap: anywhere; }
   .stats { display: flex; gap: 16px; font: 12px var(--mono); color: var(--muted); }
   .stats b { color: var(--green); font-weight: 600; }
   .foot { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); padding-top: 10px; border-top: 1px solid var(--border); }

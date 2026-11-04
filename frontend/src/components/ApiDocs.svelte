@@ -68,7 +68,7 @@
             <summary>
               <span class="method {method}">{method.toUpperCase()}</span>
               <span class="mono">{path}</span>
-              <span class="auth">
+              <span class="via">
                 {#each auth(op) as a}<span class="chip" class:on={a === 'api key'}>{a}</span>{/each}
               </span>
             </summary>
@@ -110,11 +110,11 @@
   .intro { margin: 0; }
   h2 { padding: 16px 16px 6px; margin: 0; }
   details { border-top: 1px solid var(--border); }
-  summary { display: flex; align-items: center; gap: 12px; padding: 10px 16px; cursor: pointer; list-style: none; }
+  summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 10px 16px; cursor: pointer; list-style: none; }
   summary::-webkit-details-marker { display: none; }
   summary:hover { background: var(--surface-2); }
-  .auth { margin-left: auto; display: flex; gap: 6px; }
-  .method { width: 56px; font: 600 11px/1.6 var(--mono); color: var(--muted); }
+  .via { margin-left: auto; display: flex; gap: 6px; }
+  .method { flex-shrink: 0; width: 56px; font: 600 11px/1.6 var(--mono); color: var(--muted); }
   .method.get { color: #8ab4ff; }
   .method.post { color: var(--green); }
   .method.put, .method.patch { color: var(--amber); }
@@ -122,7 +122,10 @@
   .op { padding: 4px 16px 16px; display: grid; gap: 8px; }
   .op p { margin: 0; }
   .label { margin: 8px 0 0; }
-  table { border-collapse: collapse; font-size: 13px; }
+  /* Scrolls sideways on its own when a phone is too narrow for the columns. */
+  table { display: block; overflow-x: auto; border-collapse: collapse; font-size: 13px; }
   td { padding: 4px 16px 4px 0; vertical-align: top; }
+  td:not(:last-child) { white-space: nowrap; }
+  td:last-child { min-width: 180px; }
   code { font-family: var(--mono); color: var(--text); }
 </style>

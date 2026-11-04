@@ -70,9 +70,9 @@
 <style>
   .row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 16px 18px; border-top: 1px solid var(--border); transition: background 0.3s; }
   .row.on { background: linear-gradient(90deg, var(--green-soft), transparent 60%); }
-  .info { flex: 1; min-width: 0; }
+  .info { flex: 1 1 220px; min-width: 0; }
   .name { font: 600 14px var(--mono); }
-  .switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; position: relative; }
+  .switch { margin-right: auto; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; position: relative; }
   .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
   .track { width: 38px; height: 22px; border-radius: 999px; background: var(--border-strong); position: relative; transition: background 0.25s, box-shadow 0.25s; }
   .track::after {
