@@ -13,7 +13,7 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 ## P1: bugs, security and privacy
 
 - [ ] **Old mail gets shared when a plugin is turned on.** `hist_id` is set at sign-up and freezes while a
-  user has no active subscription (`tasks.poll_inboxes`). Turning a plugin on later processes all mail since
+  user has no active subscription (`tasks.poll_hist`). Turning a plugin on later processes all mail since
   then (up to Gmail's ~1 week of history). Fix: reset `hist_id` to the current Gmail history id when a
   user goes from zero to one active subscription, or store `activated_at` and skip older messages.
 - [ ] **A revoked Google token fails forever.** `google.auth.exceptions.RefreshError` is not caught in

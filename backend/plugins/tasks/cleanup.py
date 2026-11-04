@@ -7,6 +7,7 @@ from django.utils.timezone import now
 from procrastinate.contrib.django import app
 
 from plugins.models import Result, Subscription
+from plugins.tasks.base import retry
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,5 @@ async def cleanup(timestamp):
 @app.task(name="plugins.tasks.revive", queueing_lock="revive")
 async def revive(timestamp):
     jobs = await app.job_manager.get_stalled_jobs()
-    await gather(*( app.job_manager.retry_job(job) for job in jobs ))
-    if jobs:
-        logger.warning("Retried stalled jobs", extra={"job_ids": [job.id for job in jobs]})
+    await gather(*( retry(job) for job in jobs ))
+    if jobs: logger.warning("Retried stalled jobs", extra={"job_ids": [job.id for job in jobs]})
