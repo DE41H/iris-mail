@@ -30,9 +30,8 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 <!--- [ ] **Any developer can probe users.** Fixed: subscribing by email always returns 202 (and matches
   case-insensitively).-->
-- [ ] **Any developer can spam users.** `POST /api/subscriptions/` still adds the plugin (inactive) to any
-  account's list without asking. Fix: a signed invite link the user accepts (`django.core.signing`).
-
+<!--- [ ] **Any developer can spam users.** `POST /api/subscriptions/` still adds the plugin (inactive) to any
+  account's list without asking. Fix: a signed invite link the user accepts (`django.core.signing`).-->
 <!--- [ ] **Docker build uses `astral/uv:latest`** (`docker/backend.dockerfile`). A new uv release can break or
   change the build. Pin a version.-->
 <!--- [ ] **Developers must grant Gmail access.** Every sign-in asks for `gmail.readonly`, even for developers
