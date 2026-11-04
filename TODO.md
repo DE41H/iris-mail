@@ -38,11 +38,10 @@ Found in the 2026-11-05 audit (run against Postgres + Valkey with a faked Gmail;
 
 ## P2: should do soon
 
+- [ ] **Chunked processing is untested.** `process` now fetches and answers mail 200 messages at a time and
+  moves `hist_id` to just before the next chunk, so a backlog no longer loads into memory at once. Run it
+  against live Gmail with a backlog over 200 (see P0) and watch `docker stats` on the worker.
 
-- [ ] **A message that kills the worker is retried forever.** If one batch makes Laya run out of memory
-  (worker `mem_limit: 4g`), the job is left stalled, `revive` retries it every 5 minutes with no limit,
-  and it dies the same way, blocking that user and taking the worker down each time. Not reproduced.
-  Fix: in `revive`, fail jobs whose `attempts` is already 3 or more instead of retrying them.
 
 <!--- [ ] **Rule matches have no size limit.** `_match` stores every `findall` hit. A 20 KB email and the rule `.`
   made a 100 KB `Result.output`; a long newsletter makes megabytes per result, per user, and the API pages
@@ -63,9 +62,6 @@ Found in the 2026-11-05 audit (run against Postgres + Valkey with a faked Gmail;
 
 <!--- [ ] `init_hist` has `retry=5`, but `get_hist_id` catches every error and returns `None`, so it never
   retries. Drop the option (`process` already resets a missing `hist_id`).-->
-<!--- [ ] **A big history backlog loads every message at once.** `process` fetches all new messages (up to a
-  week of mail after downtime) into memory before Laya runs, with 2 jobs per 4 GB worker. Work through the
-  ids in chunks of ~200; deduplication already makes partial progress safe.-->
 <!--- [ ] **Subscribing by email is case-sensitive.** `POST /api/subscriptions/ {"email": "U@X.com"}` returns
   404 for `u@x.com`. Use `email__iexact` in `SubscriptionSerializer.validate`.-->
 <!--- [ ] **Two identical requests at once return 500.** `validate_name` and the duplicate-subscription check

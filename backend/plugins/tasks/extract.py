@@ -15,6 +15,7 @@ from plugins.validation import MAX_MATCHES, RE2
 logger = logging.getLogger(__name__)
 
 ROUTER = laya.Router(max_loaded=1)
+CHUNK_SIZE = 250
 
 
 def _match(plugin, content):
@@ -76,7 +77,11 @@ def process(user_id):
     Subscription.objects.filter(user=user, active=True, hist_from=None).invalidated_update(hist_from=latest)  # pyright: ignore[reportAttributeAccessIssue]
     subs = Subscription.objects.filter(user=user, active=True).prefetch_related("plugin")
     low = min((s.hist_from for s in subs), default=latest)
-    msgs = fetch(gmail, [i for i, h in added.items() if h > low])
-    save_token(user, gmail)
-    _extract(user, subs, msgs, added)
+    ids = sorted((i for i, h in added.items() if h > low), key=added.__getitem__)
+    for n in range(0, len(ids), CHUNK_SIZE):
+        msgs = fetch(gmail, ids[n:n + CHUNK_SIZE])
+        save_token(user, gmail)
+        _extract(user, subs, msgs, added)
+        if n + CHUNK_SIZE < len(ids):
+            CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=added[ids[n + CHUNK_SIZE]] - 1)  # pyright: ignore[reportAttributeAccessIssue]
     CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=latest)  # pyright: ignore[reportAttributeAccessIssue]
