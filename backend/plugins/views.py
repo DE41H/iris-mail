@@ -66,6 +66,11 @@ class PluginViewSet(
 @extend_schema_view(
     list=extend_schema(exclude=True),
     set_active=extend_schema(exclude=True),
+    create=extend_schema(
+        description="Add a user by `user` id (201) or by `email` (always 202 with no body, whether or not the email has an account; "
+        "they appear in `/api/users/` once they turn the plugin on).",
+        responses={201: SubscriptionSerializer, 202: None},
+    ),
     destroy=extend_schema(
         description="Remove a user's subscription to this plugin. Their results are deleted after 30 days.",
         parameters=[OpenApiParameter("id", OpenApiTypes.UUID, OpenApiParameter.PATH)],
@@ -84,6 +89,17 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
         if isinstance(self.request.auth, Plugin):  # pyright: ignore[reportAttributeAccessIssue]
             return Subscription.objects.filter(plugin=self.request.auth).prefetch_related("plugin")  # pyright: ignore[reportAttributeAccessIssue]
         return Subscription.objects.filter(user=self.request.user).prefetch_related("plugin")
+
+    def create(self, request, *args, **kwargs):
+        if "email" not in request.data:
+            return super().create(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if user := serializer.validated_data["user"]:
+            _, created = Subscription.objects.get_or_create(user=user, plugin=request.auth)
+            if created:
+                logger.info("Subscription added", extra={"plugin_id": request.auth.pk, "user_id": user.pk})
+        return Response(status=202)
 
     def perform_create(self, serializer):
         serializer.save(plugin=self.request.auth)  # pyright: ignore[reportAttributeAccessIssue]

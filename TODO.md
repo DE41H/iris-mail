@@ -19,6 +19,7 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
   user goes from zero to one active subscription, or store `activated_at` and skip older messages.
   Same after "Reconnect Google": a revoked user's `hist_id` stays at the revoke point, so mail from the
   disconnected days is processed once they turn plugins back on.
+
 <!--- [ ] **A Laya outage silently drops mail.** `extract._answer` catches every exception and falls back to
   `_decide_each`, which logs and skips each message. If Laya fails for all of them (model download fails,
   out of memory), no results are saved, `process` still moves `hist_id` forward, and that mail is never
@@ -27,9 +28,10 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P2: should do soon
 
-- [ ] **Any developer can probe and spam users.** `POST /api/subscriptions/` with an email returns 404 or
-  201, which reveals whether that email has an account, and adds the plugin to that user's list without
-  asking them. Use an invite link the user accepts, or return the same response either way.
+<!--- [ ] **Any developer can probe users.** Fixed: subscribing by email always returns 202 (and matches
+  case-insensitively).-->
+- [ ] **Any developer can spam users.** `POST /api/subscriptions/` still adds the plugin (inactive) to any
+  account's list without asking. Fix: a signed invite link the user accepts (`django.core.signing`).
 
 <!--- [ ] **Docker build uses `astral/uv:latest`** (`docker/backend.dockerfile`). A new uv release can break or
   change the build. Pin a version.-->

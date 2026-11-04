@@ -1,5 +1,4 @@
 from allauth.socialaccount.models import SocialToken
-from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from plugins.models import CustomUser, Plugin, Result, Subscription
@@ -70,7 +69,8 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         if ("user" in attrs) == (email is not None):
             raise serializers.ValidationError("Give either user or email.")
         if email is not None:
-            attrs["user"] = get_object_or_404(CustomUser, email=email)
+            attrs["user"] = CustomUser.objects.filter(email__iexact=email).first()
+            return attrs
         plugin = self.context["request"].auth
         if Subscription.objects.filter(user=attrs["user"], plugin=plugin).exists():
             raise serializers.ValidationError("This user already has a subscription to this plugin.")

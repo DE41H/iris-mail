@@ -10,7 +10,8 @@ that the developer pulls with an API key. The email is never stored, only the an
 
 1. A developer creates a plugin in the dashboard and gets an API key (shown once, stored as a hash).
 2. A user signs in with Google, granting read access to their inbox.
-3. The developer adds the user by email or id with `POST /api/subscriptions/`. The user turns it on
+3. The developer adds the user by email or id with `POST /api/subscriptions/` (by email it always answers 202, so
+   accounts can't be probed). The user turns it on
    from the subscriptions page.
 4. Every three minutes Iris polls new mail. Laya answers the plugin's questions once per message.
 5. The developer reads `GET /api/results/?fetched=false` and confirms receipt with
