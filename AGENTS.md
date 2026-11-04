@@ -28,6 +28,7 @@ allauth (Google), Laya, Astro + Svelte 5, Caddy, Docker. Python 3.13 with uv.
 
 - No test files. Verify by hand against the running app.
 - Keep code simple, small and lightly commented.
+- Gmail: use `simplegmail` (`Gmail`, `Message`) rather than re-implementing it; call `gmail.service` only for what it lacks (history, profile).
 - Log with `logging.getLogger(__name__)`, ids in `extra=`, never email content.
 - `uuid7` PKs. Index every new query pattern; constraints go in `Meta.constraints`.
 - cacheops caches `CustomUser`, `Plugin`, `Subscription`: use `.invalidated_update()` and
