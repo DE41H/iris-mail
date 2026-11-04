@@ -99,6 +99,8 @@ CACHES = {
     }
 }
 
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+
 CACHEOPS_REDIS = getenv('CACHEOPS_URL', 'redis://127.0.0.1:6379/2')
 CACHEOPS_DEGRADE_ON_FAILURE = True
 CACHEOPS_DEFAULTS = {'timeout': 60 * 15}

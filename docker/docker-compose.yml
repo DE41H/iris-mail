@@ -16,6 +16,9 @@ services:
 
   valkey:
     image: valkey/valkey:8-alpine
+    command: valkey-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - valkey:/data
     logging: *logging
     restart: unless-stopped
 
@@ -84,6 +87,7 @@ services:
 
 volumes:
   pgdata:
+  valkey:
   static:
   models:
   caddy_data:
