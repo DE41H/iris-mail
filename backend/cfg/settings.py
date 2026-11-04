@@ -197,9 +197,17 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Iris API',
-    'DESCRIPTION': 'Plugin endpoints authenticate with `Authorization: Bearer <api key>`.',
+    'DESCRIPTION': 'Read answers extracted from your users\' mail. Authenticate every request with '
+                   '`Authorization: Bearer <api key>`. Lists are cursor-paginated, 50 items per page.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'PARSER_WHITELIST': ['rest_framework.parsers.JSONParser'],  # document JSON bodies only
+    'ENUM_NAME_OVERRIDES': {'Tier': 'plugins.models.UserTier'},
+    'TAGS': [
+        {'name': 'users', 'description': 'Users sharing their mail with your plugin.'},
+        {'name': 'subscriptions', 'description': 'Invite users to your plugin, or remove them.'},
+        {'name': 'results', 'description': 'Answers extracted from new mail.'},
+    ],
     # Documented endpoints are the plugin API, so hide session auth from the docs.
     'AUTHENTICATION_WHITELIST': ['plugins.authentication.PluginKeyAuthentication'],
 }

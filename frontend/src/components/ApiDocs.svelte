@@ -46,7 +46,9 @@
         )
       : [],
   );
-  const tags = $derived([...new Set(ops.map((o) => o.tag))]);
+  // Spec tag order and descriptions first, then any untagged leftovers.
+  const tags = $derived([...new Set([...(spec?.tags ?? []).map((t: Schema) => t.name), ...ops.map((o) => o.tag)])].filter((t) => ops.some((o) => o.tag === t)));
+  const tagDesc = (name: string) => spec?.tags?.find((t: Schema) => t.name === name)?.description;
   const auth = (op: Schema) =>
     (op.security ?? []).flatMap((s: Schema) => Object.keys(s)).map((k: string) => (k === 'PluginKey' ? 'api key' : 'session'));
 </script>
@@ -60,6 +62,7 @@
       <p class="card-body muted intro">Plugin endpoints take <code>Authorization: Bearer &lt;api key&gt;</code>.</p>
       {#each tags as tag}
         <h2 class="eyebrow">{tag}</h2>
+        {#if tagDesc(tag)}<p class="muted tag-desc">{tagDesc(tag)}</p>{/if}
         {#each ops.filter((o) => o.tag === tag) as { method, path, op } (method + path)}
           {@const status = Object.keys(op.responses ?? {})[0]}
           {@const response = body(op.responses?.[status]?.content, 'writeOnly')}
@@ -68,6 +71,7 @@
             <summary>
               <span class="method {method}">{method.toUpperCase()}</span>
               <span class="mono">{path}</span>
+              {#if op.summary}<span class="muted">{op.summary}</span>{/if}
               <span class="via">
                 {#each auth(op) as a}<span class="chip" class:on={a === 'api key'}>{a}</span>{/each}
               </span>
@@ -109,6 +113,7 @@
   .docs { display: flex; flex-direction: column; min-height: 0; }
   .intro { margin: 0; }
   h2 { padding: 16px 16px 6px; margin: 0; }
+  .tag-desc { margin: 0; padding: 0 16px 10px; font-size: 13px; }
   details { border-top: 1px solid var(--border); }
   summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 10px 16px; cursor: pointer; list-style: none; }
   summary::-webkit-details-marker { display: none; }

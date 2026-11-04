@@ -10,6 +10,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ("id", "username", "email", "tier")
         read_only_fields = fields
+        extra_kwargs = {"username": {"help_text": "Display name."}, "tier": {"help_text": "Account tier."}}  # noqa: RUF012
 
 
 class MeSerializer(CustomUserSerializer):
@@ -55,14 +56,18 @@ class PluginSerializer(serializers.ModelSerializer):
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     plugin_name = serializers.CharField(source="plugin.name", read_only=True)
-    plugin_desc = serializers.CharField(source="plugin.desc", read_only=True)
-    email = serializers.EmailField(write_only=True, required=False)
+    plugin_desc = serializers.CharField(source="plugin.desc", read_only=True, help_text="Plugin description.")
+    email = serializers.EmailField(write_only=True, required=False, help_text="User's email address. Send this or `user`.")
 
     class Meta:
         model = Subscription
         fields = ("id", "user", "email", "plugin", "plugin_name", "plugin_desc", "active", "time")
         read_only_fields = ("id", "plugin", "plugin_name", "plugin_desc", "active", "time")
-        extra_kwargs = {"user": {"required": False}}  # noqa: RUF012
+        extra_kwargs = {  # noqa: RUF012
+            "user": {"required": False, "help_text": "User id. Send this or `email`."},
+            "active": {"help_text": "Whether the user has the plugin turned on."},
+            "time": {"help_text": "When the subscription was created."},
+        }
 
     def validate(self, attrs):
         email = attrs.pop("email", None)
@@ -82,3 +87,10 @@ class ResultSerializer(serializers.ModelSerializer):
         model = Result
         fields = ("id", "user", "plugin", "version", "output", "fetched", "time")
         read_only_fields = fields
+        extra_kwargs = {  # noqa: RUF012
+            "user": {"help_text": "User the mail belongs to."},
+            "version": {"help_text": "Plugin version that produced the result."},
+            "output": {"help_text": "Answers matching the plugin schema; rule matches are under `rules`."},
+            "fetched": {"help_text": "Whether the result was acknowledged."},
+            "time": {"help_text": "When the result was created."},
+        }

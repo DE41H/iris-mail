@@ -6,6 +6,7 @@ from django.db.models import Count, Q
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter,
+    OpenApiResponse,
     extend_schema,
     extend_schema_view,
     inline_serializer,
@@ -67,13 +68,20 @@ class PluginViewSet(
     list=extend_schema(exclude=True),
     set_active=extend_schema(exclude=True),
     create=extend_schema(
-        description="Add a user by `user` id (201) or by `email` (always 202 with no body, whether or not the email has an account; "
-        "they appear in `/api/users/` once they turn the plugin on).",
-        responses={201: SubscriptionSerializer, 202: None},
+        summary="Add a user",
+        description="Send either `user` or `email`. The plugin is added to the user's list, turned off, and receives "
+        "mail once they turn it on. By `user`: 201 with the subscription. By `email`: always 202 with no body, "
+        "whether or not the address has an account.",
+        responses={
+            201: OpenApiResponse(SubscriptionSerializer, "Subscription created."),
+            202: OpenApiResponse(description="Accepted. The user is added if the address has an account."),
+        },
     ),
     destroy=extend_schema(
-        description="Remove a user's subscription to this plugin. Their results are deleted after 30 days.",
-        parameters=[OpenApiParameter("id", OpenApiTypes.UUID, OpenApiParameter.PATH)],
+        summary="Remove a user",
+        description="Ends a subscription to this plugin. The user's results are deleted after 30 days.",
+        parameters=[OpenApiParameter("id", OpenApiTypes.UUID, OpenApiParameter.PATH, description="Subscription id.")],
+        responses={204: OpenApiResponse(description="Subscription removed.")},
     ),
 )
 class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
@@ -120,11 +128,15 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
         return Response(self.get_serializer(subscription).data)
 
 
-@extend_schema_view(list=extend_schema(description="Acknowledged results are deleted once they are 30 days old. Every result is deleted at 100 days, acknowledged or not.", parameters=[
-    OpenApiParameter("user", OpenApiTypes.UUID, description="Only this user's results."),
-    OpenApiParameter("version", int, description="Only results made with this plugin version."),
-    OpenApiParameter("fetched", bool, description="Filter by whether the result was acknowledged."),
-]))
+@extend_schema_view(list=extend_schema(
+    summary="List results",
+    description="Newest first. Acknowledged results are deleted after 30 days; all results are deleted after 100 days.",
+    parameters=[
+        OpenApiParameter("user", OpenApiTypes.UUID, description="Only results for this user."),
+        OpenApiParameter("version", int, description="Only results from this plugin version."),
+        OpenApiParameter("fetched", bool, description="`true` for acknowledged results, `false` for new ones."),
+    ],
+))
 class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = ResultSerializer
     authentication_classes = (PluginKeyAuthentication,)
@@ -144,8 +156,11 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         return queryset.filter(fetched=fetched.lower() == "true")
 
     @extend_schema(
-        request=inline_serializer("Ack", {"ids": serializers.ListField(child=serializers.UUIDField(), min_length=1, max_length=500)}),
-        responses=inline_serializer("Acknowledged", {"acknowledged": serializers.IntegerField()}),
+        summary="Acknowledge results",
+        description="Marks results as fetched. Unknown ids are ignored.",
+        request=inline_serializer("Ack", {"ids": serializers.ListField(
+            child=serializers.UUIDField(), min_length=1, max_length=500, help_text="Result ids, 1 to 500.")}),
+        responses=inline_serializer("Acknowledged", {"acknowledged": serializers.IntegerField(help_text="Results marked as fetched.")}),
     )
     @action(detail=False, methods=["post"])
     def ack(self, request):
@@ -168,6 +183,10 @@ class MeViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin, viewsets.Ge
         instance.delete()
 
 
+@extend_schema_view(list=extend_schema(
+    summary="List users",
+    description="Users who have this plugin turned on.",
+))
 class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = CustomUserSerializer
     authentication_classes = (PluginKeyAuthentication,)
