@@ -2,14 +2,14 @@
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
   import { api, message, type Plugin } from '../lib/api';
-  import { fromSchema, toSchema, type Draft } from '../lib/schema';
+  import { fromRules, fromSchema, toRules, toSchema, type Draft } from '../lib/schema';
   import ConfirmButton from './ConfirmButton.svelte';
   import KeyCard from './KeyCard.svelte';
   import PluginEditor from './PluginEditor.svelte';
 
   const id = new URLSearchParams(location.search).get('id');
   let plugin = $state<Plugin | null>(null);
-  let draft = $state<Draft>({ name: '', desc: '', fields: [] });
+  let draft = $state<Draft>({ name: '', desc: '', fields: [], rules: [] });
   let locked = $state('');
   let saved = $state('');
   let key = $state('');
@@ -23,7 +23,7 @@
     plugin = p;
     const parsed = fromSchema(p.schema);
     locked = 'error' in parsed ? parsed.error : '';
-    draft = { name: p.name, desc: p.desc, fields: 'fields' in parsed ? parsed.fields : [] };
+    draft = { name: p.name, desc: p.desc, fields: 'fields' in parsed ? parsed.fields : [], rules: fromRules(p.rules) };
     saved = snapshot();
   }
 
@@ -33,8 +33,9 @@
   });
 
   async function save() {
-    const { fields, ...rest } = draft;
-    const p = await api<Plugin>(`/api/plugins/${id}/`, { method: 'PATCH', body: JSON.stringify({ ...rest, schema: toSchema(fields) }) });
+    const { fields, rules, ...rest } = draft;
+    const body = { ...rest, schema: toSchema(fields), rules: toRules(rules) };
+    const p = await api<Plugin>(`/api/plugins/${id}/`, { method: 'PATCH', body: JSON.stringify(body) });
     plugin = p;
     saved = snapshot();
     notice = 'Changes saved.';

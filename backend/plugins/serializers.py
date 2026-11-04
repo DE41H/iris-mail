@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from plugins.models import CustomUser, Plugin, Result, Subscription
+from plugins.validation import EMPTY_SCHEMA
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -29,12 +30,9 @@ class PluginSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plugin
-        fields = ("id", "developer", "name", "desc", "schema", "version", "prefix", "subscriber_count", "result_count")
+        fields = ("id", "developer", "name", "desc", "schema", "rules", "version", "prefix", "subscriber_count", "result_count")
         read_only_fields = ("id", "developer", "version", "prefix")
-        extra_kwargs = {  # noqa: RUF012
-            "desc": {"allow_blank": True},
-            "schema": {"required": True},
-        }
+        extra_kwargs = {"desc": {"allow_blank": True}}  # noqa: RUF012
 
     def validate_name(self, value):
         user = self.context["request"].user
@@ -42,8 +40,16 @@ class PluginSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("You already have a plugin with this name.")
         return value
 
+    def validate(self, attrs):
+        schema = attrs.get("schema", getattr(self.instance, "schema", None) or EMPTY_SCHEMA)
+        rules = attrs.get("rules", getattr(self.instance, "rules", {}))
+        if not schema.get("properties") and not rules:
+            raise serializers.ValidationError("Add at least one question or rule.")
+        if self.instance is None: attrs.setdefault("schema", EMPTY_SCHEMA)
+        return attrs
+
     def update(self, instance, validated_data):
-        if "schema" in validated_data and validated_data["schema"] != instance.schema:
+        if any(k in validated_data and validated_data[k] != getattr(instance, k) for k in ("schema", "rules")):
             validated_data["version"] = instance.version % 32767 + 1
         return super().update(instance, validated_data)
 

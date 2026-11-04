@@ -5,6 +5,8 @@
 export const MAX_FIELDS = 32;
 export const MAX_LEVELS = 10;
 export const MAX_OPTIONS = 32;
+export const MAX_RULES = 16;
+export const MAX_PATTERN = 512;
 
 export type Field =
   | { kind: 'choice'; name: string; question: string; options: string[] }
@@ -15,7 +17,15 @@ export interface Draft {
   name: string;
   desc: string;
   fields: Field[];
+  rules: Rule[];
 }
+
+// Each rule stores every match as a list under output.rules[name], so `rules` is not a question key.
+export interface Rule {
+  name: string;
+  pattern: string;
+}
+
 
 const prop = (f: Field) => {
   const description = f.question.trim() || undefined;
@@ -32,6 +42,7 @@ export const toSchema = (fields: Field[]) => ({
 export function fieldProblems(f: Field, fields: Field[]): string[] {
   const out: string[] = [];
   if (!/^[a-z][a-z0-9_]*$/.test(f.name)) out.push('Key must start with a letter and use only a-z, 0-9 and _.');
+  else if (f.name === 'rules') out.push('Key `rules` is reserved for rule matches.');
   else if (fields.some((g) => g !== f && g.name === f.name)) out.push('Key is already used by another question.');
   if (f.kind === 'choice') {
     if (f.options.length < 2) out.push('Add at least two answers.');
@@ -47,13 +58,36 @@ export function fieldProblems(f: Field, fields: Field[]): string[] {
   return out;
 }
 
-export function problems(fields: Field[]): string[] {
+export function problems(fields: Field[], rules: Rule[]): string[] {
   const out: string[] = [];
-  if (!fields.length) out.push('Add at least one question.');
+  if (!fields.length && !rules.length) out.push('Add at least one question or rule.');
   if (fields.length > MAX_FIELDS) out.push(`Use at most ${MAX_FIELDS} questions.`);
   fields.forEach((f, i) => fieldProblems(f, fields).forEach((p) => out.push(`${f.name || `#${i + 1}`}: ${p}`)));
+  if (rules.length > MAX_RULES) out.push(`Use at most ${MAX_RULES} rules.`);
+  rules.forEach((r, i) => ruleProblems(r, rules).forEach((p) => out.push(`rule ${r.name || `#${i + 1}`}: ${p}`)));
   return out;
 }
+
+// Best effort: JS and Python regex syntax differ slightly, the server has the final say.
+export function ruleProblems(r: Rule, rules: Rule[]): string[] {
+  const out: string[] = [];
+  if (!/^[a-z][a-z0-9_]*$/.test(r.name)) out.push('Name must start with a letter and use only a-z, 0-9 and _.');
+  else if (rules.some((g) => g !== r && g.name === r.name)) out.push('Name is already used by another rule.');
+  if (!r.pattern) out.push('Pattern is required.');
+  else if (r.pattern.length > MAX_PATTERN) out.push(`Pattern: at most ${MAX_PATTERN} characters.`);
+  else {
+    try {
+      new RegExp(r.pattern);
+    } catch {
+      out.push('Pattern does not compile.');
+    }
+  }
+  return out;
+}
+
+export const toRules = (rules: Rule[]) => Object.fromEntries(rules.map((r) => [r.name, r.pattern]));
+export const fromRules = (rules: unknown): Rule[] =>
+  Object.entries((rules as Record<string, string> | null) ?? {}).map(([name, pattern]) => ({ name, pattern }));
 
 // What Laya builds from each property (structured.py): choice, noul (yes/no) or score.
 export const toQuestions = (fields: Field[]) =>

@@ -19,27 +19,17 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
   user goes from zero to one active subscription, or store `activated_at` and skip older messages.
   Same after "Reconnect Google": a revoked user's `hist_id` stays at the revoke point, so mail from the
   disconnected days is processed once they turn plugins back on.
-- [ ] **A Laya outage silently drops mail.** `extract._answer` catches every exception and falls back to
+<!--- [ ] **A Laya outage silently drops mail.** `extract._answer` catches every exception and falls back to
   `_decide_each`, which logs and skips each message. If Laya fails for all of them (model download fails,
   out of memory), no results are saved, `process` still moves `hist_id` forward, and that mail is never
   answered (reproduced with a mocked `_decide`). Fix: in `_answer`, if `_decide_each` answered none of
-  the messages, re-raise so `hist_id` stays put and the next poll retries.
-- [ ] **A failed `init_hist` means the user is never polled.** `init_hist` retries 5 times, then gives up
-  with `hist_id = None`. `process` returns early on `None` every 3 minutes, so the user's plugins show
-  "on" but nothing is extracted, and nothing logs it. Fix: in `process`, when `hist_id` is `None`, set the
-  baseline with `_reset_history(user)` instead of returning.
+  the messages, re-raise so `hist_id` stays put and the next poll retries.-->
 
 ## P2: should do soon
 
 - [ ] **Any developer can probe and spam users.** `POST /api/subscriptions/` with an email returns 404 or
   201, which reveals whether that email has an account, and adds the plugin to that user's list without
   asking them. Use an invite link the user accepts, or return the same response either way.
-- [ ] **Plugins can only extract with Laya questions.** Add `Plugin.regexes`, a JSON object of
-  `{name: pattern}`. `process` runs each pattern over subject + plain body and stores every match as a
-  list under `output.extra`. Make `extra` a reserved key in the schema. A plugin needs questions, regexes
-  or both, and regex-only plugins skip Laya. Validate in `validation.py` and `schema.ts`, run patterns with
-  `regex` and a timeout against ReDoS, bump `version` when regexes change, and add a regex section to the
-  plugin editor. Full plan: `~/.claude/plans/i-want-to-add-transient-liskov.md`.
 
 <!--- [ ] **Docker build uses `astral/uv:latest`** (`docker/backend.dockerfile`). A new uv release can break or
   change the build. Pin a version.-->
@@ -52,8 +42,6 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 - [ ] **A big history backlog loads every message at once.** `process` fetches all new messages (up to a
   week of mail after downtime) into memory before Laya runs, with 2 jobs per 4 GB worker. Work through the
   ids in chunks of ~200; deduplication already makes partial progress safe.
-- [ ] **`_laya()` can build two routers.** `functools.cache` doesn't lock, and the worker runs 2 sync jobs
-  in threads, so two first-time calls can each load the model. Guard it with a `threading.Lock`.
 
 <!--- [ ] **Subscribing by email is case-sensitive.** `POST /api/subscriptions/ {"email": "U@X.com"}` returns
   404 for `u@x.com`. Use `email__iexact` in `SubscriptionSerializer.validate`.-->

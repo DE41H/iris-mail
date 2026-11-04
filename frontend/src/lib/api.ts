@@ -62,6 +62,7 @@ export interface Plugin {
   name: string;
   desc: string;
   schema: unknown;
+  rules: Record<string, string>;
   version: number;
   prefix: string | null;
   subscriber_count?: number;

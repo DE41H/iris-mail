@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { toQuestions, toSchema, type Field } from '../lib/schema';
+  import { toQuestions, toSchema, type Field, type Rule } from '../lib/schema';
   import CopyButton from './CopyButton.svelte';
   import Json from './Json.svelte';
 
-  let { fields }: { fields: Field[] } = $props();
+  let { fields, rules }: { fields: Field[]; rules: Rule[] } = $props();
 
   const TABS = [
     ['schema', 'schema'],
@@ -14,7 +14,7 @@
 
   const example = (f: Field) => (f.kind === 'boolean' ? true : f.kind === 'scale' ? f.min : (f.options[0] ?? null));
   const value = $derived(
-    tab === 'schema' ? toSchema(fields) : tab === 'laya' ? toQuestions(fields) : { output: Object.fromEntries(fields.map((f) => [f.name, example(f)])) },
+    tab === 'schema' ? toSchema(fields) : tab === 'laya' ? toQuestions(fields) : { output: { ...Object.fromEntries(fields.map((f) => [f.name, example(f)])), ...(rules.length ? { rules: Object.fromEntries(rules.map((r) => [r.name, ['…']])) } : {}) } },
   );
 </script>
 

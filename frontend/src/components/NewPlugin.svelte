@@ -1,7 +1,7 @@
 <script lang="ts">
   import { fade, fly } from 'svelte/transition';
   import { api, type Plugin } from '../lib/api';
-  import { toSchema, type Draft } from '../lib/schema';
+  import { toRules, toSchema, type Draft } from '../lib/schema';
   import { clone, TEMPLATES, type Template } from '../lib/presets';
   import KeyCard from './KeyCard.svelte';
   import PluginEditor from './PluginEditor.svelte';
@@ -10,16 +10,16 @@
   let created = $state<(Plugin & { key: string }) | null>(null);
 
   function start(t: Template) {
-    draft = clone({ name: t.name, desc: t.desc, fields: t.fields });
+    draft = clone({ name: t.name, desc: t.desc, fields: t.fields, rules: [] });
     scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function create() {
     if (!draft) return;
-    const { fields, ...rest } = draft;
+    const { fields, rules, ...rest } = draft;
     created = await api<Plugin & { key: string }>('/api/plugins/', {
       method: 'POST',
-      body: JSON.stringify({ ...rest, schema: toSchema(fields) }),
+      body: JSON.stringify({ ...rest, schema: toSchema(fields), rules: toRules(rules) }),
     });
   }
 </script>

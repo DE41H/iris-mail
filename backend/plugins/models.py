@@ -7,7 +7,7 @@ from django.db import IntegrityError, models
 from django.db.transaction import atomic
 from uuid6 import uuid7
 
-from plugins.validation import SchemaValidator
+from plugins.validation import RuleValidator, SchemaValidator
 
 
 class UserTier(models.IntegerChoices):
@@ -29,6 +29,7 @@ class Plugin(models.Model):
     name = models.SlugField(max_length=255)
     desc = models.TextField(max_length=1024, default="")
     schema = models.JSONField(default=dict, validators=[SchemaValidator()])
+    rules = models.JSONField(default=dict, blank=True, validators=[RuleValidator()])
     version = models.PositiveSmallIntegerField(default=1, editable=False)
     key = models.BinaryField(max_length=32, unique=True, blank=True, null=True)
     prefix = models.CharField(max_length=16, unique=True, blank=True, null=True)

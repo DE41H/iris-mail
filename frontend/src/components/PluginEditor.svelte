@@ -4,6 +4,7 @@
   import { pluginProblems, problems, type Draft } from '../lib/schema';
   import { message } from '../lib/api';
   import Builder from './Builder.svelte';
+  import RuleList from './RuleList.svelte';
   import SchemaPreview from './SchemaPreview.svelte';
 
   interface Props {
@@ -21,7 +22,7 @@
   let busy = $state(false);
   let error = $state('');
   let open = $state(false);
-  const issues = $derived([...pluginProblems(draft.name, draft.desc), ...(locked ? [] : problems(draft.fields))]);
+  const issues = $derived([...pluginProblems(draft.name, draft.desc), ...(locked ? [] : problems(draft.fields, draft.rules))]);
 
   const slugify = (e: Event) =>
     (draft.name = (e.currentTarget as HTMLInputElement).value.toLowerCase().replace(/\s+/g, '-').replace(/[^-a-z0-9_]/g, ''));
@@ -85,10 +86,16 @@
           <Builder bind:fields={draft.fields} />
         {/if}
       </section>
+
+      {#if !locked}
+        <section class="card rules reveal d2">
+          <RuleList bind:rules={draft.rules} />
+        </section>
+      {/if}
     </div>
 
     <aside class="side reveal d3">
-      <SchemaPreview fields={draft.fields} />
+      <SchemaPreview fields={draft.fields} rules={draft.rules} />
     </aside>
   </div>
 </form>
@@ -102,6 +109,7 @@
   .ident { display: grid; grid-template-columns: 1fr 1.5fr 1.5fr; gap: 12px; padding: 12px 14px; }
   .ident .label { margin-bottom: 4px; }
   .questions { display: flex; flex-direction: column; padding: 12px 14px; }
+  .rules { padding: 12px 14px; }
   .state { font: 12px var(--mono); color: var(--muted); background: none; border: 0; padding: 0 6px; }
   .state.ok { color: var(--green); }
   .state.warn { color: var(--amber); cursor: pointer; }
