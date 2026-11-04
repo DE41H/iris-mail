@@ -19,8 +19,9 @@ SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SECURE_HSTS_SECONDS = 0 if DEBUG else int(getenv('DJANGO_HSTS_SECONDS') or 3600)
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') if getenv('DJANGO_BEHIND_PROXY') == 'True' else None
-ALLAUTH_TRUSTED_PROXY_COUNT = 1 if getenv('DJANGO_BEHIND_PROXY') == 'True' else 0
+BEHIND_PROXY = getenv('DJANGO_BEHIND_PROXY') == 'True'
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') if BEHIND_PROXY else None
+ALLAUTH_TRUSTED_PROXY_COUNT = 1 if BEHIND_PROXY else 0
 
 
 # Application definition
@@ -193,6 +194,7 @@ REST_FRAMEWORK = {
         'anon': '500/hour',
         'user': '200/minute'
     },
+    'NUM_PROXIES': 1 if BEHIND_PROXY else 0,
     'DEFAULT_PAGINATION_CLASS': 'plugins.pagination.UUIDCursorPagination',
     'PAGE_SIZE': 50,
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',

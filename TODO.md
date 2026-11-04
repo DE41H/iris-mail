@@ -26,13 +26,6 @@ Found in the 2026-11-05 audit (run against Postgres + Valkey with a faked Gmail;
   user ids. Reproduced: `DELETE /api/subscriptions/<user id>/` returns 404. The README says developers can
   remove subscriptions. Fix: add `DestroyModelMixin` to `UserViewSet` with `perform_destroy` deleting
   `Subscription(plugin=request.auth, user=instance)`, so `DELETE /api/users/{id}/` works.
-- [ ] **Bad API keys are never throttled and fill Valkey, which logs everyone out.** A wrong key raises
-  `AuthenticationFailed` before DRF runs throttles, so the anon limit never applies. Each lookup in
-  `Plugin.auth_key` is cached by cacheops (~2 keys, ~1.5 KB per request: 1,000 bad keys took db 2 from 41
-  to 2,041 keys). Sessions live in the same Valkey (`SESSION_ENGINE = cache`) under `volatile-lru`, so once
-  256 MB fills, sessions are evicted and users are signed out. Fix: `.nocache()` on the lookup in
-  `models.py:69` (it hits a unique index), and `SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'`
-  so a full or restarted Valkey can't drop sessions.
 
 <!--- [ ] **Old mail gets shared when a plugin is turned on.** Fixed: each subscription stores `hist_from`
   (the Gmail history id when it was turned on) and `process` only answers mail added after it. Not yet run

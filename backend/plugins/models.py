@@ -66,7 +66,7 @@ class Plugin(models.Model):
     def auth_key(cls, key: str):
         if not key or not key.startswith("iris_") or len(key) != 60: return None
         hash = cls.gen_hash(key)
-        plugin = cls.objects.prefetch_related("developer").filter(prefix__isnull=False, prefix=key[:16]).first()
+        plugin = cls.objects.nocache().prefetch_related("developer").filter(prefix__isnull=False, prefix=key[:16]).first()  # pyright: ignore[reportAttributeAccessIssue]
         return plugin if plugin and compare_digest(bytes(plugin.key), hash) else None
 
     def rot_key(self):
