@@ -25,7 +25,7 @@ def _match(plugin, content):
         except re2.error:
             logger.warning("Plugin rule does not compile", extra={"plugin_id": plugin.id, "rule": name})
             found = []
-        out[name] = [next((g for g in m if g), m[0]) if isinstance(m, tuple) else m for m in found[MAX_MATCHES]]
+        out[name] = [next((g for g in m if g), m[0]) if isinstance(m, tuple) else m for m in found[:MAX_MATCHES]]
     return out
 
 
