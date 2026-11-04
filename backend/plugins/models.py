@@ -4,6 +4,7 @@ from secrets import compare_digest, token_urlsafe
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import IntegrityError, models
+from django.db.models.functions import Upper
 from django.db.transaction import atomic
 from uuid6 import uuid7
 
@@ -22,16 +23,19 @@ class CustomUser(AbstractUser):
     tier = models.PositiveSmallIntegerField(choices=UserTier.choices, default=UserTier.BASE)
     hist_id = models.PositiveBigIntegerField(null=True, blank=True)
 
+    class Meta(AbstractUser.Meta):
+        indexes = (models.Index(Upper("email"), name="user_email_upper_idx"),)  # email__iexact
+
 
 class Plugin(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
-    developer = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="dev_plugins")
-    name = models.SlugField(max_length=255)
+    developer = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="dev_plugins", db_index=False)  # covered by unique (developer, name)
+    name = models.SlugField(max_length=255, db_index=False)  # covered by unique (developer, name)
     desc = models.TextField(max_length=1024, default="")
     schema = models.JSONField(default=dict, validators=[SchemaValidator()])
     rules = models.JSONField(default=dict, blank=True, validators=[RuleValidator()])
     version = models.PositiveSmallIntegerField(default=1, editable=False)
-    key = models.BinaryField(max_length=32, unique=True, blank=True, null=True)
+    key = models.BinaryField(max_length=32, blank=True, null=True)  # looked up by unique prefix
     prefix = models.CharField(max_length=16, unique=True, blank=True, null=True)
 
     class Meta:
@@ -79,7 +83,7 @@ class Plugin(models.Model):
 
 class Subscription(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
-    user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="subscriptions")
+    user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="subscriptions", db_index=False)  # covered by unique (user, plugin)
     plugin = models.ForeignKey(to=Plugin, on_delete=models.CASCADE, related_name="subscribers")
     active = models.BooleanField(default=False)
     hist_from = models.PositiveBigIntegerField(null=True, blank=True)  # Gmail history id when turned on; None: set on next poll
@@ -93,7 +97,6 @@ class Subscription(models.Model):
             ),
         )
         indexes = (
-            models.Index(fields=("user", "active")),
             models.Index(fields=("user",), condition=models.Q(active=True), name="subscription_active_user_idx"),
         )
 
@@ -104,8 +107,8 @@ class Subscription(models.Model):
 
 class Result(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
-    user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="results")
-    plugin = models.ForeignKey(to=Plugin, on_delete=models.CASCADE, related_name="results")
+    user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="results", db_index=False)  # covered by unique (user, message, plugin)
+    plugin = models.ForeignKey(to=Plugin, on_delete=models.CASCADE, related_name="results", db_index=False)  # covered by (plugin, -id)
     output = models.JSONField(default=dict)
     version = models.PositiveSmallIntegerField(default=1)
     message = models.BinaryField(max_length=8)
@@ -128,5 +131,4 @@ class Result(models.Model):
             models.Index(fields=("plugin", "-id")),
             models.Index(fields=("plugin", "user", "-id")),
             models.Index(fields=("plugin", "version", "-id")),
-            models.Index(fields=("time",), name="result_time_idx"),
         )
