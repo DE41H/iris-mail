@@ -5,11 +5,13 @@ from urllib.request import Request, urlopen
 
 from allauth.socialaccount.models import SocialToken
 from django.conf import settings
+from django.db.transaction import atomic
 from django.utils import timezone
 from google.oauth2.credentials import Credentials
+from googleapiclient.errors import HttpError
 from simplegmail import Gmail
 
-from plugins.models import CustomUser
+from plugins.models import CustomUser, Subscription
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +51,37 @@ def get_hist_id(user: CustomUser) -> int | None:
         logger.warning("Gmail history id unavailable", extra={"user_id": user.pk}, exc_info=True)
         return None
 
+def reset_hist(user):
+    logger.warning("Gmail history expired, resetting baseline", extra={"user_id": user.pk})
+    CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=get_hist_id(user))  # pyright: ignore[reportAttributeAccessIssue]
+
+def get_hist(gmail: Gmail, start):
+    ids, page = {}, None
+    while True:
+        data = gmail.service.users().history().list(  # pyright: ignore[reportAttributeAccessIssue]
+            userId="me", startHistoryId=start, historyTypes=["messageAdded"], labelId="INBOX", pageToken=page,
+        ).execute()
+        for h in data.get("history", []):
+            for m in h.get("messagesAdded", []):
+                ids.setdefault(m["message"]["id"], int(h["id"]))
+        page = data.get("nextPageToken")
+        if not page:
+            return ids, int(data["historyId"])
+
+def get(gmail: Gmail, id):
+    try:
+        return gmail._build_message_from_ref("me", {"id": id}, attachments="ignore")
+    except HttpError as error:
+        if error.resp.status != 404: raise
+        logger.info("Gmail message is gone, skipping", extra={"message_id": id})
+
+def fetch(gmail: Gmail, ids):
+    try:
+        return gmail._get_messages_from_refs("me", [{"id": i} for i in ids], attachments="ignore")
+    except HttpError as error:
+        if error.resp.status != 404: raise
+    return [ get(gmail, id) for id in ids ]
+
 def revoke(user: CustomUser):
     token = SocialToken.objects.filter(account__user=user, account__provider="google").first()
     if token is None: return
@@ -56,3 +89,9 @@ def revoke(user: CustomUser):
         urlopen(Request(REVOKE_URI, data=urlencode({"token": token.token_secret or token.token}).encode()), timeout=10)
     except OSError:
         logger.warning("Google token revoke failed", extra={"user_id": user.id}, exc_info=True)
+
+def disconnect(user):
+    logger.warning("Google token revoked, turning sharing off", extra={"user_id": user.pk})
+    with atomic():
+        SocialToken.objects.filter(account__user=user, account__provider="google").delete()
+        Subscription.objects.filter(user=user, active=True).invalidated_update(active=False)  # pyright: ignore[reportAttributeAccessIssue]

@@ -1,83 +1,82 @@
 import logging
-from functools import cache
-from types import SimpleNamespace
 
 import laya
+import re2
+from bs4 import BeautifulSoup
+from google.auth.exceptions import RefreshError
 from googleapiclient.errors import HttpError
 from laya.structured import SchemaError
 from procrastinate.contrib.django import app
-from simplegmail import Gmail
 
-from plugins.gmail import client, get_hist_id, save_token
+from plugins.gmail import client, disconnect, fetch, get_hist, reset_hist, save_token
 from plugins.models import CustomUser, Result, Subscription
+from plugins.validation import RE2
 
 logger = logging.getLogger(__name__)
 
-@cache
-def _laya():
-    return laya.Router(max_loaded=1)  # only multilingual is used, see decide_batch
+ROUTER = laya.Router(max_loaded=1)
 
-def _get_msgs(gmail: Gmail, start):
-    ids, page = {}, None
-    while True:
-        data = gmail.service.users().history().list(  # pyright: ignore[reportAttributeAccessIssue]
-            userId="me", startHistoryId=start, historyTypes=["messageAdded"], labelId="INBOX", pageToken=page,
-        ).execute()
-        ids.update((m["message"]["id"], None) for h in data.get("history", []) for m in h.get("messagesAdded", []))
-        page = data.get("nextPageToken")
-        if not page:
-            break
-    msgs = []
-    def add(msg_id, raw, error):
-        if error is not None:
-            if error.resp.status != 404: raise error
-            # Deleted between the history entry and the fetch: skip only this message.
-            logger.info("Gmail message is gone, skipping", extra={"message_id": msg_id})
-            return
-        parts = gmail._evaluate_message_payload(raw["payload"], "me", msg_id, "ignore")
-        subject = next((h["value"] for h in raw["payload"]["headers"] if h["name"].lower() == "subject"), "")
-        plain = "\n".join(p["body"] for p in parts if p["part_type"] == "plain") or None
-        msgs.append(SimpleNamespace(id=msg_id, subject=subject, plain=plain))
-    ids = list(ids)
-    for i in range(0, len(ids), 50):  # Gmail allows 100 calls per batch but advises 50
-        batch = gmail.service.new_batch_http_request(callback=add)  # pyright: ignore[reportAttributeAccessIssue]
-        for msg_id in ids[i:i + 50]:
-            batch.add(gmail.service.users().messages().get(userId="me", id=msg_id), request_id=msg_id)  # pyright: ignore[reportAttributeAccessIssue]
-        batch.execute()
-    return msgs, int(data["historyId"])
 
-@app.task(name="plugins.tasks.process", retry=3)
-def process(user_id):
-    user = CustomUser.objects.filter(pk=user_id).first()
-    if user is None or user.hist_id is None: return  # None: the account was deleted after this job was queued
-    gmail = client(user)
+def _match(plugin, content):
+    out = {}
+    for name, pattern in plugin.rules.items():
+        try:
+            found = re2.compile(pattern, RE2).findall(content)
+        except re2.error:
+            logger.warning("Plugin rule does not compile", extra={"plugin_id": plugin.id, "rule": name})
+            found = []
+        out[name] = [next((g for g in m if g), m[0]) if isinstance(m, tuple) else m for m in found]
+    return out
+
+
+def _decide(plugin, states):
+    return laya.decide_batch(ROUTER, states, schema=plugin.schema, model="multilingual", batch_size=32)
+
+
+def _guess(user, plugin, msgs, states):
+    if not plugin.schema.get("properties"): return [(m, {}) for m in msgs]
+    extra = {"plugin_id": plugin.id, "user_id": user.pk}
     try:
-        msgs, latest = _get_msgs(gmail, user.hist_id)
-    except HttpError as error:
-        if error.resp.status != 404: raise
-        logger.warning("Gmail history expired, resetting baseline", extra={"user_id": user_id})
-        CustomUser.objects.filter(pk=user_id).invalidated_update(hist_id=get_hist_id(user))  # pyright: ignore[reportAttributeAccessIssue]
-        return
-    save_token(user, gmail)
-    done ={(bytes(b), p) for b, p in Result.objects.filter(user=user, message__in=[bytes.fromhex(m.id) for m in msgs]).values_list("message", "plugin_id")}
-    subs = tuple(Subscription.objects.filter(user=user, active=True).prefetch_related("plugin"))
+        return list(zip(msgs, _decide(plugin, [states[m.id] for m in msgs]), strict=True))
+    except SchemaError:
+        logger.exception("Plugin schema cannot be answered by Laya", extra=extra)
+        return []
+
+
+def _extract(user, subs, msgs, added):
+    bodies = {m.id: m.plain or BeautifulSoup(m.html or "", "lxml").get_text("\n") for m in msgs}
+    states = {m.id: laya.email_state(m.subject, bodies[m.id], sender=m.sender) for m in msgs}
+    done = {(bytes(b), p) for b, p in Result.objects.filter(user=user, message__in=[bytes.fromhex(m.id) for m in msgs]).values_list("message", "plugin_id")}
     results = []
-    states = {}  # Laya state per message, built once and shared by every plugin
     try:
         for sub in subs:
             plugin = sub.plugin
-            todo = [m for m in msgs if (bytes.fromhex(m.id), plugin.id) not in done]
-            if not todo:
-                continue
-            for m in todo:
-                if m.id not in states:
-                    states[m.id] = laya.email_state(m.subject, m.plain or "")
-            try:
-                outputs = laya.decide_batch(_laya(), [states[m.id] for m in todo], schema=plugin.schema, model="multilingual", batch_size=64)
-            except SchemaError:
-                logger.exception("Plugin schema cannot be answered by Laya", extra={"plugin_id": plugin.id, "user_id": user_id})
-                continue
-            results += [Result(user=user, plugin=plugin, version=plugin.version, output=o, message=bytes.fromhex(m.id)) for m, o in zip(todo, outputs)]
+            todo = [m for m in msgs if added[m.id] > sub.hist_from and (bytes.fromhex(m.id), plugin.id) not in done]
+            for m, output in _guess(user, plugin, todo, states):
+                if plugin.rules: output["rules"] = _match(plugin, f"{m.subject or ''}\n{bodies[m.id]}")
+                results.append(Result(user=user, plugin=plugin, version=plugin.version, output=output, message=bytes.fromhex(m.id)))
     finally:
         Result.objects.bulk_create(results, ignore_conflicts=True)
-    CustomUser.objects.filter(pk=user_id).invalidated_update(hist_id=latest)  # pyright: ignore[reportAttributeAccessIssue]
+
+
+@app.task(name="plugins.tasks.process")
+def process(user_id):
+    user = CustomUser.objects.filter(pk=user_id).first()
+    if user is None: return
+    if user.hist_id is None: return reset_hist(user)
+    gmail = client(user)
+    try:
+        added, latest = get_hist(gmail, user.hist_id)
+    except RefreshError as error:
+        if error.retryable: raise
+        return disconnect(user)
+    except HttpError as error:
+        if error.resp.status != 404: raise
+        return reset_hist(user)
+    Subscription.objects.filter(user=user, active=True, hist_from=None).invalidated_update(hist_from=latest)  # pyright: ignore[reportAttributeAccessIssue]
+    subs = Subscription.objects.filter(user=user, active=True).prefetch_related("plugin")
+    low = min((s.hist_from for s in subs), default=latest)
+    msgs = fetch(gmail, [i for i, h in added.items() if h > low])
+    save_token(user, gmail)
+    _extract(user, subs, msgs, added)
+    CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=latest)  # pyright: ignore[reportAttributeAccessIssue]

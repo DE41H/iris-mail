@@ -76,6 +76,8 @@ export function ruleProblems(r: Rule, rules: Rule[]): string[] {
   else if (rules.some((g) => g !== r && g.name === r.name)) out.push('Name is already used by another rule.');
   if (!r.pattern) out.push('Pattern is required.');
   else if (r.pattern.length > MAX_PATTERN) out.push(`Pattern: at most ${MAX_PATTERN} characters.`);
+  // the server matches with RE2, which has no lookarounds, backreferences, atomic groups or possessive quantifiers
+  else if (/\(\?<?[=!>]|\\[1-9k]|[*+?}]\+/.test(r.pattern)) out.push('Pattern: lookarounds, backreferences and ++ are not supported.');
   else {
     try {
       new RegExp(r.pattern);

@@ -1,15 +1,15 @@
-import re
-
-import regex
+import re2
 from django.core.exceptions import ValidationError
 from django.utils.deconstruct import deconstructible
 from laya.structured import SchemaError, plan_from_json_schema
 
-KEY = re.compile(r"[a-z][a-z0-9_]*")
+KEY = re2.compile(r"[a-z][a-z0-9_]*")
 MAX_OPTIONS = 32
 MAX_RULES = 16
 MAX_PATTERN = 512
 EMPTY_SCHEMA = {"type": "object", "properties": {}}
+RE2 = re2.Options()
+RE2.log_errors = False
 
 
 def _problem(prop):
@@ -66,9 +66,9 @@ class RuleValidator:
             if not isinstance(pattern, str) or not 0 < len(pattern) <= MAX_PATTERN:
                 raise ValidationError(f"{name}: pattern must be 1 to {MAX_PATTERN} characters", code="invalid_rules")
             try:
-                regex.compile(pattern)
-            except regex.error as err:
-                raise ValidationError(f"{name}: {err}", code="invalid_rules") from err
+                re2.compile(pattern, RE2)
+            except re2.error as err:
+                raise ValidationError(f"{name}: {err.args[0].decode()}", code="invalid_rules") from err
 
     def __eq__(self, other):
         return isinstance(other, RuleValidator)
