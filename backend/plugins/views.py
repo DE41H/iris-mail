@@ -80,8 +80,8 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
 
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(self.request.auth, Plugin):  # pyright: ignore[reportAttributeAccessIssue]
-            return Subscription.objects.filter(plugin=self.request.auth)  # pyright: ignore[reportAttributeAccessIssue]
-        return Subscription.objects.filter(user=self.request.user)
+            return Subscription.objects.filter(plugin=self.request.auth).prefetch_related("plugin")  # pyright: ignore[reportAttributeAccessIssue]
+        return Subscription.objects.filter(user=self.request.user).prefetch_related("plugin")
 
     def perform_create(self, serializer):
         serializer.save(plugin=self.request.auth)  # pyright: ignore[reportAttributeAccessIssue]

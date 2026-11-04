@@ -92,6 +92,7 @@ class Subscription(models.Model):
         )
         indexes = (
             models.Index(fields=("user", "active")),
+            models.Index(fields=("user",), condition=models.Q(active=True), name="subscription_active_user_idx"),
         )
 
     def set_active(self, active: bool):

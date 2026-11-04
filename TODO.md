@@ -50,8 +50,6 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 <!--- [ ] Set `DJANGO_HSTS_SECONDS=31536000` in production `.env` once HTTPS works (defaults to 3600).-->
 <!--- [ ] Back up the `pgdata` volume.-->
-- [ ] Add `prefetch_related("plugin")` to the user's subscription list (`plugin_name` is one query per row
-  when the cache is cold), and a partial index on `Subscription(active=True)` for `poll_inboxes`.
 - [ ] Drop `prompt: consent` for returning users; Google shows the consent screen on every sign-in.
 - [ ] Version plugin schemas: editing a schema mixes old and new result shapes in `/api/results/`.
 <!--- [ ] `PluginViewSet` counts all results per plugin on every request; store a counter if it gets slow.-->
