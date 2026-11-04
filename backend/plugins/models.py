@@ -127,4 +127,5 @@ class Result(models.Model):
             models.Index(fields=("plugin", "-id")),
             models.Index(fields=("plugin", "user", "-id")),
             models.Index(fields=("plugin", "version", "-id")),
+            models.Index(fields=("time",), name="result_time_idx"),
         )

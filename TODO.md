@@ -39,10 +39,6 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 - [ ] **One worker answers every inbox in turn.** The worker runs with Procrastinate's default concurrency
   of 1, and calls `laya.decide` once per message per plugin. Group messages per plugin with
   `laya.decide_batch`, then size concurrency and worker memory for the models (`max_loaded`).
-- [ ] **The job table grows forever.** Procrastinate keeps finished jobs, and a new one is added per user
-  every 3 minutes. Schedule the built-in `remove_old_jobs` task as a periodic job.
-- [ ] **Results are kept forever.** Fetched results, and results for removed subscriptions, are never
-  deleted. Set a retention period (for example 30 days after ack) and delete older results on a schedule.
 
 ## P3: nice to have
 

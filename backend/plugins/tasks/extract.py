@@ -32,7 +32,7 @@ def _get_msgs(gmail: Gmail, start):
         if error is not None:
             if error.resp.status != 404: raise error
             # Deleted between the history entry and the fetch: skip only this message.
-            logger.info("Gmail message %s is gone, skipping", msg_id)
+            logger.info("Gmail message is gone, skipping", extra={"message_id": msg_id})
             return
         parts = gmail._evaluate_message_payload(raw["payload"], "me", msg_id, "ignore")
         subject = next((h["value"] for h in raw["payload"]["headers"] if h["name"].lower() == "subject"), "")
@@ -46,16 +46,16 @@ def _get_msgs(gmail: Gmail, start):
         batch.execute()
     return msgs, int(data["historyId"])
 
-@app.task(retry=3)
+@app.task(name="plugins.tasks.process", retry=3)
 def process(user_id):
-    user = CustomUser.objects.get(pk=user_id)
-    if user.hist_id is None: return
+    user = CustomUser.objects.filter(pk=user_id).first()
+    if user is None or user.hist_id is None: return  # None: the account was deleted after this job was queued
     gmail = client(user)
     try:
         msgs, latest = _get_msgs(gmail, user.hist_id)
     except HttpError as error:
         if error.resp.status != 404: raise
-        logger.warning("Gmail history expired for user %s, resetting baseline", user_id)
+        logger.warning("Gmail history expired, resetting baseline", extra={"user_id": user_id})
         CustomUser.objects.filter(pk=user_id).invalidated_update(hist_id=get_hist_id(user))  # pyright: ignore[reportAttributeAccessIssue]
         return
     save_token(user, gmail)
@@ -73,22 +73,10 @@ def process(user_id):
                 try:
                     output = laya.decide(_laya(), state, schema=plugin.schema)
                 except SchemaError:
-                    logger.exception("Plugin %s has a schema Laya cannot answer", plugin.id)
+                    logger.exception("Plugin schema cannot be answered by Laya", extra={"plugin_id": plugin.id, "user_id": user_id})
                     continue
-                results.append(Result(user=user, plugin=plugin, output=output, message=key))
+                results.append(Result(user=user, plugin=plugin, version=plugin.version, output=output, message=key))
                 done.add((key, plugin.id))
     finally:
         Result.objects.bulk_create(results, ignore_conflicts=True)
     CustomUser.objects.filter(pk=user_id).invalidated_update(hist_id=latest)  # pyright: ignore[reportAttributeAccessIssue]
-
-@app.task(retry=5)
-def init_hist(user_id):
-    user = CustomUser.objects.get(pk=user_id)
-    CustomUser.objects.filter(pk=user_id, hist_id__isnull=True).invalidated_update(hist_id=get_hist_id(user))  # pyright: ignore[reportAttributeAccessIssue]
-
-@app.periodic(cron="*/3 * * * *")
-@app.task
-def poll_inboxes(timestamp):
-    user_ids = CustomUser.objects.filter(subscriptions__active=True, socialaccount__provider="google").values_list("pk", flat=True).distinct()
-    for user_id in user_ids:
-        process.configure(lock=str(user_id)).defer(user_id=str(user_id))
