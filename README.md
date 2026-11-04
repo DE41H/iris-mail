@@ -23,11 +23,15 @@ The full API reference is at `/docs`.
 - Email contents are never stored. Developers get only the answers, plus each subscriber's email and username.
 - Users can turn a plugin off, remove it, or delete their account. Deleting revokes Google access
   and removes everything Iris holds about them.
-- Developers can remove a subscription with `DELETE /api/subscriptions/{id}/`.
+- If a user revokes Google access, Iris turns all their plugins off until they sign in again.
+- Answers older than 30 days are deleted once acknowledged, or once the plugin is removed.
+- Developers can remove a subscription with `DELETE /api/subscriptions/{id}/` and list active
+  subscribers with `GET /api/users/`.
 
 ## Stack
 
 Django + DRF, PostgreSQL, Procrastinate, Valkey, Gmail API, Laya, Astro + Svelte, Caddy, Docker.
+Contributor notes are in `AGENTS.md`.
 
 ## Running
 
