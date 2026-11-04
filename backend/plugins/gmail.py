@@ -39,11 +39,15 @@ def save_token(user: CustomUser, gmail: Gmail):
         token=creds.token, expires_at=creds.expiry.replace(tzinfo=UTC)
     )
 
-def get_hist_id(user: CustomUser) -> int:
-    gmail = client(user)
-    response = gmail.service.users().getProfile(userId="me").execute()  # type: ignore[attr-defined]
-    save_token(user, gmail)
-    return int(response["historyId"])
+def get_hist_id(user: CustomUser) -> int | None:
+    try:
+        gmail = client(user)
+        response = gmail.service.users().getProfile(userId="me").execute()  # type: ignore[attr-defined]
+        save_token(user, gmail)
+        return int(response["historyId"])
+    except Exception:
+        logger.warning("Gmail history id unavailable", extra={"user_id": user.pk}, exc_info=True)
+        return None
 
 def revoke(user: CustomUser):
     token = SocialToken.objects.filter(account__user=user, account__provider="google").first()

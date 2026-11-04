@@ -13,13 +13,9 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P1: bugs, security and privacy
 
-- [ ] **Old mail gets shared when a plugin is turned on.** `hist_id` is set at sign-up and freezes while a
-  user has no active subscription (`tasks.poll_hist`). Turning a plugin on later processes all mail since
-  then (up to Gmail's ~1 week of history). Fix: reset `hist_id` to the current Gmail history id when a
-  user goes from zero to one active subscription, or store `activated_at` and skip older messages.
-  Same after "Reconnect Google": a revoked user's `hist_id` stays at the revoke point, so mail from the
-  disconnected days is processed once they turn plugins back on.
-
+<!--- [ ] **Old mail gets shared when a plugin is turned on.** Fixed: each subscription stores `hist_from`
+  (the Gmail history id when it was turned on) and `process` only answers mail added after it. Not yet run
+  against live Gmail (see P0).-->
 <!--- [ ] **A Laya outage silently drops mail.** `extract._answer` catches every exception and falls back to
   `_decide_each`, which logs and skips each message. If Laya fails for all of them (model download fails,
   out of memory), no results are saved, `process` still moves `hist_id` forward, and that mail is never
@@ -40,10 +36,9 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P3: nice to have
 
-- [ ] **A big history backlog loads every message at once.** `process` fetches all new messages (up to a
+<!--- [ ] **A big history backlog loads every message at once.** `process` fetches all new messages (up to a
   week of mail after downtime) into memory before Laya runs, with 2 jobs per 4 GB worker. Work through the
-  ids in chunks of ~200; deduplication already makes partial progress safe.
-
+  ids in chunks of ~200; deduplication already makes partial progress safe.-->
 <!--- [ ] **Subscribing by email is case-sensitive.** `POST /api/subscriptions/ {"email": "U@X.com"}` returns
   404 for `u@x.com`. Use `email__iexact` in `SubscriptionSerializer.validate`.-->
 <!--- [ ] **Two identical requests at once return 500.** `validate_name` and the duplicate-subscription check

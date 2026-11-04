@@ -18,7 +18,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from plugins.authentication import PluginKeyAuthentication
-from plugins.gmail import revoke
+from plugins.gmail import get_hist_id, revoke
 from plugins.models import CustomUser, Plugin, Result, Subscription
 from plugins.permissions import PluginKeyAuth, SessionPermission
 from plugins.serializers import (
@@ -123,7 +123,10 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
         active = serializers.BooleanField().run_validation(request.data.get("active"))
         if active and not SocialToken.objects.filter(account__user=request.user, account__provider="google").exists():
             raise ValidationError({"google": "Reconnect Google first."})
-        subscription.set_active(active)
+        if active and not subscription.active:
+            subscription.set_active(True, hist_from=get_hist_id(request.user))
+        else:
+            subscription.set_active(active)
         logger.info("Sharing changed", extra={"subscription_id": subscription.pk, "plugin_id": subscription.plugin_id, "user_id": subscription.user_id, "active": subscription.active})
         return Response(self.get_serializer(subscription).data)
 

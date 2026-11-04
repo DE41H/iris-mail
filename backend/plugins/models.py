@@ -82,6 +82,7 @@ class Subscription(models.Model):
     user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="subscriptions")
     plugin = models.ForeignKey(to=Plugin, on_delete=models.CASCADE, related_name="subscribers")
     active = models.BooleanField(default=False)
+    hist_from = models.PositiveBigIntegerField(null=True, blank=True)  # Gmail history id when turned on; None: set on next poll
     time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -96,9 +97,9 @@ class Subscription(models.Model):
             models.Index(fields=("user",), condition=models.Q(active=True), name="subscription_active_user_idx"),
         )
 
-    def set_active(self, active: bool):
-        self.__class__.objects.filter(pk=self.pk).invalidated_update(active=active)  # pyright: ignore[reportAttributeAccessIssue]
-        self.refresh_from_db(fields=("active",))
+    def set_active(self, active: bool, **fields):
+        self.__class__.objects.filter(pk=self.pk).invalidated_update(active=active, **fields)  # pyright: ignore[reportAttributeAccessIssue]
+        self.refresh_from_db(fields=("active", *fields))
 
 
 class Result(models.Model):
