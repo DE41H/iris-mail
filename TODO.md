@@ -13,12 +13,8 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P1: bugs, security and privacy
 
-- [ ] **Developers cannot remove users.** `DELETE /api/subscriptions/{id}/` needs a subscription id, but an
-  API key can't list subscriptions (403), `POST` by email returns no body, and `GET /api/users/` returns
-  user ids. Reproduced: `DELETE /api/subscriptions/<user id>/` returns 404. The README says developers can
-  remove subscriptions. Fix: add `DestroyModelMixin` to `UserViewSet` with `perform_destroy` deleting
-  `Subscription(plugin=request.auth, user=instance)`, so `DELETE /api/users/{id}/` works.
-
+<!--- [ ] **Developers cannot remove users.** Fixed: `POST /api/subscriptions/remove/` takes `user` or `email`
+  like adding does, and always returns 204. Not yet run against a live database.-->
 <!--- [ ] **Old mail gets shared when a plugin is turned on.** Fixed: each subscription stores `hist_from`
   (the Gmail history id when it was turned on) and `process` only answers mail added after it. Not yet run
   against live Gmail (see P0).-->

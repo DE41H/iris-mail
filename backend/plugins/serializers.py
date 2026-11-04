@@ -77,7 +77,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             attrs["user"] = CustomUser.objects.filter(email__iexact=email).first()
             return attrs
         plugin = self.context["request"].auth
-        if Subscription.objects.filter(user=attrs["user"], plugin=plugin).exists():
+        if self.context["view"].action == "create" and Subscription.objects.filter(user=attrs["user"], plugin=plugin).exists():
             raise serializers.ValidationError("This user already has a subscription to this plugin.")
         return attrs
 

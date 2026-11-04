@@ -87,6 +87,13 @@ class PluginViewSet(
         parameters=[OpenApiParameter("id", OpenApiTypes.UUID, OpenApiParameter.PATH, description="Subscription id.")],
         responses={204: OpenApiResponse(description="Subscription removed.")},
     ),
+    remove=extend_schema(
+        summary="Remove a user by id or email",
+        description="Send either `user` or `email`. Ends the user's subscription to this plugin. Always 204, "
+        "whether or not the user was subscribed. The user's results are deleted after 30 days.",
+        request=SubscriptionSerializer,
+        responses={204: OpenApiResponse(description="Removed, if subscribed.")},
+    ),
 )
 class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     serializer_class = SubscriptionSerializer
@@ -95,7 +102,7 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
     def get_permissions(self):
         if self.action == "destroy":
             return [(PluginKeyAuth | SessionPermission)()]
-        return [PluginKeyAuth()] if self.action == "create" else [SessionPermission()]
+        return [PluginKeyAuth()] if self.action in ("create", "remove") else [SessionPermission()]
 
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(self.request.auth, Plugin):  # pyright: ignore[reportAttributeAccessIssue]
@@ -120,6 +127,14 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
         by = "developer" if isinstance(self.request.auth, Plugin) else "user"  # pyright: ignore[reportAttributeAccessIssue]
         logger.info("Subscription removed", extra={"subscription_id": instance.pk, "plugin_id": instance.plugin_id, "user_id": instance.user_id, "by": by})
         instance.delete()
+
+    @action(detail=False, methods=["post"])
+    def remove(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if sub := self.get_queryset().filter(user=serializer.validated_data["user"]).first():
+            self.perform_destroy(sub)
+        return Response(status=204)
 
     @action(detail=True, methods=["post"])
     def set_active(self, request, pk=None):
