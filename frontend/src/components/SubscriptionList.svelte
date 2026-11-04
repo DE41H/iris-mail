@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { listAll, message, type Subscription } from '../lib/api';
+  import { session } from '../lib/session';
   import SubscriptionRow from './SubscriptionRow.svelte';
 
   let subs = $state<Subscription[] | null>(null);
@@ -10,6 +11,9 @@
   onMount(() => listAll<Subscription>('/api/subscriptions/').then((s) => (subs = s)).catch((err) => (error = message(err))));
 </script>
 
+{#if $session && !$session.google}
+  <div class="alert alert-danger" role="alert">Google access was revoked, so sharing is off. <a href="/accounts/google/login/?next=/subscriptions/">Reconnect Google</a></div>
+{/if}
 {#if error}
   <div class="alert alert-danger" role="alert">{error}</div>
 {:else if subs}

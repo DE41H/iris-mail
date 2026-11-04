@@ -1,3 +1,4 @@
+from allauth.socialaccount.models import SocialToken
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
@@ -9,6 +10,17 @@ class CustomUserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ("id", "username", "email", "tier")
         read_only_fields = fields
+
+
+class MeSerializer(CustomUserSerializer):
+    google = serializers.SerializerMethodField()
+
+    class Meta(CustomUserSerializer.Meta):
+        fields = (*CustomUserSerializer.Meta.fields, "google")
+        read_only_fields = fields
+
+    def get_google(self, user) -> bool:
+        return SocialToken.objects.filter(account__user=user, account__provider="google").exists()
 
 
 class PluginSerializer(serializers.ModelSerializer):

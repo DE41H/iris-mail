@@ -4,6 +4,7 @@ export interface User {
   username: string;
   email: string;
   tier: number;
+  google: boolean; // false once Google access is revoked
 }
 
 // undefined until the first check, null when signed out.

@@ -1,5 +1,6 @@
 import logging
 
+from allauth.socialaccount.models import SocialToken
 from django.contrib.auth import logout
 from django.db.models import Count, Q
 from drf_spectacular.types import OpenApiTypes
@@ -21,6 +22,7 @@ from plugins.models import CustomUser, Plugin, Result, Subscription
 from plugins.permissions import PluginKeyAuth, SessionPermission
 from plugins.serializers import (
     CustomUserSerializer,
+    MeSerializer,
     PluginSerializer,
     ResultSerializer,
     SubscriptionSerializer,
@@ -94,7 +96,10 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
     @action(detail=True, methods=["post"])
     def set_active(self, request, pk=None):
         subscription = self.get_object()
-        subscription.set_active(serializers.BooleanField().run_validation(request.data.get("active")))
+        active = serializers.BooleanField().run_validation(request.data.get("active"))
+        if active and not SocialToken.objects.filter(account__user=request.user, account__provider="google").exists():
+            raise ValidationError({"google": "Reconnect Google first."})
+        subscription.set_active(active)
         logger.info("Sharing changed", extra={"subscription_id": subscription.pk, "plugin_id": subscription.plugin_id, "user_id": subscription.user_id, "active": subscription.active})
         return Response(self.get_serializer(subscription).data)
 
@@ -135,7 +140,7 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
 @extend_schema(exclude=True)
 class MeViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
-    serializer_class = CustomUserSerializer
+    serializer_class = MeSerializer
 
     def get_object(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.request.user
