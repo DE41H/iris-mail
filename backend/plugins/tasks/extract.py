@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 @cache
 def _laya():
-    return laya.Router()
+    return laya.Router(max_loaded=1)  # only multilingual is used, see decide_batch
 
 def _get_msgs(gmail: Gmail, start):
     ids, page = {}, None
@@ -62,21 +62,22 @@ def process(user_id):
     done ={(bytes(b), p) for b, p in Result.objects.filter(user=user, message__in=[bytes.fromhex(m.id) for m in msgs]).values_list("message", "plugin_id")}
     subs = tuple(Subscription.objects.filter(user=user, active=True).prefetch_related("plugin"))
     results = []
+    states = {}  # Laya state per message, built once and shared by every plugin
     try:
-        for message in msgs:
-            key = bytes.fromhex(message.id)
-            plugins = [s.plugin for s in subs if (key, s.plugin_id) not in done]  # pyright: ignore[reportAttributeAccessIssue]
-            if not plugins:
+        for sub in subs:
+            plugin = sub.plugin
+            todo = [m for m in msgs if (bytes.fromhex(m.id), plugin.id) not in done]
+            if not todo:
                 continue
-            state = laya.email_state(message.subject, message.plain or "")
-            for plugin in plugins:
-                try:
-                    output = laya.decide(_laya(), state, schema=plugin.schema)
-                except SchemaError:
-                    logger.exception("Plugin schema cannot be answered by Laya", extra={"plugin_id": plugin.id, "user_id": user_id})
-                    continue
-                results.append(Result(user=user, plugin=plugin, version=plugin.version, output=output, message=key))
-                done.add((key, plugin.id))
+            for m in todo:
+                if m.id not in states:
+                    states[m.id] = laya.email_state(m.subject, m.plain or "")
+            try:
+                outputs = laya.decide_batch(_laya(), [states[m.id] for m in todo], schema=plugin.schema, model="multilingual", batch_size=64)
+            except SchemaError:
+                logger.exception("Plugin schema cannot be answered by Laya", extra={"plugin_id": plugin.id, "user_id": user_id})
+                continue
+            results += [Result(user=user, plugin=plugin, version=plugin.version, output=o, message=bytes.fromhex(m.id)) for m, o in zip(todo, outputs)]
     finally:
         Result.objects.bulk_create(results, ignore_conflicts=True)
     CustomUser.objects.filter(pk=user_id).invalidated_update(hist_id=latest)  # pyright: ignore[reportAttributeAccessIssue]

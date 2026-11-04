@@ -16,7 +16,7 @@ services:
 
   valkey:
     image: valkey/valkey:8-alpine
-    command: valkey-server --maxmemory 512mb --maxmemory-policy volatile-lru
+    command: valkey-server --maxmemory 256mb --maxmemory-policy volatile-lru
     volumes:
       - valkey:/data
     logging: *logging
@@ -53,9 +53,12 @@ services:
       context: ../backend
       dockerfile: ../docker/backend.dockerfile
     env_file: .env
-    command: python manage.py procrastinate worker
+    command: python manage.py procrastinate worker --concurrency 2
     environment:
       LAYA_REVISION: reviewed
+      OMP_NUM_THREADS: 2
+      MALLOC_ARENA_MAX: 2
+    mem_limit: 4g
     volumes:
       - models:/models
     logging: *logging

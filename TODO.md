@@ -7,8 +7,8 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 - [ ] **Test the full flow against live Google OAuth.** Sign in, add a user with `POST /api/subscriptions/`,
   turn the plugin on, receive mail, read `/api/results/`. Nothing past sign-in has run for real.
-- [ ] **Pass Google's restricted-scope review.** `gmail.readonly` needs OAuth verification, a CASA security
-  assessment, and a privacy policy and terms page linked from the consent screen. Neither page exists.
+<!--- [ ] **Pass Google's restricted-scope review.** `gmail.readonly` needs OAuth verification, a CASA security
+  assessment, and a privacy policy and terms page linked from the consent screen. Neither page exists.-->
 
 ## P1: bugs, security and privacy
 
@@ -36,9 +36,12 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
   asking them. Use an invite link the user accepts, or return the same response either way.
 - [ ] **HTML-only emails reach Laya with an empty body.** `process` passes `message.plain or ""`. Fall back
   to `message.html` stripped to text, and pass `sender=` to `laya.email_state`.
-- [ ] **One worker answers every inbox in turn.** The worker runs with Procrastinate's default concurrency
-  of 1, and calls `laya.decide` once per message per plugin. Group messages per plugin with
-  `laya.decide_batch`, then size concurrency and worker memory for the models (`max_loaded`).
+- [ ] **Plugins can only extract with Laya questions.** Add `Plugin.regexes`, a JSON object of
+  `{name: pattern}`. `process` runs each pattern over subject + plain body and stores every match as a
+  list under `output.extra`. Make `extra` a reserved key in the schema. A plugin needs questions, regexes
+  or both, and regex-only plugins skip Laya. Validate in `validation.py` and `schema.ts`, run patterns with
+  `regex` and a timeout against ReDoS, bump `version` when regexes change, and add a regex section to the
+  plugin editor. Full plan: `~/.claude/plans/i-want-to-add-transient-liskov.md`.
 
 ## P3: nice to have
 
