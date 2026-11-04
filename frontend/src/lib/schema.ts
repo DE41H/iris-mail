@@ -1,4 +1,5 @@
-// Same rules as backend/plugins/validation.py, which also checks what Laya itself rejects.
+// Same rules as backend/plugins/validation.py (_problem, RuleValidator) plus the limits Laya's
+// plan_from_json_schema enforces: MAX_FIELDS, MAX_OPTIONS and MAX_LEVELS are Laya's own.
 // Laya reads a flat JSON Schema: one property per question. Each property is an enum (choice),
 // a boolean (yes/no), or an integer range of at most MAX_LEVELS (scale). Nothing else is accepted.
 
@@ -45,10 +46,10 @@ export function fieldProblems(f: Field, fields: Field[]): string[] {
   else if (f.name === 'rules') out.push('Key `rules` is reserved for rule matches.');
   else if (fields.some((g) => g !== f && g.name === f.name)) out.push('Key is already used by another question.');
   if (f.kind === 'choice') {
-    if (f.options.length < 2) out.push('Add at least two answers.');
-    if (f.options.length > MAX_OPTIONS) out.push(`At most ${MAX_OPTIONS} answers.`);
-    if (f.options.some((option) => !option.trim())) out.push('Fill in or remove blank answers.');
-    if (new Set(f.options.map((option) => option.trim())).size !== f.options.length) out.push('Answers must be unique.');
+    const answers = new Set(f.options.map((option) => option.trim()));
+    if (f.options.length < 2 || f.options.length > MAX_OPTIONS) out.push(`Use 2 to ${MAX_OPTIONS} answers.`);
+    if (answers.has('')) out.push('Fill in or remove blank answers.');
+    if (answers.size !== f.options.length) out.push('Answers must be unique.');
   }
   if (f.kind === 'scale') {
     if (!Number.isInteger(f.min) || !Number.isInteger(f.max)) out.push('Min and max must be whole numbers.');
@@ -123,27 +124,34 @@ export function pluginProblems(name: string, desc: string): string[] {
   return out;
 }
 
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+// One property as a field, or why it is not a supported question. Same cases, in the same order, as _problem.
+function toField(name: string, prop: unknown): Field | string {
+  if (!isObject(prop)) return 'must be an object';
+  const { description: question = '', enum: values, type, minimum: min, maximum: max } = prop;
+  if (typeof question !== 'string') return 'description must be a string';
+  if ('enum' in prop && !Array.isArray(values)) return 'enum must be a list'; // Laya's check
+  if (Array.isArray(values) && values.length === 2 && new Set(values).size === 2 && values.every((v) => typeof v === 'boolean')) return { kind: 'boolean', name, question };
+  if (Array.isArray(values)) {
+    if (!values.every((v) => typeof v === 'string')) return 'enum values must be strings';
+    return { kind: 'choice', name, question, options: values as string[] };
+  }
+  if (type === 'boolean') return { kind: 'boolean', name, question };
+  if (type === 'integer' && Number.isInteger(min) && Number.isInteger(max)) return { kind: 'scale', name, question, min: min as number, max: max as number };
+  return 'must be an enum, a boolean or an integer with minimum and maximum';
+}
+
 // Reads a saved schema back into fields. Shapes the builder cannot express come back as an error,
-// so saving never silently drops a property.
+// so saving never silently drops a property. Answer counts, blanks and levels are left to fieldProblems.
 export function fromSchema(schema: unknown): { fields: Field[] } | { error: string } {
-  const properties = (schema as { properties?: unknown } | null)?.properties ?? {};
-  if (typeof properties !== 'object' || Array.isArray(properties)) return { error: 'Schema has no properties object.' };
+  const properties = isObject(schema) ? (schema.properties ?? {}) : {};
+  if (!isObject(properties)) return { error: 'Schema has no properties object.' };
   const fields: Field[] = [];
-  for (const [name, raw] of Object.entries(properties)) {
-    const p = raw as { type?: unknown; enum?: unknown; description?: string; minimum?: unknown; maximum?: unknown };
-    const question = typeof p.description === 'string' ? p.description : '';
-    const values = p.enum;
-    if (Array.isArray(values) && values.length === 2 && values.includes(true) && values.includes(false)) {
-      fields.push({ kind: 'boolean', name, question });
-    } else if (Array.isArray(values) && values.every((v) => typeof v === 'string')) {
-      fields.push({ kind: 'choice', name, question, options: values });
-    } else if (p.type === 'boolean') {
-      fields.push({ kind: 'boolean', name, question });
-    } else if (p.type === 'integer' && Number.isInteger(p.minimum) && Number.isInteger(p.maximum)) {
-      fields.push({ kind: 'scale', name, question, min: p.minimum as number, max: p.maximum as number });
-    } else {
-      return { error: `"${name}" uses a shape this builder cannot edit. Recreate the plugin to change it.` };
-    }
+  for (const [name, prop] of Object.entries(properties)) {
+    const field = toField(name, prop);
+    if (typeof field === 'string') return { error: `"${name}" ${field}. Recreate the plugin to change it.` };
+    fields.push(field);
   }
   return { fields };
 }
