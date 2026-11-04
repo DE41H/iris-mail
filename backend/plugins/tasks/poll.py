@@ -8,7 +8,7 @@ from plugins.models import CustomUser
 from plugins.tasks.extract import process
 
 
-@app.task(name="plugins.tasks.init_hist", retry=5)
+@app.task(name="plugins.tasks.init_hist")
 def init_hist(user_id):
     user = CustomUser.objects.get(pk=user_id)
     CustomUser.objects.filter(pk=user_id, hist_id__isnull=True).invalidated_update(hist_id=get_hist_id(user))  # pyright: ignore[reportAttributeAccessIssue]

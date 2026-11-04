@@ -10,7 +10,7 @@ from procrastinate.contrib.django import app
 
 from plugins.gmail import client, disconnect, fetch, get_hist, reset_hist, save_token
 from plugins.models import CustomUser, Result, Subscription
-from plugins.validation import RE2
+from plugins.validation import MAX_MATCHES, RE2
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ def _match(plugin, content):
         except re2.error:
             logger.warning("Plugin rule does not compile", extra={"plugin_id": plugin.id, "rule": name})
             found = []
-        out[name] = [next((g for g in m if g), m[0]) if isinstance(m, tuple) else m for m in found]
+        out[name] = [next((g for g in m if g), m[0]) if isinstance(m, tuple) else m for m in found[MAX_MATCHES]]
     return out
 
 

@@ -6,6 +6,7 @@ from laya.structured import SchemaError, plan_from_json_schema
 KEY = re2.compile(r"[a-z][a-z0-9_]*")
 MAX_OPTIONS = 32
 MAX_RULES = 16
+MAX_MATCHES = 20
 MAX_PATTERN = 512
 EMPTY_SCHEMA = {"type": "object", "properties": {}}
 RE2 = re2.Options()
