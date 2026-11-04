@@ -16,7 +16,7 @@ services:
 
   valkey:
     image: valkey/valkey:8-alpine
-    command: valkey-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+    command: valkey-server --maxmemory 512mb --maxmemory-policy volatile-lru
     volumes:
       - valkey:/data
     logging: *logging
