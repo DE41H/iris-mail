@@ -21,6 +21,8 @@ allauth (Google), Laya, Astro + Svelte 5, Caddy, Docker. Python 3.13 with uv.
     cd backend && uv run manage.py procrastinate worker
     cd frontend && npm install && npm run dev     # :4321, proxies to :8000
     cd docker && docker compose up -d --build
+    # admin login is password + TOTP (django-otp); give each superuser a device, scan the printed URL:
+    uv run manage.py shell -c "from django_otp.plugins.otp_totp.models import TOTPDevice as T; from plugins.models import CustomUser as U; print(T.objects.create(user=U.objects.get(username='NAME'), name='admin').config_url)"
 
 ## Rules
 

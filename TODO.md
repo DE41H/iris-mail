@@ -24,13 +24,9 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
   errors per message, log them, and move on.
 - [ ] **OAuth tokens are stored in plain text.** `SocialToken.token_secret` (the refresh token, i.e. inbox
   access) is a plain column, and allauth's admin shows it. Encrypt it at rest with a key from env.
-- [ ] **`/admin/` is public.** Caddy proxies it to the internet, and it shows tokens and results. Restrict
-  it to an IP allowlist or a private port, or remove it from the Caddyfile.
 - [ ] **Polls pile up.** `poll_inboxes` queues `process` for every user every 3 minutes. `lock=` only stops
   two jobs from running at once, so a slow worker builds an endless queue. Use `queueing_lock=user_id`
   and ignore `AlreadyEnqueued`.
-- [ ] **Containers do not restart.** No service in `docker-compose.yml` has a `restart:` policy, so a
-  crash or reboot takes the app down. Add `restart: unless-stopped`.
 
 ## P2: should do soon
 
@@ -52,9 +48,7 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P3: nice to have
 
-- [ ] Pin image versions: `astral/uv:latest`, `node:22-alpine`, `caddy:2-alpine`.
-- [ ] Pin the Laya model revision (`LAYA_REVISION`) so a Hub update cannot change answers silently.
-- [ ] Raise `SECURE_HSTS_SECONDS` (3600 now) once HTTPS works in production.
+- [ ] Set `DJANGO_HSTS_SECONDS=31536000` in production `.env` once HTTPS works (defaults to 3600).
 <!--- [ ] Back up the `pgdata` volume.-->
 - [ ] Run `clearsessions` on a schedule; expired sessions are never deleted.
 - [ ] Add `prefetch_related("plugin")` to the user's subscription list (`plugin_name` is one query per row
