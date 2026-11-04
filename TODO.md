@@ -13,6 +13,33 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P1: bugs, security and privacy
 
+Found in the 2026-11-05 audit (run against Postgres + Valkey with a faked Gmail; Laya not loaded):
+
+- [ ] **One deleted email stops a user's mail for a week.** `gmail.fetch` falls back to `get()` per id when
+  any message 404s, and `get()` returns `None` for the gone one. `_extract` then does `m.id` on `None`
+  (`AttributeError`), `hist_id` never moves, and every poll fails the same way until Gmail's history
+  expires (~1 week). Then `reset_hist` skips that whole week for every plugin. Reproduced: 3 new messages,
+  one deleted before fetch. Common in real life (spam filters, quick deletes). Fix in `gmail.py:83`:
+  `return [m for m in (get(gmail, id) for id in ids) if m]`.
+- [ ] **The plugin list takes 23 s at 300 users.** `PluginViewSet.get_queryset` counts subscribers and
+  results with two `Count(distinct=True)` on LEFT JOINs, so Postgres builds subscriptions × results rows
+  (300 × 30,000 = 9M) per plugin. Measured 23.4 s for one `GET /api/plugins/`; it holds one of the 2
+  Granian workers the whole time. Fix: count each with a `Subquery` (`Subscription.objects.filter(plugin=
+  OuterRef("pk"), active=True).values("plugin").annotate(n=Count("pk")).values("n")`, same for `Result`),
+  wrapped in `Coalesce(..., 0)`. This replaces the P3 "counts all results" note below.
+- [ ] **Developers cannot remove users.** `DELETE /api/subscriptions/{id}/` needs a subscription id, but an
+  API key can't list subscriptions (403), `POST` by email returns no body, and `GET /api/users/` returns
+  user ids. Reproduced: `DELETE /api/subscriptions/<user id>/` returns 404. The README says developers can
+  remove subscriptions. Fix: add `DestroyModelMixin` to `UserViewSet` with `perform_destroy` deleting
+  `Subscription(plugin=request.auth, user=instance)`, so `DELETE /api/users/{id}/` works.
+- [ ] **Bad API keys are never throttled and fill Valkey, which logs everyone out.** A wrong key raises
+  `AuthenticationFailed` before DRF runs throttles, so the anon limit never applies. Each lookup in
+  `Plugin.auth_key` is cached by cacheops (~2 keys, ~1.5 KB per request: 1,000 bad keys took db 2 from 41
+  to 2,041 keys). Sessions live in the same Valkey (`SESSION_ENGINE = cache`) under `volatile-lru`, so once
+  256 MB fills, sessions are evicted and users are signed out. Fix: `.nocache()` on the lookup in
+  `models.py:69` (it hits a unique index), and `SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'`
+  so a full or restarted Valkey can't drop sessions.
+
 <!--- [ ] **Old mail gets shared when a plugin is turned on.** Fixed: each subscription stores `hist_from`
   (the Gmail history id when it was turned on) and `process` only answers mail added after it. Not yet run
   against live Gmail (see P0).-->
@@ -24,6 +51,16 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P2: should do soon
 
+
+- [ ] **A message that kills the worker is retried forever.** If one batch makes Laya run out of memory
+  (worker `mem_limit: 4g`), the job is left stalled, `revive` retries it every 5 minutes with no limit,
+  and it dies the same way, blocking that user and taking the worker down each time. Not reproduced.
+  Fix: in `revive`, fail jobs whose `attempts` is already 3 or more instead of retrying them.
+
+<!--- [ ] **Rule matches have no size limit.** `_match` stores every `findall` hit. A 20 KB email and the rule `.`
+  made a 100 KB `Result.output`; a long newsletter makes megabytes per result, per user, and the API pages
+  50 of them. Fix: keep the first 20 hits per rule (`found[:20]`), say so in the result `output` help text,
+  and compile each rule once per plugin instead of once per message.-->
 <!--- [ ] **Any developer can probe users.** Fixed: subscribing by email always returns 202 (and matches
   case-insensitively).-->
 <!--- [ ] **Any developer can spam users.** `POST /api/subscriptions/` still adds the plugin (inactive) to any
@@ -36,6 +73,9 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P3: nice to have
 
+
+<!--- [ ] `init_hist` has `retry=5`, but `get_hist_id` catches every error and returns `None`, so it never
+  retries. Drop the option (`process` already resets a missing `hist_id`).-->
 <!--- [ ] **A big history backlog loads every message at once.** `process` fetches all new messages (up to a
   week of mail after downtime) into memory before Laya runs, with 2 jobs per 4 GB worker. Work through the
   ids in chunks of ~200; deduplication already makes partial progress safe.-->
