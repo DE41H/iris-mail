@@ -1,4 +1,5 @@
 from allauth.core.ratelimit import consume_or_429
+from allauth.socialaccount.models import SocialToken
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django_otp.admin import OTPAdminSite
@@ -20,3 +21,4 @@ admin.site.register(CustomUser, UserAdmin)
 admin.site.register(Plugin)
 admin.site.register(Subscription)
 admin.site.register(Result)
+admin.site.unregister(SocialToken)

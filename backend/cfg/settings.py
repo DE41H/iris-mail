@@ -8,6 +8,7 @@ AUTH_USER_MODEL = 'plugins.CustomUser'
 # Security
 DEBUG = getenv('DJANGO_DEBUG', 'False') == 'True'
 SECRET_KEY = getenv('DJANGO_SECRET_KEY') or ('django-insecure-dev-only-key' if DEBUG else None)
+SALT_KEY = getenv('DJANGO_SALT_KEY') or ('pepper' if DEBUG else None)
 ALLOWED_HOSTS = [ host.strip() for host in getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') ]
 CSRF_TRUSTED_ORIGINS = [ origin.strip() for origin in getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip() ]
 

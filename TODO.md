@@ -22,8 +22,6 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 - [ ] **One bad message stops a user's inbox for good.** Any Laya error other than `SchemaError` fails the
   whole `process` job before `hist_id` advances, so every later poll hits the same message again. Catch
   errors per message, log them, and move on.
-- [ ] **OAuth tokens are stored in plain text.** `SocialToken.token_secret` (the refresh token, i.e. inbox
-  access) is a plain column, and allauth's admin shows it. Encrypt it at rest with a key from env.
 - [ ] **Polls pile up.** `poll_inboxes` queues `process` for every user every 3 minutes. `lock=` only stops
   two jobs from running at once, so a slow worker builds an endless queue. Use `queueing_lock=user_id`
   and ignore `AlreadyEnqueued`.

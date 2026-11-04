@@ -43,6 +43,7 @@ allauth (Google), Laya, Astro + Svelte 5, Caddy, Docker. Python 3.13 with uv.
 
 - Never store email bodies or headers.
 - API keys are stored as SHA-256 only and shown once.
+- Google OAuth tokens are encrypted at rest (`plugins/token.py`, key from `DJANGO_SECRET_KEY` + `DJANGO_SALT_KEY`).
 - Extract only for active subscriptions, and never call Laya twice for the same user, message and plugin.
 - Secrets come from env.
 

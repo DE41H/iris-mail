@@ -55,6 +55,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "django-allauth" },
     { name = "django-cacheops" },
+    { name = "django-fernet-encrypted-fields" },
     { name = "django-otp" },
     { name = "djangorestframework" },
     { name = "drf-spectacular" },
@@ -80,6 +81,7 @@ dev = [
 requires-dist = [
     { name = "django-allauth", specifier = ">=65.20.1" },
     { name = "django-cacheops", specifier = ">=7.2" },
+    { name = "django-fernet-encrypted-fields", specifier = ">=0.4.0" },
     { name = "django-otp", specifier = ">=1.7.5" },
     { name = "djangorestframework", specifier = ">=3.18.3" },
     { name = "drf-spectacular", specifier = ">=0.30.0" },
@@ -440,6 +442,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/1b/92/9df8a60ee959c214705ec3d3ccf80820097672a0260b149cf2751e818086/django_cacheops-7.2.tar.gz", hash = "sha256:cbc11cc0321295a3644e27bcb26940f08cb9c2e71d3ee506cbcff0bdda1a9f33", size = 72751, upload-time = "2025-04-20T04:36:19.068Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/89/e0/cad1eca0d388ac9f0a75f785599a10acf62ecb6bbb7947da72c04461539c/django_cacheops-7.2-py2.py3-none-any.whl", hash = "sha256:c3b4399474919e62aa91bbd97e7b68cfc50e8cb4384d743bde686c37fe8c010b", size = 45116, upload-time = "2025-04-20T04:36:16.697Z" },
+]
+
+[[package]]
+name = "django-fernet-encrypted-fields"
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cryptography" },
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/95/d7/df0426ebf5b1784d064825ec8e5940e634991452066cfacc7fe0138f091a/django_fernet_encrypted_fields-0.4.0.tar.gz", hash = "sha256:836c927a260a834a35c4caecf82a97a5e411408cbecb44e25caddd02d8cdd86e", size = 5505, upload-time = "2026-04-14T01:25:15.216Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/83/75/c6de2333c26d0052d2175bf21dc3f5c45e878090946a75fb0c827da6e40a/django_fernet_encrypted_fields-0.4.0-py3-none-any.whl", hash = "sha256:b3e4049882b8c7216d868b7aa7533e466a48c1307b5d4b1b8dc4cb5946d87eec", size = 5681, upload-time = "2026-04-14T01:25:13.309Z" },
 ]
 
 [[package]]
