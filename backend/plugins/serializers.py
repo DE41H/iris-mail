@@ -17,8 +17,8 @@ class PluginSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plugin
-        fields = ("id", "developer", "name", "desc", "schema", "hint", "prefix", "subscriber_count", "result_count")
-        read_only_fields = ("id", "developer", "prefix")
+        fields = ("id", "developer", "name", "desc", "schema", "hint", "version", "prefix", "subscriber_count", "result_count")
+        read_only_fields = ("id", "developer", "version", "prefix")
         extra_kwargs = {  # noqa: RUF012
             "desc": {"allow_blank": True},
             "hint": {"allow_blank": True},
@@ -30,6 +30,11 @@ class PluginSerializer(serializers.ModelSerializer):
         if Plugin.objects.filter(developer=user, name=value).exclude(pk=getattr(self.instance, "pk", None)).exists():
             raise serializers.ValidationError("You already have a plugin with this name.")
         return value
+
+    def update(self, instance, validated_data):
+        if "schema" in validated_data and validated_data["schema"] != instance.schema:
+            validated_data["version"] = instance.version % 32767 + 1
+        return super().update(instance, validated_data)
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
@@ -58,5 +63,5 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 class ResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = Result
-        fields = ("id", "user", "plugin", "output", "fetched", "time")
+        fields = ("id", "user", "plugin", "version", "output", "fetched", "time")
         read_only_fields = fields

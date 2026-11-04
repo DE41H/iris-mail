@@ -50,8 +50,7 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 <!--- [ ] Set `DJANGO_HSTS_SECONDS=31536000` in production `.env` once HTTPS works (defaults to 3600).-->
 <!--- [ ] Back up the `pgdata` volume.-->
-- [ ] Drop `prompt: consent` for returning users; Google shows the consent screen on every sign-in.
-- [ ] Version plugin schemas: editing a schema mixes old and new result shapes in `/api/results/`.
+<!--- [ ] Drop `prompt: consent` for returning users; Google shows the consent screen on every sign-in.-->
 <!--- [ ] `PluginViewSet` counts all results per plugin on every request; store a counter if it gets slow.-->
 <!--- [ ] Show developers their subscribers and recent results in the dashboard, not just counts.-->
 <!--- [ ] Send results to developers by webhook, and use Gmail push (`users.watch`) instead of polling.-->

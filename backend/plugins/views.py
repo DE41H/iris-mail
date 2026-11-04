@@ -101,6 +101,7 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
 
 @extend_schema_view(list=extend_schema(parameters=[
     OpenApiParameter("user", OpenApiTypes.UUID, description="Only this user's results."),
+    OpenApiParameter("version", int, description="Only results made with this plugin version."),
     OpenApiParameter("fetched", bool, description="Filter by whether the result was acknowledged."),
 ]))
 class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -112,6 +113,8 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         queryset = Result.objects.filter(plugin=self.request.auth)  # pyright: ignore[reportAttributeAccessIssue]
         if user := self.request.GET.get("user"):
             queryset = queryset.filter(user=serializers.UUIDField().run_validation(user))  # pyright: ignore[reportArgumentType]
+        if version := self.request.GET.get("version"):
+            queryset = queryset.filter(version=serializers.IntegerField(min_value=1, max_value=32767).run_validation(version))  # pyright: ignore[reportArgumentType]
         fetched = self.request.GET.get("fetched")
         if fetched is None:
             return queryset

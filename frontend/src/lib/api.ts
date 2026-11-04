@@ -63,6 +63,7 @@ export interface Plugin {
   desc: string;
   hint: string;
   schema: unknown;
+  version: number;
   prefix: string | null;
   subscriber_count?: number;
   result_count?: number;

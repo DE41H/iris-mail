@@ -70,7 +70,7 @@
   {#if plugin}
     <PluginEditor bind:draft submit="save" onsubmit={save} {dirty} {locked}>
       {#snippet head()}
-        <div class="eyebrow"><a href="/plugins">plugins</a> / {plugin!.prefix ? `${plugin!.prefix}…` : 'no key'}</div>
+        <div class="eyebrow"><a href="/plugins">plugins</a> / {plugin!.prefix ? `${plugin!.prefix}…` : 'no key'} / v{plugin!.version}</div>
         <h1 class="mono">{plugin!.name}<span class="cursor"></span></h1>
       {/snippet}
       {#if dirty}<button type="button" class="btn btn-ghost" onclick={() => fill(plugin!)}>discard</button>{/if}

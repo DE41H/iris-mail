@@ -30,6 +30,7 @@ class Plugin(models.Model):
     desc = models.TextField(max_length=1024, default="")
     schema = models.JSONField(default=dict, validators=[SchemaValidator()])
     hint = models.CharField(max_length=512, default="")
+    version = models.PositiveSmallIntegerField(default=1, editable=False)
     key = models.BinaryField(max_length=32, unique=True, blank=True, null=True)
     prefix = models.CharField(max_length=16, unique=True, blank=True, null=True)
 
@@ -105,6 +106,7 @@ class Result(models.Model):
     user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="results")
     plugin = models.ForeignKey(to=Plugin, on_delete=models.CASCADE, related_name="results")
     output = models.JSONField(default=dict)
+    version = models.PositiveSmallIntegerField(default=1)
     message = models.BinaryField(max_length=8)
     fetched = models.BooleanField(default=False)
     time = models.DateTimeField(auto_now_add=True)
@@ -124,4 +126,5 @@ class Result(models.Model):
             ),
             models.Index(fields=("plugin", "-id")),
             models.Index(fields=("plugin", "user", "-id")),
+            models.Index(fields=("plugin", "version", "-id")),
         )
