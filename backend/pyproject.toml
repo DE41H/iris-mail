@@ -11,7 +11,7 @@ dependencies = [
     "laya>=0.4.15",
     "procrastinate[django]>=3.10.0",
     "psycopg[binary]>=3.3.6",
-    "redis>=8.1.0",
+    "redis[hiredis]>=8.1.0",
     "torch",
     "simplegmail>=5.0.0",
     "uuid6>=2025.0.1",
