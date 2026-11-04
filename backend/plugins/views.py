@@ -2,7 +2,8 @@ import logging
 
 from allauth.socialaccount.models import SocialToken
 from django.contrib.auth import logout
-from django.db.models import Count, Q
+from django.db.models import Count, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -44,9 +45,12 @@ class PluginViewSet(
     serializer_class = PluginSerializer
 
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def count(qs):
+            return Coalesce(Subquery(qs.filter(plugin=OuterRef("pk")).values("plugin").annotate(n=Count("pk")).values("n")), 0)
+
         return Plugin.objects.filter(developer=self.request.user).annotate(
-            subscriber_count=Count("subscribers", filter=Q(subscribers__active=True), distinct=True),
-            result_count=Count("results", distinct=True),
+            subscriber_count=count(Subscription.objects.filter(active=True)),
+            result_count=count(Result.objects.all()),
         )
 
     def create(self, request, *args, **kwargs):

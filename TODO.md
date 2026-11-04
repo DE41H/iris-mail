@@ -21,12 +21,6 @@ Found in the 2026-11-05 audit (run against Postgres + Valkey with a faked Gmail;
   expires (~1 week). Then `reset_hist` skips that whole week for every plugin. Reproduced: 3 new messages,
   one deleted before fetch. Common in real life (spam filters, quick deletes). Fix in `gmail.py:83`:
   `return [m for m in (get(gmail, id) for id in ids) if m]`.
-- [ ] **The plugin list takes 23 s at 300 users.** `PluginViewSet.get_queryset` counts subscribers and
-  results with two `Count(distinct=True)` on LEFT JOINs, so Postgres builds subscriptions × results rows
-  (300 × 30,000 = 9M) per plugin. Measured 23.4 s for one `GET /api/plugins/`; it holds one of the 2
-  Granian workers the whole time. Fix: count each with a `Subquery` (`Subscription.objects.filter(plugin=
-  OuterRef("pk"), active=True).values("plugin").annotate(n=Count("pk")).values("n")`, same for `Result`),
-  wrapped in `Coalesce(..., 0)`. This replaces the P3 "counts all results" note below.
 - [ ] **Developers cannot remove users.** `DELETE /api/subscriptions/{id}/` needs a subscription id, but an
   API key can't list subscriptions (403), `POST` by email returns no body, and `GET /api/users/` returns
   user ids. Reproduced: `DELETE /api/subscriptions/<user id>/` returns 404. The README says developers can
@@ -89,6 +83,5 @@ Found in the 2026-11-05 audit (run against Postgres + Valkey with a faked Gmail;
 <!--- [ ] Set `DJANGO_HSTS_SECONDS=31536000` in production `.env` once HTTPS works (defaults to 3600).-->
 <!--- [ ] Back up the `pgdata` volume.-->
 <!--- [ ] Drop `prompt: consent` for returning users; Google shows the consent screen on every sign-in.-->
-<!--- [ ] `PluginViewSet` counts all results per plugin on every request; store a counter if it gets slow.-->
 <!--- [ ] Show developers their subscribers and recent results in the dashboard, not just counts.-->
 <!--- [ ] Send results to developers by webhook, and use Gmail push (`users.watch`) instead of polling.-->
