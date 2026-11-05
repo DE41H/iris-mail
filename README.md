@@ -1,60 +1,120 @@
+<div align="center">
+
+<img src="backend/static/favicon.svg" width="88" alt="Iris logo">
+
 # Iris
 
-> Understand any inbox without ever holding onto the email.
+**Ask inboxes questions. Get JSON back.**
 
-Developers describe what they want from email (invoices, shipping updates, receipts) as a **plugin**. Users connect
-Gmail and turn the plugin on. Iris turns matching mail into structured answers that the developer pulls with an API
-key. Only the answers and short rule matches are stored, never the email.
+Write a few questions about email. People connect Gmail and switch you on.<br>
+Every new message is read and answered. You get the answers, never the email.
+
+[How it works](#how-it-works) · [For developers](#for-developers) · [Privacy](#privacy) · [Self-host](#self-host)
+
+</div>
+
+---
+
+## What it looks like
+
+A receipt lands in someone's inbox:
+
+```text
+From:    receipts@northwind.example
+Subject: Your receipt from Northwind
+
+Pro plan, billed monthly. Renews on the 5th.
+Total charged: $12.00
+```
+
+Your **Spending** plugin gets this, and the email is dropped:
+
+```json
+{
+  "receipt": true,
+  "spend_category": "software",
+  "subscription": true,
+  "rules": { "amount": ["$12.00"] }
+}
+```
 
 ## How it works
 
-1. A developer creates a plugin in the dashboard and gets an API key (shown once, stored as a hash).
-2. A user signs in with Google, granting read access to their inbox.
-3. The developer adds the user with `POST /api/subscriptions/`, by email or id. By email it always answers `202`, so
-   accounts can't be probed. The user turns the plugin on from the subscriptions page.
-4. Every 3 minutes Iris polls new mail, and Laya answers the plugin's questions once per message.
-5. The developer reads `GET /api/results/?fetched=false` and confirms receipt with `POST /api/results/ack/`.
-   Anything not acknowledged is sent again.
+| | |
+| :-- | :-- |
+| **1. Write your questions** | Yes/no, a choice, or a scale, plus optional regex rules. You get an API key. |
+| **2. People switch you on** | They sign in with Google and opt in, one plugin at a time. |
+| **3. Fetch the answers** | New mail is read every 3 minutes. Pull results as JSON and acknowledge them. |
 
-Full API reference: `/docs`.
+Questions are answered by [Laya](https://pypi.org/project/laya/). Rules pull exact text, like an amount or a tracking
+number, and land under `output.rules`.
+
+## For developers
+
+Build a plugin in the dashboard at `/plugins/new`, or start from a template:
+**Spending**, **Deliveries**, **Bills**, **Travel**, **Meetings**, **Security alerts**, **Job hunt**, **Newsletters**,
+**Appointments**, **Support triage**, **Inbox priority**.
+
+Then three calls:
+
+```bash
+H=(-H "Authorization: Bearer $KEY" -H "Content-Type: application/json")
+
+# 1. Add a user. They still switch the plugin on themselves.
+curl "${H[@]}" -X POST $IRIS/api/subscriptions/ -d '{"email": "ada@example.com"}'
+
+# 2. Read new answers
+curl "${H[@]}" "$IRIS/api/results/?fetched=false"
+
+# 3. Acknowledge them, or they come back next time
+curl "${H[@]}" -X POST $IRIS/api/results/ack/ -d '{"ids": ["…"]}'
+```
+
+Adding by email always returns `202`, so accounts can't be probed. The full reference lives at `/docs`.
+
+<details>
+<summary><b>Limits</b></summary>
+
+<br>
+
+| | |
+| :-- | :-- |
+| Questions per plugin | 32 |
+| Answers per choice | 32 |
+| Steps on a scale | 10 |
+| Rules per plugin | 16, RE2 syntax, first capture group kept |
+| API rate | 500 to 5,000 requests per hour, by tier |
+
+</details>
 
 ## Privacy
 
-- Whole emails are never stored. Developers get only answers, short rule matches, and each subscriber's email and
-  username.
-- Users can turn a plugin off, remove it, or delete their account. Deleting revokes Google access and removes
-  everything Iris holds about them.
-- If a user revokes Google access, all their plugins turn off until they sign in again.
-- Answers are deleted 30 days after being acknowledged or after the plugin is removed, and always after 100 days.
-- Developers list active subscribers with `GET /api/users/` and remove one by email or id with
-  `POST /api/subscriptions/remove/`.
+- **No email is stored.** Developers get answers, short rule matches, and each subscriber's email and username.
+- **Opt-in, per plugin.** Users turn each plugin on or off, or delete their account, which revokes Google access and
+  erases everything.
+- **Answers expire.** 30 days after they are acknowledged or the plugin is removed, and always after 100 days.
+- **Keys and tokens are protected.** API keys are stored as SHA-256 hashes and shown once. Google tokens are encrypted.
 
-## Running
+## Self-host
 
 ```bash
-cp docker/.env.example docker/.env    # fill in the secrets
+cp docker/.env.example docker/.env   # add Google OAuth and the secrets
 docker/deploy.sh
 ```
 
-`deploy.sh` needs the [docker-rollout](https://github.com/wowu/docker-rollout) plugin and swaps the backend with no
-downtime. The frontend is copied in place (assets first; unused ones are removed after 30 days). The Caddyfile is
-built into the Caddy image, so changing it recreates Caddy and drops open connections for a moment.
+Then open `https://localhost`. Deploys roll out with no downtime and need the
+[docker-rollout](https://github.com/wowu/docker-rollout) plugin.
 
-Stack: Django + DRF, PostgreSQL, Procrastinate, Valkey, Gmail API, Laya, Astro + Svelte, Caddy, Docker.
-Contributor notes are in [`AGENTS.md`](AGENTS.md).
+<sub>Django · DRF · PostgreSQL · Procrastinate · Valkey · Astro · Svelte · Caddy · Docker</sub>
 
-## Status
+## Good to know
 
-Early development. Everything runs in Docker, but the full flow is untested against live Google OAuth.
-Open work is in [`TODO.md`](TODO.md).
+Iris is in early development.
 
-## Known drawbacks
+- Laya can be wrong, for example on Hindi mail or number ranges. Rules are exact, so use a rule for numbers and
+  bucket them yourself.
+- Mail Gmail can't parse is skipped, and if Laya fails on a batch those messages get no answers. Both are logged.
 
-- **Laya answers are not always right.** It can misread Hindi mail and gets number ranges wrong (Rs. 52,000 and
-  Rs. 1,499 both came back as `100_to_1000`). Rules are reliable: pull numbers out with a rule and bucket them
-  yourself.
-- **Some mail is skipped for good.** An email Gmail's parser can't read (e.g. `charset=unknown-8bit` spam) is
-  skipped. If Laya fails on a batch, that plugin gets no answers for those messages. Both are logged.
-- **Dashboard counts lag by up to 5 minutes.** They are cached to keep load off the database.
-- **Sessions can be evicted.** Sessions live in Valkey; under memory pressure some users are logged out and sign in
-  again with Google. Mail polling is unaffected.
+Contributors: start with [`AGENTS.md`](AGENTS.md) and [`TODO.md`](TODO.md).
+
+<div align="center"><sub>Licensed under <a href="LICENSE.md">GPL-3.0</a></sub></div>
