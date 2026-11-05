@@ -37,7 +37,8 @@ docker/deploy.sh
 ```
 
 `deploy.sh` needs the [docker-rollout](https://github.com/wowu/docker-rollout) plugin and swaps the backend with no
-downtime.
+downtime. The frontend is copied in place (assets first; unused ones are removed after 30 days). The Caddyfile is
+built into the Caddy image, so changing it recreates Caddy and drops open connections for a moment.
 
 Stack: Django + DRF, PostgreSQL, Procrastinate, Valkey, Gmail API, Laya, Astro + Svelte, Caddy, Docker.
 Contributor notes are in [`AGENTS.md`](AGENTS.md).

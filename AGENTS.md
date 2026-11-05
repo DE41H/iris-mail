@@ -25,7 +25,7 @@ django-otp, Laya, Astro 7 + Svelte 5, Caddy, Docker. Python 3.13 with uv.
 cd backend && uv sync && uv run manage.py migrate && uv run manage.py invalidate all && uv run manage.py runserver
 cd backend && uv run manage.py procrastinate worker
 cd frontend && npm install && npm run dev     # :4321, proxies to :8000
-docker/deploy.sh                              # build, migrate, roll out backend, copy frontend, reload Caddy
+docker/deploy.sh                              # build, migrate, roll out backend, copy frontend, restart changed worker/Caddy
 ```
 
 Admin login is password + TOTP. Give each superuser a device and scan the printed URL:
