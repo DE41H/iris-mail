@@ -52,3 +52,9 @@ allauth (Google), django-otp, Laya, Astro 7 + Svelte 5, Caddy, Docker. Python 3.
 - Google OAuth tokens are encrypted at rest (`plugins/token.py`, key from `DJANGO_SECRET_KEY` + `DJANGO_SALT_KEY`).
 - Extract only for active subscriptions, and never call Laya twice for the same user, message and plugin.
 - Secrets come from env.
+
+## Known drawbacks (accepted, don't fix)
+
+- Laya answers can be wrong (Hindi mail, number ranges); rules are reliable. Not a code bug.
+- Dashboard plugin counts are cached by cacheops for up to 5 minutes; their subqueries don't invalidate it.
+- Sessions use the Valkey cache (`volatile-lru`), so eviction logs users out. Polling is unaffected.

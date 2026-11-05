@@ -44,3 +44,12 @@ Contributor notes are in `AGENTS.md`.
 
 Early development. Everything runs in Docker, but the full flow has not yet been tested against live
 Google OAuth. See `TODO.md`.
+
+## Known drawbacks
+
+- **Laya answers are not always right.** Rules match reliably, but Laya can misread Hindi mail and gets number
+  ranges wrong (Rs. 52,000 and Rs. 1,499 both came back as `100_to_1000`). Pull numbers out with a rule and
+  bucket them yourself.
+- **Dashboard counts lag by up to 5 minutes.** Subscriber and result counts are cached to keep load off the database.
+- **Sessions can be evicted.** Sessions live in Valkey; under memory pressure some users are logged out and sign
+  in again with Google. Mail polling is unaffected.

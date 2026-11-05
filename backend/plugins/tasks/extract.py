@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 ROUTER = laya.Router(max_loaded=1)
 CHUNK_SIZE = 250
+INVISIBLE = dict.fromkeys(map(ord, "\u200b\u200c\u200d\u2060\ufeff\u034f\u00ad"))
 
 
 def _compile(plugin):
@@ -55,8 +56,16 @@ def _guess(user, plugin, msgs, states):
         return []
 
 
+def _refine(html):
+    soup = BeautifulSoup(html, "lxml")
+    for tag in soup(["head", "style", "script", "noscript", "template"]):
+        tag.decompose()
+    text = soup.get_text("\n").replace("\xa0", " ").translate(INVISIBLE)
+    return "\n".join(line for line in (" ".join(raw.split()) for raw in text.splitlines()) if line)
+
+
 def _extract(user, subs, msgs, added):
-    bodies = {m.id: m.plain or BeautifulSoup(m.html or "", "lxml").get_text("\n") for m in msgs}
+    bodies = {m.id: m.plain or _refine(m.html or "") for m in msgs}
     states = {m.id: laya.email_state(m.subject, bodies[m.id], sender=m.sender) for m in msgs}
     done = {(bytes(b), p) for b, p in Result.objects.filter(user=user, message__in=[bytes.fromhex(m.id) for m in msgs]).values_list("message", "plugin_id")}
     saved = 0
