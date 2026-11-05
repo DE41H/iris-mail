@@ -72,7 +72,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         email = attrs.pop("email", None)
         if ("user" in attrs) == (email is not None):
-            raise serializers.ValidationError("Send either user or email, not both.")
+            raise serializers.ValidationError("Send `user` or `email`")
         if email is not None:
             attrs["user"] = CustomUser.objects.filter(email__iexact=email).first()
             return attrs
