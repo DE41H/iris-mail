@@ -3,11 +3,9 @@
   import { slide } from 'svelte/transition';
   import { MAX_NAME_LENGTH, MAX_RULES, MAX_PATTERN, type Rule } from '../lib/schema';
   import { ruleMatches, ruleProblems } from '../lib/rules';
-  import { RULE_PRESETS } from '../lib/presets';
 
   let { rules = $bindable() }: { rules: Rule[] } = $props();
   const full = $derived(rules.length >= MAX_RULES);
-  const unused = $derived(RULE_PRESETS.filter((p) => !rules.some((r) => r.name === p.name)));
   let touched = $state<Rule[]>([]);
   let sample = $state('');
   let testing = $state(false);
@@ -24,7 +22,7 @@
 <div class="rule-list">
   {#if rules.length}
     <div class="rows" bind:this={rows}>
-      <div class="row head" aria-hidden="true"><span>Saved as</span><span>Pattern, the first group is kept</span></div>
+      <div class="row head" aria-hidden="true"><span>Saved as</span><span>Pattern</span></div>
       {#each rules as r, i}
         {@const issues = ruleProblems(r, rules)}
         {@const shown = touched.includes(r) && issues.length}
@@ -52,23 +50,13 @@
     <label class="sample" transition:slide={{ duration: 200 }}>
       <span class="label">Sample email text</span>
       <textarea rows="3" bind:value={sample} placeholder="Thanks for your order #48213. Total: $42.50"></textarea>
-      <span class="help">Matches show under each rule. Only for testing, not saved.</span>
     </label>
   {/if}
   <div class="add">
     <button type="button" class="add-pill" disabled={full} onclick={() => add({ name: '', pattern: '' })}><i aria-hidden="true">+</i>Add a rule</button>
     {#if rules.length}<button type="button" class="text-btn" aria-expanded={testing} onclick={() => (testing = !testing)}>{testing ? 'Hide tester' : 'Test on sample text'}</button>{/if}
   </div>
-  {#if unused.length && !full}
-    <div class="ideas" role="group" aria-label="Common patterns">
-      <span class="label">Common</span>
-      {#each unused.slice(0, 6) as p (p.name)}
-        <button type="button" class="idea" title={p.pattern} onclick={() => add({ ...p })}><i aria-hidden="true">+</i>{p.name.replaceAll('_', ' ')}</button>
-      {/each}
-    </div>
-  {/if}
 
-  <p class="help">Matches land in the output under <code>rules</code>, as a list per rule.</p>
 </div>
 
 <style>
@@ -80,13 +68,11 @@
   .hits { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 36px 0 calc((100% - 52px) / 3 + 8px); font-size: 12px; }
   .hit { padding: 1px 8px; border-radius: 6px; background: var(--signal-soft); color: var(--signal-text); font-size: 12px; }
   .none { color: var(--faint); }
-  .add, .ideas { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .add { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .label { margin: 0 4px 0 0; font-size: 13px; }
   .text-btn { margin-left: auto; }
   .sample { display: block; }
-  textarea { resize: vertical; font-size: 13.5px; }
-  .help { margin: 0; }
-  .sample .help { margin-top: 6px; }
+  textarea { min-height: 76px; font-size: 13.5px; }
   .tool { width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--muted); font-size: 13px; cursor: pointer; transition: background 0.2s, color 0.2s; }
   .tool:hover { background: var(--danger-soft); color: var(--danger); }
   @media (max-width: 640px) {

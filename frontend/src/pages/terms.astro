@@ -14,28 +14,35 @@ import Layout from '../layouts/Layout.astro';
     <article class="legal grow scroll">
       <h2>The service</h2>
       <p>
-        Iris lets developers define plugins and lets users turn them on to have questions answered about their
-        new emails. By using Iris you agree to these terms and to our <a href="/privacy">privacy policy</a>.
+        Iris lets developers create plugins that ask questions about email, and lets users turn plugins on to have
+        those questions answered about their new Gmail messages. By using Iris you agree to these terms and to our
+        <a href="/privacy">privacy policy</a>.
       </p>
 
       <h2>Your account</h2>
       <p>
-        You sign in with Google and are responsible for activity on your account. You can delete it at any time
-        from <a href="/subscriptions">your subscriptions page</a>.
+        You sign in with Google and must be old enough to agree to these terms where you live. You are responsible
+        for activity on your account. You can delete it at any time from
+        <a href="/subscriptions">your subscriptions page</a>; this also deletes any plugins you created.
       </p>
 
       <h2>Developers</h2>
       <ul>
         <li>Keep your API keys secret. We show each key once and cannot recover it.</li>
-        <li>Use answers only for the purpose your plugin describes, and do not try to rebuild users' emails from them.</li>
+        <li>Add users to your plugin only with their consent.</li>
+        <li>
+          Use answers and users' email addresses only for the purpose your plugin describes, and do not try to
+          rebuild users' emails from them.
+        </li>
         <li>Do not build plugins that deceive users or collect passwords, payment details or other secrets.</li>
         <li>Follow the law, including privacy law, for any data you receive.</li>
+        <li>Deleting a plugin or your account deletes its answers, and its users stop receiving new ones.</li>
       </ul>
 
       <h2>Acceptable use</h2>
       <p>
         Do not abuse the API, get around rate limits, probe for vulnerabilities without permission, or use Iris
-        to harm others. We may suspend accounts or plugins that do.
+        to harm others. We may suspend accounts or remove plugins that do.
       </p>
 
       <h2>Answers are automated</h2>
@@ -52,6 +59,7 @@ import Layout from '../layouts/Layout.astro';
         We may change or stop the service and these terms. We will update this page and its date; using Iris
         after a change means you accept it.
       </p>
+
       <h2>Contact</h2>
       <p>
         Iris is created and run by Sreyash Satpathy. Email

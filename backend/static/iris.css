@@ -234,6 +234,8 @@ input[type="text"], input[type="number"], input[type="email"], input:not([type])
   font: 15px/1.4 var(--font);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
+/* Textareas grow with what is typed instead of showing a resize grip; rows is the fallback where field-sizing is missing. */
+textarea { resize: none; field-sizing: content; max-height: 240px; }
 input.mono, textarea.mono { font-family: var(--mono); font-size: 13.5px; }
 input::placeholder, textarea::placeholder { color: var(--faint); }
 input:hover, textarea:hover, select:hover { border-color: color-mix(in oklab, var(--accent) 35%, var(--border-strong)); }

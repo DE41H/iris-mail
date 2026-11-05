@@ -3,7 +3,7 @@
   import { flip } from 'svelte/animate';
   import { fly, slide } from 'svelte/transition';
   import { fromSchema, MAX_FIELDS, type Field } from '../lib/schema';
-  import { blank, FIELD_PRESETS, KINDS } from '../lib/presets';
+  import { blank, KINDS } from '../lib/presets';
   import FieldCard from './FieldCard.svelte';
 
   let { fields = $bindable() }: { fields: Field[] } = $props();
@@ -16,7 +16,6 @@
   // An empty list starts nothing open; a new or clicked question opens.
   let active = $state<Field | null>(null);
   const full = $derived(fields.length >= MAX_FIELDS);
-  const unused = $derived(FIELD_PRESETS.filter((p) => !fields.some((f) => f.name === p.name)));
 
   async function add(field: Field, at = fields.length) {
     if (full) return;
@@ -78,16 +77,6 @@
       <button type="button" class="text-btn" aria-expanded={importing} onclick={() => (importing = !importing)}>Paste JSON schema</button>
     </div>
 
-    {#if unused.length && !full}
-      <div class="ideas" role="group" aria-label="Ready-made questions">
-        <span class="label">Ready-made</span>
-        {#each unused.slice(0, fields.length ? 6 : 10) as p (p.name)}
-          <button type="button" class="idea" title={p.question} onclick={() => add(structuredClone(p))} animate:flip={{ duration: 200 }} out:fly={{ y: -6, duration: 140 }}>
-            <i aria-hidden="true">+</i>{p.name.replaceAll('_', ' ')}
-          </button>
-        {/each}
-      </div>
-    {/if}
 
     {#if full}<span class="help warn">That is the most questions a plugin can have.</span>{/if}
     {#if importing}
@@ -109,11 +98,12 @@
   .list:empty { display: none; }
   .add { display: grid; gap: 10px; }
   .label { margin: 0 4px 0 0; font-size: 13px; }
-  .kinds, .ideas { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .kinds { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .first .add-pill { padding: 9px 18px; }
   .text-btn { margin-left: auto; }
   .warn { color: var(--signal-text); margin: 0; }
   .import { display: grid; gap: 8px; }
+  .import textarea { min-height: 140px; }
   .import .actions { justify-content: space-between; }
   @media (max-width: 640px) { .text-btn { margin-left: 0; flex-basis: 100%; text-align: left; } }
 </style>

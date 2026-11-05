@@ -62,13 +62,10 @@
   }
 </script>
 
-{#snippet title(n: number, text: string, hint: string, ok: boolean, count?: string)}
+{#snippet title(n: number, text: string, ok: boolean, count?: string)}
   <header class="sec-head">
     {#if steps}<span class="n" class:ok aria-hidden="true">{#if ok}<svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" /></svg>{:else}{n}{/if}</span>{/if}
-    <div>
-      <h2>{text}{#if count}<span class="count">{count}</span>{/if}</h2>
-      <p>{hint}</p>
-    </div>
+    <h2>{text}{#if count}<span class="count">{count}</span>{/if}</h2>
   </header>
 {/snippet}
 
@@ -83,22 +80,21 @@
       {#if error}<div class="alert alert-danger" role="alert">{error}</div>{/if}
 
       <section class="card sec reveal d1" bind:this={sections[0]}>
-        {@render title(1, steps ? 'Name it' : 'Details', 'People see this when they choose plugins to switch on.', done.name)}
-        <div class="body details">
+        {@render title(1, steps ? 'Name it' : 'Details', done.name)}
+        <div class="body">
           <label>
             <span class="label">Name</span>
             <input class="mono" type="text" value={draft.name} oninput={slugify} placeholder="receipts" maxlength="255" autocomplete="off" spellcheck="false" />
-            <span class="help">Used in API calls.</span>
           </label>
           <label>
             <span class="label">Description</span>
-            <textarea rows="2" bind:value={draft.desc} placeholder="Finds receipts and sorts them by what was bought." maxlength="1024"></textarea>
+            <textarea rows="1" bind:value={draft.desc} placeholder="Finds receipts and sorts them by what was bought." maxlength="1024"></textarea>
           </label>
         </div>
       </section>
 
       <section class="card sec reveal d2" bind:this={sections[1]}>
-        {@render title(2, 'Questions', 'Laya answers each one for every new email.', done.questions, locked ? '' : `${draft.fields.length} / ${MAX_FIELDS}`)}
+        {@render title(2, 'Questions', done.questions, locked ? '' : `${draft.fields.length} / ${MAX_FIELDS}`)}
         <div class="body">
           {#if locked}
             <div class="alert alert-danger">{locked}</div>
@@ -110,7 +106,7 @@
 
       {#if !locked}
         <section class="card sec reveal d3" bind:this={sections[2]}>
-          {@render title(3, 'Exact text', 'Optional. Patterns copy things like amounts or order numbers word for word.', done.rules, draft.rules.length ? `${draft.rules.length} / ${MAX_RULES}` : '')}
+          {@render title(3, 'Rules', done.rules, draft.rules.length ? `${draft.rules.length} / ${MAX_RULES}` : '')}
           <div class="body">
             <RuleList bind:rules={draft.rules} />
           </div>
@@ -121,7 +117,7 @@
     {#if aside}<div class="side reveal d1">{@render aside()}</div>{/if}
 
     <section class="card output reveal d2" class:tall={!aside}>
-      <header class="out-head"><h2>Output</h2><span class="live">Updates as you type</span></header>
+      <header class="out-head"><h2>Output</h2></header>
       <SchemaPreview fields={draft.fields} rules={draft.rules} />
     </section>
   </div>
@@ -167,10 +163,8 @@
   .output.tall { grid-row: 1 / -1; }
 
   .sec { padding: 0; }
-  .sec-head { display: flex; align-items: flex-start; gap: 14px; padding: 18px 22px 0; }
+  .sec-head { display: flex; align-items: center; gap: 14px; padding: 18px 22px 0; }
   .sec-head h2 { display: flex; align-items: baseline; gap: 10px; font-size: 16px; font-weight: 640; font-stretch: 108%; color: var(--text); }
-  .sec-head p { margin-top: 2px; font-size: 13.5px; color: var(--muted); }
-  .sec-head > div { flex: 1; min-width: 0; }
   .count { font-size: 12.5px; font-weight: 500; font-stretch: 100%; letter-spacing: 0; color: var(--faint); font-variant-numeric: tabular-nums; }
   .n {
     display: grid;
@@ -190,15 +184,10 @@
   @keyframes tick { from { stroke-dashoffset: 16; } }
   .body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 16px 22px 22px 64px; }
   .plain .body { padding-left: 22px; }
-  .details { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); align-items: start; }
   .body label { display: block; }
-  .body .help { margin-top: 6px; }
-  textarea { resize: vertical; min-height: 44px; }
 
   .out-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 18px 0; }
   .out-head h2 { font-size: 15px; color: var(--text); }
-  .live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
-  .live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 
   .bar {
     position: sticky;
@@ -247,6 +236,5 @@
     .bar { margin-inline: -16px; padding-inline: 16px; }
     .sec-head { padding: 16px 16px 0; }
     .body, .plain .body { padding: 14px 16px 18px; }
-    .details { grid-template-columns: minmax(0, 1fr); }
   }
 </style>

@@ -32,19 +32,6 @@ export const SCALES: [string, number, number][] = [
   ['1 – 3 (small)', 1, 3],
 ];
 
-export const FIELD_PRESETS: Field[] = [
-  { kind: 'boolean', name: 'receipt', question: 'Is this email a receipt or invoice?' },
-  { kind: 'boolean', name: 'needs_reply', question: 'Does this email need a reply from me?' },
-  { kind: 'boolean', name: 'newsletter', question: 'Is this a newsletter or marketing email?' },
-  { kind: 'boolean', name: 'has_deadline', question: 'Does this email mention a deadline?' },
-  { kind: 'scale', name: 'urgency', question: 'How urgent is this email? 0 is not at all, 4 is drop everything.', min: 0, max: 4 },
-  { kind: 'scale', name: 'importance', question: 'How important is this email to me, from 1 to 5?', min: 1, max: 5 },
-  { kind: 'choice', name: 'sentiment', question: "What is the sender's tone?", options: OPTION_SETS['Sentiment'] },
-  { kind: 'choice', name: 'category', question: 'What is this email about?', options: OPTION_SETS['Category'] },
-  { kind: 'choice', name: 'priority', question: 'What priority should this email get?', options: OPTION_SETS['Priority'] },
-  { kind: 'choice', name: 'next_action', question: 'What should I do with this email?', options: OPTION_SETS['Next action'] },
-];
-
 export interface Template {
   title: string;
   blurb: string;
@@ -212,6 +199,3 @@ export function retype(f: Field, kind: Field['kind']) {
   for (const key of Object.keys(target)) delete target[key];
   Object.assign(target, next);
 }
-
-// Every rule the templates use, offered as a starting point in the editor.
-export const RULE_PRESETS: Rule[] = [...new Map(TEMPLATES.flatMap((t) => t.rules).map((r) => [r.name, r])).values()];

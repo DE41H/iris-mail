@@ -98,7 +98,6 @@
             </div>
             <ConfirmButton label={plugin!.prefix ? 'Rotate' : 'Create key'} confirm={plugin!.prefix ? 'Old key stops. Sure?' : 'Create?'} onconfirm={rotate} />
           </div>
-          <p class="help">The full key is shown once. Rotating makes a new one and the old key stops working at once.</p>
           <dl class="stats">
             <div>
               <dt>Version</dt>
@@ -107,7 +106,7 @@
             <div><dt>Users</dt><dd>{plugin!.subscriber_count ?? 0}</dd></div>
             <div><dt>Results</dt><dd>{plugin!.result_count ?? 0}</dd></div>
           </dl>
-          {#if bumps && !locked}<p class="help bump">Saving starts version {next}. Results keep the version they came from.</p>{/if}
+          {#if bumps && !locked}<p class="help bump">Saving starts version {next}.</p>{/if}
         </section>
       {/snippet}
       {#if dirty}<button type="button" class="btn btn-ghost" onclick={() => fill(plugin!)}>Discard</button>{/if}
