@@ -43,7 +43,8 @@ export const toSchema = (fields: Field[]) => ({
 
 export function fieldProblems(f: Field, fields: Field[]): string[] {
   const out: string[] = [];
-  if (!/^[a-z][a-z0-9_]*$/.test(f.name)) out.push('Key must start with a letter and use only a-z, 0-9 and _.');
+  if (!f.name) out.push(f.question.trim() ? 'Give it a saved-as key.' : 'Write the question.');
+  else if (!/^[a-z][a-z0-9_]*$/.test(f.name)) out.push('Key must start with a letter and use only a-z, 0-9 and _.');
   else if (f.name.length > MAX_NAME_LENGTH) out.push(`Key: at most ${MAX_NAME_LENGTH} characters.`);
   else if (f.name === 'rules') out.push('Key `rules` is reserved for rule matches.');
   else if (fields.some((g) => g !== f && g.name === f.name)) out.push('Key is already used by another question.');
@@ -65,9 +66,9 @@ export function problems(fields: Field[], rules: Rule[]): string[] {
   const out: string[] = [];
   if (!fields.length && !rules.length) out.push('Add at least one question or rule.');
   if (fields.length > MAX_FIELDS) out.push(`Use at most ${MAX_FIELDS} questions.`);
-  fields.forEach((f, i) => fieldProblems(f, fields).forEach((p) => out.push(`${f.name || `#${i + 1}`}: ${p}`)));
+  fields.forEach((f, i) => fieldProblems(f, fields).forEach((p) => out.push(`Question ${i + 1}: ${p}`)));
   if (rules.length > MAX_RULES) out.push(`Use at most ${MAX_RULES} rules.`);
-  rules.forEach((r, i) => ruleProblems(r, rules).forEach((p) => out.push(`rule ${r.name || `#${i + 1}`}: ${p}`)));
+  rules.forEach((r, i) => ruleProblems(r, rules).forEach((p) => out.push(`Rule ${i + 1}: ${p}`)));
   return out;
 }
 

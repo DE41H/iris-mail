@@ -5,8 +5,8 @@
 
   let { fields, rules }: { fields: Field[]; rules: Rule[] } = $props();
 
-  const TABS = ['schema', 'laya', 'result'] as const;
-  let tab = $state<(typeof TABS)[number]>('schema');
+  const TABS = ['result', 'schema', 'laya'] as const;
+  let tab = $state<(typeof TABS)[number]>('result');
 
   const example = (f: Field) => (f.kind === 'boolean' ? true : f.kind === 'scale' ? f.min : (f.options[0] ?? null));
   const value = $derived(
@@ -14,10 +14,10 @@
   );
 </script>
 
-<section class="card preview">
+<section class="preview">
   <div class="tabs" role="tablist">
     {#each TABS as t}
-      <button type="button" role="tab" aria-selected={tab === t} onclick={() => (tab = t)}>{t === 'laya' ? 'Laya' : t[0].toUpperCase() + t.slice(1)}</button>
+      <button type="button" role="tab" aria-selected={tab === t} onclick={() => (tab = t)}>{t === 'laya' ? 'Laya questions' : t === 'result' ? 'Example result' : 'JSON schema'}</button>
     {/each}
     <span class="live" title="Updates as you type">Live</span>
   </div>
@@ -26,8 +26,8 @@
 </section>
 
 <style>
-  .preview { overflow: hidden; flex: 1; display: flex; flex-direction: column; min-height: 0; }
-  .tabs { display: flex; align-items: center; border-bottom: 1px solid var(--border); padding: 0 8px; }
+  .preview { overflow: hidden; display: flex; flex-direction: column; min-height: 0; border-top: 1px solid var(--border); }
+  .tabs { display: flex; align-items: center; border-bottom: 1px solid var(--border); padding: 0 12px 0 54px; overflow-x: auto; }
   .tabs button {
     position: relative;
     padding: 10px;
@@ -55,6 +55,6 @@
   @keyframes grow { from { transform: scaleX(0); } }
   .live { margin-left: auto; font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
   .live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-  .preview :global(pre) { flex: 1; min-height: 0; background: transparent; }
+  .preview :global(pre) { flex: 1; min-height: 0; max-height: 340px; background: transparent; }
   .foot { display: flex; justify-content: flex-end; padding: 0 12px 12px; }
 </style>

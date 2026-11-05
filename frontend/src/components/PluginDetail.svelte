@@ -76,9 +76,11 @@
         <div class="eyebrow"><a href="/plugins">Plugins</a> <span aria-hidden="true">/</span> version {plugin!.version}{#if plugin!.prefix} <span aria-hidden="true">/</span> key <code>{plugin!.prefix}…</code>{/if}</div>
         <h1>{plugin!.name}</h1>
       {/snippet}
+      {#snippet tools()}
+        <ConfirmButton label="New key" confirm="Replace the key?" onconfirm={rotate} />
+        <ConfirmButton label="Delete" confirm="Delete for good?" danger onconfirm={remove} />
+      {/snippet}
       {#if dirty}<button type="button" class="btn btn-ghost" onclick={() => fill(plugin!)}>Discard</button>{/if}
-      <ConfirmButton label="New key" confirm="Replace the key?" onconfirm={rotate} />
-      <ConfirmButton label="Delete" confirm="Delete for good?" danger onconfirm={remove} />
     </PluginEditor>
   {/if}
 </div>

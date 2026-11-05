@@ -212,3 +212,6 @@ export function retype(f: Field, kind: Field['kind']) {
   for (const key of Object.keys(target)) delete target[key];
   Object.assign(target, next);
 }
+
+// Every rule the templates use, offered as a starting point in the editor.
+export const RULE_PRESETS: Rule[] = [...new Map(TEMPLATES.flatMap((t) => t.rules).map((r) => [r.name, r])).values()];

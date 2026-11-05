@@ -52,33 +52,6 @@
 </script>
 
 <div class="builder">
-  <div class="toolbar">
-    {#each KINDS as k}
-      <button type="button" class="btn btn-sm" disabled={full} title={k.note} onclick={() => add(blank(k.kind))}>+ {k.label}</button>
-    {/each}
-    <select disabled={full || !unused.length} onchange={preset} aria-label="Insert a ready-made question">
-      <option value="">Add a ready-made question…</option>
-      {#each KINDS as k}
-        <optgroup label={k.label}>
-          {#each unused.filter((p) => p.kind === k.kind) as p}<option value={p.name}>{p.question}</option>{/each}
-        </optgroup>
-      {/each}
-    </select>
-    <button type="button" class="btn btn-sm btn-ghost" aria-expanded={importing} onclick={() => (importing = !importing)}>Paste a schema</button>
-    <span class="count" class:full>{fields.length}/{MAX_FIELDS}</span>
-  </div>
-
-  {#if importing}
-    <div class="import" transition:slide={{ duration: 200 }}>
-      <textarea class="mono" rows="6" bind:value={pasted} placeholder={'{ "type": "object", "properties": { … } }'} aria-label="JSON schema to import"></textarea>
-      {#if importError}<div class="error">{importError}</div>{/if}
-      <div class="actions">
-        <span class="help">This replaces every question above.</span>
-        <button type="button" class="btn btn-sm btn-primary" disabled={!pasted.trim()} onclick={load}>Import</button>
-      </div>
-    </div>
-  {/if}
-
   <div class="list" bind:this={list}>
     {#each fields as field, i (field)}
       <div animate:flip={{ duration: 260 }} in:fly={{ y: 16, duration: 280 }} out:fly={{ x: -24, duration: 180 }}>
@@ -91,20 +64,80 @@
           onremove={() => fields.splice(i, 1)}
         />
       </div>
-    {:else}
-      <div class="empty">No questions yet. Pick an answer type above to add the first one.</div>
     {/each}
+  </div>
+
+  <div class="add" class:first={!fields.length}>
+    <span class="label">{fields.length ? 'Add another question' : 'Add your first question'}</span>
+    <div class="kinds">
+      {#each KINDS as k}
+        <button type="button" class="kind" disabled={full} onclick={() => add(blank(k.kind))}>
+          <i aria-hidden="true">{k.icon}</i>
+          <b>{k.label}</b>
+          <span>{k.note}</span>
+        </button>
+      {/each}
+    </div>
+    <div class="more">
+      <select disabled={full || !unused.length} onchange={preset} aria-label="Add a ready-made question">
+        <option value="">Or pick a ready-made question…</option>
+        {#each KINDS as k}
+          <optgroup label={k.label}>
+            {#each unused.filter((p) => p.kind === k.kind) as p}<option value={p.name}>{p.question}</option>{/each}
+          </optgroup>
+        {/each}
+      </select>
+      <button type="button" class="link" aria-expanded={importing} onclick={() => (importing = !importing)}>Paste a JSON schema</button>
+    </div>
+    {#if full}<span class="help warn">That is the most questions a plugin can have.</span>{/if}
+    {#if importing}
+      <div class="import" transition:slide={{ duration: 200 }}>
+        <textarea class="mono" rows="6" bind:value={pasted} placeholder={'{ "type": "object", "properties": { … } }'} aria-label="JSON schema to import"></textarea>
+        {#if importError}<div class="error">{importError}</div>{/if}
+        <div class="actions">
+          <span class="help">This replaces every question above.</span>
+          <button type="button" class="btn btn-sm btn-primary" disabled={!pasted.trim()} onclick={load}>Import</button>
+        </div>
+      </div>
+    {/if}
   </div>
 </div>
 
 <style>
-  .builder { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
-  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .toolbar select { width: auto; max-width: min(280px, 100%); padding-top: 5px; padding-bottom: 5px; font-size: 13px; border-radius: 999px; }
-  .count { margin-left: auto; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .count.full { color: var(--signal-text); }
+  .builder, .add { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .list:empty { display: none; }
+  .add { gap: 10px; }
+  .add .label { margin: 0; }
+  .kinds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .kind {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: baseline;
+    column-gap: 8px;
+    padding: 12px 14px;
+    text-align: left;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, translate 0.3s var(--spring);
+  }
+  .kind i { font-style: normal; color: var(--accent); }
+  .kind b { font-size: 14px; font-weight: 600; }
+  .kind span { grid-column: 2; font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+  .kind:hover:not(:disabled) { border-style: solid; border-color: var(--accent); background: var(--accent-soft); translate: 0 -2px; }
+  .kind:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .kind:disabled { opacity: 0.5; cursor: not-allowed; }
+  .first .kind { padding-block: 16px; }
+  .more { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .more select { flex: 1 1 220px; min-width: 0; width: auto; font-size: 13.5px; }
+  .link { border: 0; background: none; padding: 0; font: 540 13px var(--font); color: var(--accent); cursor: pointer; }
+  .link:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .warn { color: var(--signal-text); margin: 0; }
   .import { display: grid; gap: 8px; }
   .import .actions { justify-content: space-between; }
-  .list { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 10px; flex: 1; min-height: 0; overflow: auto; padding-right: 2px; }
-  .empty { border: 1px dashed var(--border-strong); border-radius: var(--radius); }
+  @media (max-width: 640px) { .kinds { grid-template-columns: minmax(0, 1fr); } }
 </style>
