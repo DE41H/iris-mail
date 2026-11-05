@@ -72,7 +72,6 @@
   <div class="card empty reveal">
     <Iris breathe />
     <h2>No plugins yet</h2>
-    <p>Start from a template and you'll have an API key in a minute.</p>
     <p><a class="btn btn-primary" href="/plugins/new">Create a plugin</a></p>
   </div>
 {:else}

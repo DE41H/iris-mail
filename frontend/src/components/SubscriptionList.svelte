@@ -24,7 +24,7 @@
         {#each subs as sub, i (sub.id)}<SubscriptionRow bind:sub={subs[i]} onremove={() => (subs = subs!.filter((s) => s.id !== sub.id))} />{/each}
       </ul>
     {:else}
-      <div class="empty">No plugins yet. When an app built on Iris asks to read your mail, it shows up here, off until you switch it on.</div>
+      <div class="empty">When an app built on Iris asks to read your mail, it shows up here, off until you switch it on.</div>
     {/if}
   </section>
 {:else}
