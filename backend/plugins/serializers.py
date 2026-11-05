@@ -72,13 +72,13 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         email = attrs.pop("email", None)
         if ("user" in attrs) == (email is not None):
-            raise serializers.ValidationError("Give either user or email.")
+            raise serializers.ValidationError("Send either user or email, not both.")
         if email is not None:
             attrs["user"] = CustomUser.objects.filter(email__iexact=email).first()
             return attrs
         plugin = self.context["request"].auth
         if self.context["view"].action == "create" and Subscription.objects.filter(user=attrs["user"], plugin=plugin).exists():
-            raise serializers.ValidationError("This user already has a subscription to this plugin.")
+            raise serializers.ValidationError("This user is already added.")
         return attrs
 
 

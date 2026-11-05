@@ -230,5 +230,10 @@ LOGGING = {
     }},
     'handlers': {'json': {'class': 'logging.StreamHandler', 'formatter': 'json'}},
     'root': {'handlers': ['json'], 'level': 'INFO'},
-    'loggers': {name: {'handlers': [], 'propagate': True} for name in ('django', 'django.server')},
+    'loggers': {
+        **{name: {'handlers': [], 'propagate': True} for name in ('django', 'django.server')},
+        # procrastinate logs every job start and success; keep only failures
+        'procrastinate': {'level': 'WARNING'},
+        'googleapiclient.discovery_cache': {'level': 'ERROR'},
+    },
 }

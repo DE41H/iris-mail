@@ -33,11 +33,11 @@ async def cleanup(timestamp):
     condition = (cond_1) | (cond_2 & cond_3)
     clean_results = Result.objects.filter(condition).adelete()
     (count, _), _ = await gather(clean_results, delete_jobs)
-    logger.info("Cleaned up old jobs and results", extra={"results_deleted": count})
+    logger.info("Old jobs and results deleted", extra={"results": count})
 
 @app.periodic(cron="*/5 * * * *")
 @app.task(name="plugins.tasks.revive", queueing_lock="revive")
 async def revive(timestamp):
     jobs = await app.job_manager.get_stalled_jobs()
     await gather(*( retry(job) for job in jobs ))
-    if jobs: logger.warning("Retried stalled jobs", extra={"job_ids": [job.id for job in jobs]})
+    if jobs: logger.warning("Stalled jobs retried", extra={"job_ids": [job.id for job in jobs]})

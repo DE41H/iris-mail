@@ -39,10 +39,6 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 - [ ] **Bad keys from one IP lock out valid keys from that IP.** `PluginKeyAuthentication` checks the
   per-IP fail counter before the key, so 10 bad keys from a shared IP (cloud NAT, serverless) block every
   developer behind it for an hour. Fix: check the key first; only on failure count and raise `Throttled`.
-- [ ] **`process` logs nothing about its work.** A run that answers mail and one that skips it look the same
-  in the worker log (only procrastinate's "job succeeded"). In the live test one mail went to Spam and was
-  skipped, and only a manual Gmail history call showed why. Fix: one `logger.info` at the end of `process`
-  with `user_id`, messages seen, messages fetched and results saved (counts only).
 
 
 ## P3: nice to have
@@ -59,11 +55,6 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
   `RefreshError`, so such a user is reset every 3 minutes and never disconnected. Mostly gone once the
   P1 "mail skipped" fix lands.
 - [ ] `POST /api/subscriptions/remove/` returns 400 for an unknown user id, though the docs say always 204.
-- [ ] **Some 400s do not name the field.** `?version=abc`, `?user=x` and `set_active {"active": "yes"}` return
-  a bare list (`["A valid integer is required."]`), while `?fetched=maybe` returns `{"fetched": ...}`.
-  Raise `ValidationError({"version": ...})` etc. so clients and the dashboard know which input failed.
-- [ ] **Adding a user by id is not logged.** `SubscriptionViewSet.create` logs "Subscription added" only on
-  the email path; the `user` path (`perform_create`) logs nothing. Add the same log line there.
 - [ ] **`ack` counts already-acknowledged results.** Acking the same id twice returns `acknowledged: 1` both
   times. Filter `fetched=False` in the update if the count should mean "newly acknowledged", or reword the
   help text.

@@ -59,8 +59,8 @@ class SchemaValidator:
 @deconstructible
 class RuleValidator:
     def __call__(self, value):
-        if not isinstance(value, dict): raise ValidationError("must be an object of name: pattern", code="invalid_rules")
-        if len(value) > MAX_RULES: raise ValidationError(f"at most {MAX_RULES} rules", code="invalid_rules")
+        if not isinstance(value, dict): raise ValidationError("Rules must be an object of name: pattern.", code="invalid_rules")
+        if len(value) > MAX_RULES: raise ValidationError(f"Use at most {MAX_RULES} rules.", code="invalid_rules")
         for name, pattern in value.items():
             if not KEY.fullmatch(name):
                 raise ValidationError(f"{name}: name must match ^[a-z][a-z0-9_]*$", code="invalid_rules")

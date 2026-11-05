@@ -24,7 +24,7 @@ def _match(plugin, content):
         try:
             found = re2.compile(pattern, RE2).findall(content)
         except re2.error:
-            logger.warning("Plugin rule does not compile", extra={"plugin_id": plugin.id, "rule": name})
+            logger.warning("Rule does not compile, skipped", extra={"plugin_id": plugin.id, "rule": name})
             found = []
         out[name] = [next((g for g in m if g), m[0]) if isinstance(m, tuple) else m for m in found[:MAX_MATCHES]]
     return out
@@ -40,7 +40,7 @@ def _guess(user, plugin, msgs, states):
     try:
         return list(zip(msgs, _decide(plugin, [states[m.id] for m in msgs]), strict=True))
     except SchemaError:
-        logger.exception("Plugin schema cannot be answered by Laya", extra=extra)
+        logger.exception("Laya cannot answer plugin schema, skipped", extra=extra)
         return []
 
 
@@ -58,13 +58,14 @@ def _extract(user, subs, msgs, added):
                 results.append(Result(user=user, plugin=plugin, version=plugin.version, output=output, message=bytes.fromhex(m.id)))
     finally:
         Result.objects.bulk_create(results, ignore_conflicts=True)
+    return len(results)
 
 
 @app.task(name="plugins.tasks.process")
 def process(user_id):
     user = CustomUser.objects.filter(pk=user_id).first()
     if user is None: return
-    if user.hist_id is None: return reset_hist(user)
+    if user.hist_id is None: return reset_hist(user, "no history id")
     gmail = client(user)
     try:
         added, latest = get_hist(gmail, user.hist_id)
@@ -73,15 +74,19 @@ def process(user_id):
         return disconnect(user)
     except HttpError as error:
         if error.resp.status != 404: raise
-        return reset_hist(user)
+        return reset_hist(user, "history expired")
     Subscription.objects.filter(user=user, active=True, hist_from=None).invalidated_update(hist_from=latest)  # pyright: ignore[reportAttributeAccessIssue]
     subs = Subscription.objects.filter(user=user, active=True).prefetch_related("plugin")
     low = min((s.hist_from for s in subs), default=latest)
     ids = sorted((i for i, h in added.items() if h > low), key=added.__getitem__)
+    fetched = saved = 0
     for n in range(0, len(ids), CHUNK_SIZE):
         msgs = fetch(gmail, ids[n:n + CHUNK_SIZE])
         save_token(user, gmail)
-        _extract(user, subs, msgs, added)
+        fetched += len(msgs)
+        saved += _extract(user, subs, msgs, added)
         if n + CHUNK_SIZE < len(ids):
             CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=added[ids[n + CHUNK_SIZE]] - 1)  # pyright: ignore[reportAttributeAccessIssue]
     CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=latest)  # pyright: ignore[reportAttributeAccessIssue]
+    if added:
+        logger.info("Mail processed", extra={"user_id": user.pk, "seen": len(added), "fetched": fetched, "results": saved})

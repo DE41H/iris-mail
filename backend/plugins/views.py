@@ -33,6 +33,14 @@ from plugins.serializers import (
 logger = logging.getLogger(__name__)
 
 
+def _param(name, field, value):
+    # name the input in the error, like serializer errors do
+    try:
+        return field.run_validation(value)
+    except ValidationError as err:
+        raise ValidationError({name: err.detail}) from err
+
+
 @extend_schema(exclude=True)
 class PluginViewSet(
     mixins.ListModelMixin,
@@ -58,7 +66,18 @@ class PluginViewSet(
         serializer.is_valid(raise_exception=True)
         plugin = serializer.save(developer=request.user)
         key = plugin.rot_key()
+        logger.info("Plugin created", extra={"plugin_id": plugin.pk, "user_id": request.user.pk})
         return Response({**serializer.data, "key": key}, status=201)
+
+    def perform_update(self, serializer):
+        version = serializer.instance.version
+        plugin = serializer.save()
+        if plugin.version != version:
+            logger.info("Plugin version changed", extra={"plugin_id": plugin.pk, "version": plugin.version})
+
+    def perform_destroy(self, instance):
+        logger.info("Plugin deleted", extra={"plugin_id": instance.pk, "user_id": instance.developer_id})
+        instance.delete()
 
     @action(detail=True, methods=["post"])
     def rotate_key(self, request, pk=None):
@@ -121,7 +140,8 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
         return Response(status=202)
 
     def perform_create(self, serializer):
-        serializer.save(plugin=self.request.auth)  # pyright: ignore[reportAttributeAccessIssue]
+        sub = serializer.save(plugin=self.request.auth)  # pyright: ignore[reportAttributeAccessIssue]
+        logger.info("Subscription added", extra={"plugin_id": sub.plugin_id, "user_id": sub.user_id})
 
     def perform_destroy(self, instance):
         by = "developer" if isinstance(self.request.auth, Plugin) else "user"  # pyright: ignore[reportAttributeAccessIssue]
@@ -139,14 +159,14 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
     @action(detail=True, methods=["post"])
     def set_active(self, request, pk=None):
         subscription = self.get_object()
-        active = serializers.BooleanField().run_validation(request.data.get("active"))
+        active = _param("active", serializers.BooleanField(), request.data.get("active"))
         if active and not SocialToken.objects.filter(account__user=request.user, account__provider="google").exists():
             raise ValidationError({"google": "Reconnect Google first."})
         if active and not subscription.active:
             subscription.set_active(True, hist_from=get_hist_id(request.user))
         else:
             subscription.set_active(active)
-        logger.info("Sharing changed", extra={"subscription_id": subscription.pk, "plugin_id": subscription.plugin_id, "user_id": subscription.user_id, "active": subscription.active})
+        logger.info("Plugin turned on" if subscription.active else "Plugin turned off", extra={"subscription_id": subscription.pk, "plugin_id": subscription.plugin_id, "user_id": subscription.user_id, "active": subscription.active})
         return Response(self.get_serializer(subscription).data)
 
 
@@ -167,9 +187,9 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         queryset = Result.objects.filter(plugin=self.request.auth)  # pyright: ignore[reportAttributeAccessIssue]
         if user := self.request.GET.get("user"):
-            queryset = queryset.filter(user=serializers.UUIDField().run_validation(user))  # pyright: ignore[reportArgumentType]
+            queryset = queryset.filter(user=_param("user", serializers.UUIDField(), user))
         if version := self.request.GET.get("version"):
-            queryset = queryset.filter(version=serializers.IntegerField(min_value=1, max_value=32767).run_validation(version))  # pyright: ignore[reportArgumentType]
+            queryset = queryset.filter(version=_param("version", serializers.IntegerField(min_value=1, max_value=32767), version))
         fetched = self.request.GET.get("fetched")
         if fetched is None:
             return queryset
@@ -186,7 +206,10 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     )
     @action(detail=False, methods=["post"])
     def ack(self, request):
-        ids = serializers.ListField(child=serializers.UUIDField(), allow_empty=False, max_length=500).run_validation(request.data.get("ids"))
+        try:
+            ids = serializers.ListField(child=serializers.UUIDField(), allow_empty=False, max_length=500).run_validation(request.data.get("ids"))
+        except ValidationError as err:
+            raise ValidationError({"ids": err.detail}) from err
         acked = Result.objects.filter(plugin=request.auth, pk__in=ids).update(fetched=True)
         return Response({"acknowledged": acked})
 
@@ -199,7 +222,7 @@ class MeViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin, viewsets.Ge
         return self.request.user
 
     def perform_destroy(self, instance):
-        logger.info("Deleting account", extra={"user_id": instance.pk})
+        logger.info("Account deleted", extra={"user_id": instance.pk})
         revoke(instance)
         logout(self.request)
         instance.delete()
