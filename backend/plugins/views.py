@@ -155,7 +155,11 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
     @action(detail=False, methods=["post"])
     def remove(self, request):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            errors = serializer.errors
+            if errors.keys() == {"user"} and "email" not in request.data and {e.code for e in errors["user"]} == {"does_not_exist"}:
+                return Response(status=204)
+            raise ValidationError(errors)
         if sub := self.get_queryset().filter(user=serializer.validated_data["user"]).first():
             self.perform_destroy(sub)
         return Response(status=204)
