@@ -43,9 +43,6 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P3: nice to have
 
-- [ ] **Two identical "add user" requests at once return 500.** The duplicate check in
-  `SubscriptionSerializer.validate` runs before the insert, so the second hits the unique constraint as an
-  `IntegrityError`. Catch it in `perform_create` and return 400.
 - [ ] **Rules are compiled for every message.** `_match` calls `re2.compile` per rule per message and builds
   the full `findall` list before keeping 20 (the rule `.` on a big newsletter makes ~1M strings). Compile once
   per plugin per chunk.

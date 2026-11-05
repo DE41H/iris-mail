@@ -2,6 +2,7 @@ import logging
 
 from allauth.socialaccount.models import SocialToken
 from django.contrib.auth import logout
+from django.db import IntegrityError
 from django.db.models import Count, OuterRef, Subquery
 from django.db.models.functions import Coalesce
 from drf_spectacular.types import OpenApiTypes
@@ -140,7 +141,10 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
         return Response(status=202)
 
     def perform_create(self, serializer):
-        sub = serializer.save(plugin=self.request.auth)  # pyright: ignore[reportAttributeAccessIssue]
+        try:
+            sub = serializer.save(plugin=self.request.auth)  # pyright: ignore[reportAttributeAccessIssue]
+        except IntegrityError as err:
+            raise ValidationError("This user is already added.") from err
         logger.info("Subscription added", extra={"plugin_id": sub.plugin_id, "user_id": sub.user_id})
 
     def perform_destroy(self, instance):
