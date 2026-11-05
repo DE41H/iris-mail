@@ -3,7 +3,7 @@
   import { flip } from 'svelte/animate';
   import { fly, slide } from 'svelte/transition';
   import { fromSchema, MAX_FIELDS, type Field } from '../lib/schema';
-  import { blank, clone, FIELD_PRESETS, KINDS } from '../lib/presets';
+  import { blank, FIELD_PRESETS, KINDS } from '../lib/presets';
   import FieldCard from './FieldCard.svelte';
 
   let { fields = $bindable() }: { fields: Field[] } = $props();
@@ -34,7 +34,7 @@
   function preset(e: Event) {
     const select = e.currentTarget as HTMLSelectElement;
     const found = FIELD_PRESETS.find((p) => p.name === select.value);
-    if (found) add(clone(found));
+    if (found) add(structuredClone(found));
     select.value = '';
   }
 

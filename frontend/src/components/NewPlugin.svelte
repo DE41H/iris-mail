@@ -2,7 +2,7 @@
   import { fade, fly } from 'svelte/transition';
   import { api, type Plugin } from '../lib/api';
   import { toRules, toSchema, type Draft } from '../lib/schema';
-  import { clone, TEMPLATES, type Template } from '../lib/presets';
+  import { TEMPLATES, type Template } from '../lib/presets';
   import KeyCard from './KeyCard.svelte';
   import PluginEditor from './PluginEditor.svelte';
 
@@ -10,7 +10,7 @@
   let created = $state<(Plugin & { key: string }) | null>(null);
 
   function start(t: Template) {
-    draft = clone({ name: t.name, desc: t.desc, fields: t.fields, rules: [] });
+    draft = structuredClone({ name: t.name, desc: t.desc, fields: t.fields, rules: [] });
     scrollTo({ top: 0, behavior: 'smooth' });
   }
 

@@ -108,9 +108,6 @@ export const TEMPLATES: Template[] = [
   },
 ];
 
-// Fields are edited in place, so every insert gets its own copy.
-export const clone = <T>(value: T): T => structuredClone(value);
-
 // Changes a field's kind in place so the card keeps its identity (and focus) across the switch.
 export function retype(f: Field, kind: Field['kind']) {
   const next = blank(kind, f.name, f.question);

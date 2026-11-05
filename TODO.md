@@ -64,5 +64,3 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 - [ ] **The Laya model downloads on the first mail.** The first `process` took 26 s and warned about
   unauthenticated Hugging Face requests. Download the model at worker start (or at image build into the
   `models` volume) and set `HF_TOKEN` in `.env` if downloads get rate-limited.
-- [ ] Lean: move `retry` from `plugins/tasks/base.py` into `cleanup.py`; call `structuredClone` directly
-  instead of `presets.clone`; delete the empty `frontend/src/routes/` and `frontend/src/lib/components/`.

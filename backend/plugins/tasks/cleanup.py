@@ -6,19 +6,24 @@ from uuid import UUID
 from django.db.models import Exists, OuterRef, Q
 from django.utils.timezone import now
 from procrastinate.contrib.django import app
+from procrastinate.exceptions import UniqueViolation
+from procrastinate.jobs import Status
 
 from plugins.models import Result, Subscription
-from plugins.tasks.base import retry
 
 logger = logging.getLogger(__name__)
+
 
 JOB_KEEP_FOR_HRS = 7 * 24
 RESULT_KEEP_FOR = 30
 RESULT_MAX_AGE = 100
 
 def _before(days):
-    # smallest uuid7 made `days` ago: its top 48 bits are the unix time in ms
     return UUID(int=int((now() - timedelta(days=days)).timestamp() * 1000) << 80)
+
+async def _retry(job):
+    try: await app.job_manager.retry_job(job)
+    except UniqueViolation: await app.job_manager.finish_job(job, Status.FAILED, delete_job=False)
 
 @app.periodic(cron="0 3 * * *")
 @app.task(name="plugins.tasks.cleanup")
@@ -39,5 +44,5 @@ async def cleanup(timestamp):
 @app.task(name="plugins.tasks.revive", queueing_lock="revive")
 async def revive(timestamp):
     jobs = await app.job_manager.get_stalled_jobs()
-    await gather(*( retry(job) for job in jobs ))
+    await gather(*( _retry(job) for job in jobs ))
     if jobs: logger.warning("Stalled jobs retried", extra={"job_ids": [job.id for job in jobs]})
