@@ -21,10 +21,5 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
   Fix: save each plugin's results right after its `_guess`, inside `suppress(IntegrityError)`, and drop the
   `try/finally`.
 
-
-
 ## P3: nice to have
 
-- [ ] **Revoked token with expired history loops.** `reset_hist` uses `get_hist_id`, which swallows
-  `RefreshError`, so such a user is reset every 3 minutes and never disconnected. Mostly gone once the
-  P1 "mail skipped" fix lands.

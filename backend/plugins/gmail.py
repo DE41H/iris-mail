@@ -8,6 +8,7 @@ from allauth.socialaccount.models import SocialToken
 from django.conf import settings
 from django.db.transaction import atomic
 from django.utils import timezone
+from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
 from googleapiclient.errors import HttpError
 from simplegmail import Gmail
@@ -43,19 +44,27 @@ def save_token(user: CustomUser, gmail: Gmail):
         token=creds.token, expires_at=creds.expiry.replace(tzinfo=UTC)
     )
 
+def _read_hist_id(user: CustomUser) -> int:
+    gmail = client(user)
+    response = gmail.service.users().getProfile(userId="me").execute()  # type: ignore[attr-defined]
+    save_token(user, gmail)
+    return int(response["historyId"])
+
 def get_hist_id(user: CustomUser) -> int | None:
     try:
-        gmail = client(user)
-        response = gmail.service.users().getProfile(userId="me").execute()  # type: ignore[attr-defined]
-        save_token(user, gmail)
-        return int(response["historyId"])
+        return _read_hist_id(user)
     except Exception:
         logger.warning("Could not read Gmail history id", extra={"user_id": user.pk}, exc_info=True)
         return None
 
 def reset_hist(user, reason):
     logger.warning("Gmail history reset, older mail skipped", extra={"user_id": user.pk, "reason": reason})
-    CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=get_hist_id(user))  # pyright: ignore[reportAttributeAccessIssue]
+    try:
+        hist_id = _read_hist_id(user)
+    except RefreshError as error:
+        if error.retryable: raise
+        return disconnect(user)
+    CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=hist_id)  # pyright: ignore[reportAttributeAccessIssue]
 
 def get_hist(gmail: Gmail, start):
     ids, page = {}, None
