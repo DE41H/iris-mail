@@ -21,7 +21,7 @@
     <div class="card-head"><span>{subs.length} {subs.length === 1 ? 'plugin' : 'plugins'}</span><span class="count" class:live={active}>{active} on</span></div>
     {#if subs.length}
       <ul class="grow scroll">
-        {#each subs as _, i (subs[i].id)}<SubscriptionRow bind:sub={subs[i]} onremove={() => (subs = subs!.filter((s) => s.id !== subs![i].id))} />{/each}
+        {#each subs as sub, i (sub.id)}<SubscriptionRow bind:sub={subs[i]} onremove={() => (subs = subs!.filter((s) => s.id !== sub.id))} />{/each}
       </ul>
     {:else}
       <div class="empty">No plugins yet. When an app built on Iris asks to read your mail, it shows up here, off until you switch it on.</div>

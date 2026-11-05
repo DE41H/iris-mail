@@ -37,9 +37,9 @@ const steps = [
   /* Grows past one screen on short windows instead of running into the footer. */
   .landing { justify-content: space-between; gap: 28px; height: auto; min-height: calc(100dvh - 60px - 48px - 36px); }
   .hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px 48px; align-items: end; }
-  .hero h1 { grid-column: 1 / -1; }
   /* The one load moment: the headline pulls into focus, narrow and light to wide and heavy. */
   .hero h1 {
+    grid-column: 1 / -1;
     font-size: clamp(38px, 6.4vw, 80px);
     line-height: 1;
     letter-spacing: -0.035em;

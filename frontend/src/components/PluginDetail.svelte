@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api, message, type Plugin } from '../lib/api';
-  import { fromRules, fromSchema, toRules, toSchema, type Draft } from '../lib/schema';
+  import { fromRules, fromSchema, toBody, type Draft } from '../lib/schema';
   import ConfirmButton from './ConfirmButton.svelte';
   import KeyCard from './KeyCard.svelte';
   import PluginEditor from './PluginEditor.svelte';
@@ -38,9 +38,7 @@
   });
 
   async function save() {
-    const { fields, rules, ...rest } = draft;
-    const body = { ...rest, schema: toSchema(fields), rules: toRules(rules) };
-    const p = await api<Plugin>(`/api/plugins/${id}/`, { method: 'PATCH', body: JSON.stringify(body) });
+    const p = await api<Plugin>(`/api/plugins/${id}/`, { method: 'PATCH', body: toBody(draft) });
     notice = p.version !== plugin?.version ? `Saved as version ${p.version}.` : 'Changes saved.';
     plugin = { ...plugin, ...p };
     saved = snapshot();

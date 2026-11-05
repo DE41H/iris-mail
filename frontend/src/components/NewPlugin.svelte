@@ -1,7 +1,7 @@
 <script lang="ts">
   import { fade, fly } from 'svelte/transition';
   import { api, type Plugin } from '../lib/api';
-  import { toRules, toSchema, type Draft } from '../lib/schema';
+  import { toBody, type Draft } from '../lib/schema';
   import { TEMPLATES, type Template } from '../lib/presets';
   import KeyCard from './KeyCard.svelte';
   import PluginEditor from './PluginEditor.svelte';
@@ -15,12 +15,7 @@
   }
 
   async function create() {
-    if (!draft) return;
-    const { fields, rules, ...rest } = draft;
-    created = await api<Plugin & { key: string }>('/api/plugins/', {
-      method: 'POST',
-      body: JSON.stringify({ ...rest, schema: toSchema(fields), rules: toRules(rules) }),
-    });
+    if (draft) created = await api<Plugin & { key: string }>('/api/plugins/', { method: 'POST', body: toBody(draft) });
   }
 </script>
 

@@ -9,14 +9,12 @@
   let busy = $state(false);
   let error = $state('');
 
-  // Sends the state the user chose, not a flip, so a stale tab cannot change sharing by mistake.
-  async function set(active: boolean) {
+  async function run(fn: () => Promise<unknown>) {
     if (busy) return;
-    asking = false;
     busy = true;
     error = '';
     try {
-      sub = await api<Subscription>(`/api/subscriptions/${sub.id}/set_active/`, { method: 'POST', body: JSON.stringify({ active }) });
+      await fn();
     } catch (err) {
       error = message(err);
     } finally {
@@ -24,18 +22,15 @@
     }
   }
 
-  async function remove() {
-    if (busy) return;
-    busy = true;
-    error = '';
-    try {
-      await api(`/api/subscriptions/${sub.id}/`, { method: 'DELETE' });
-      onremove();
-    } catch (err) {
-      error = message(err);
-      busy = false;
-    }
+  // Sends the state the user chose, not a flip, so a stale tab cannot change sharing by mistake.
+  function set(active: boolean) {
+    asking = false;
+    return run(async () => {
+      sub = await api<Subscription>(`/api/subscriptions/${sub.id}/set_active/`, { method: 'POST', body: JSON.stringify({ active }) });
+    });
   }
+
+  const remove = () => run(() => api(`/api/subscriptions/${sub.id}/`, { method: 'DELETE' }).then(onremove));
 
   // Turning a plugin on shares extracted data with its creator, so it asks first, inline.
   function toggle(e: Event) {

@@ -10,6 +10,7 @@ export default defineConfig({
   outDir: './build',
   integrations: [svelte()],
   devToolbar: { enabled: false },
+  markdown: { syntaxHighlight: false }, // no markdown pages; Shiki's inline styles would break CSP
   // Hashes Astro's inline scripts and styles into a CSP meta tag; Caddy adds frame-ancestors.
   security: {
     csp: {

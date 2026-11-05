@@ -1,6 +1,6 @@
 // Rule checks, apart from schema.ts so only the editor loads re2js (the plugin list only reads schemas).
 import { RE2JS } from 're2js';
-import { fieldProblems, MAX_FIELDS, MAX_NAME_LENGTH, MAX_PATTERN, MAX_RULES, type Field, type Rule } from './schema';
+import { fieldProblems, KEY, MAX_FIELDS, MAX_NAME_LENGTH, MAX_PATTERN, MAX_RULES, type Field, type Rule } from './schema';
 
 const MAX_MATCHES = 20; // matches kept per rule per email, as in validation.py
 const MAX_MATCH_LENGTH = 200; // characters kept per match, as in validation.py
@@ -17,17 +17,25 @@ export function problems(fields: Field[], rules: Rule[]): string[] {
 
 // The worker matches with RE2 (re2.compile in validation.py and extract.py); re2js is the same engine,
 // so a pattern that compiles here compiles there.
+// Every keystroke checks each rule several times, so compiled patterns are cached.
+const compiled = new Map<string, RE2JS | string>();
 function compile(pattern: string): RE2JS | string {
-  try {
-    return RE2JS.compile(pattern);
-  } catch (err) {
-    return (err as Error).message.replace(/^error parsing regexp: /, '');
+  let re = compiled.get(pattern);
+  if (re === undefined) {
+    try {
+      re = RE2JS.compile(pattern);
+    } catch (err) {
+      re = (err as Error).message.replace(/^error parsing regexp: /, '');
+    }
+    if (compiled.size > 200) compiled.clear(); // typing makes a new pattern per key
+    compiled.set(pattern, re);
   }
+  return re;
 }
 
 export function ruleProblems(r: Rule, rules: Rule[]): string[] {
   const out: string[] = [];
-  if (!/^[a-z][a-z0-9_]*$/.test(r.name)) out.push('Name must start with a letter and use only a-z, 0-9 and _.');
+  if (!KEY.test(r.name)) out.push('Name must start with a letter and use only a-z, 0-9 and _.');
   else if (r.name.length > MAX_NAME_LENGTH) out.push(`Name: at most ${MAX_NAME_LENGTH} characters.`);
   else if (rules.some((g) => g !== r && g.name === r.name)) out.push('Name is already used by another rule.');
   if (!r.pattern) out.push('Pattern is required.');

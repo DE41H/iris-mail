@@ -28,6 +28,7 @@ export interface Rule {
   pattern: string;
 }
 
+export const KEY = /^[a-z][a-z0-9_]*$/; // question keys and rule names
 
 const prop = (f: Field) => {
   const description = f.question.trim() || undefined;
@@ -44,7 +45,7 @@ export const toSchema = (fields: Field[]) => ({
 export function fieldProblems(f: Field, fields: Field[]): string[] {
   const out: string[] = [];
   if (!f.name) out.push(f.question.trim() ? 'Give it a saved-as key.' : 'Write the question.');
-  else if (!/^[a-z][a-z0-9_]*$/.test(f.name)) out.push('Key must start with a letter and use only a-z, 0-9 and _.');
+  else if (!KEY.test(f.name)) out.push('Key must start with a letter and use only a-z, 0-9 and _.');
   else if (f.name.length > MAX_NAME_LENGTH) out.push(`Key: at most ${MAX_NAME_LENGTH} characters.`);
   else if (f.name === 'rules') out.push('Key `rules` is reserved for rule matches.');
   else if (fields.some((g) => g !== f && g.name === f.name)) out.push('Key is already used by another question.');
@@ -63,6 +64,8 @@ export function fieldProblems(f: Field, fields: Field[]): string[] {
 }
 
 export const toRules = (rules: Rule[]) => Object.fromEntries(rules.map((r) => [r.name, r.pattern]));
+// The body the plugin endpoints take.
+export const toBody = ({ fields, rules, ...rest }: Draft) => JSON.stringify({ ...rest, schema: toSchema(fields), rules: toRules(rules) });
 export const fromRules = (rules: unknown): Rule[] =>
   Object.entries((rules as Record<string, string> | null) ?? {}).map(([name, pattern]) => ({ name, pattern }));
 

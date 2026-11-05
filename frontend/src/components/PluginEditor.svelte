@@ -28,11 +28,13 @@
   let open = $state(false);
   let tried = $state(false); // problems are only called out once saving was attempted
   const sections: HTMLElement[] = $state([]);
-  const issues = $derived([...pluginProblems(draft.name, draft.desc), ...(locked ? [] : problems(draft.fields, draft.rules))]);
+  const named = $derived(pluginProblems(draft.name, draft.desc));
+  const fieldsOk = $derived(draft.fields.every((f) => !fieldProblems(f, draft.fields).length));
+  const issues = $derived([...named, ...(locked ? [] : problems(draft.fields, draft.rules))]);
   // A step shows a check once it is filled in and has nothing to fix.
   const done = $derived({
-    name: !pluginProblems(draft.name, draft.desc).length,
-    questions: !!draft.fields.length && draft.fields.every((f) => !fieldProblems(f, draft.fields).length),
+    name: !named.length,
+    questions: !!draft.fields.length && fieldsOk,
     rules: !!draft.rules.length && draft.rules.every((r) => !ruleProblems(r, draft.rules).length),
   });
 
@@ -45,8 +47,7 @@
     if (issues.length || locked) {
       tried = open = true;
       // Jump to the first section that still needs work, like a checkout form does.
-      const fieldsOk = draft.fields.every((f) => !fieldProblems(f, draft.fields).length) && (draft.fields.length || draft.rules.length);
-      const at = !done.name ? 0 : !fieldsOk ? 1 : 2;
+      const at = !done.name ? 0 : !fieldsOk || !(draft.fields.length || draft.rules.length) ? 1 : 2;
       sections[at]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }

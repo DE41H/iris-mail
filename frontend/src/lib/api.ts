@@ -1,4 +1,4 @@
-export interface Page<T> {
+interface Page<T> {
   next: string | null;
   previous: string | null;
   results: T[];
@@ -10,6 +10,18 @@ export interface Subscription {
   plugin_name: string;
   plugin_desc: string;
   active: boolean;
+}
+
+export interface Plugin {
+  id: string;
+  name: string;
+  desc: string;
+  schema: unknown;
+  rules: Record<string, string>;
+  version: number;
+  prefix: string | null;
+  subscriber_count?: number;
+  result_count?: number;
 }
 
 export class ApiError extends Error {}
@@ -29,7 +41,7 @@ const describe = (data: unknown) =>
 const inflight = new Map<string, Promise<unknown>>();
 
 export function api<T>(path: string, init: RequestInit = {}): Promise<T> {
-  if ((init.method ?? 'GET') !== 'GET') return send<T>(path, init);
+  if (init.method && init.method !== 'GET') return send<T>(path, init);
   let req = inflight.get(path) as Promise<T> | undefined;
   if (!req) {
     req = send<T>(path, init).finally(() => inflight.delete(path));
@@ -69,15 +81,3 @@ export async function listAll<T>(path: string): Promise<T[]> {
 }
 
 export const message = (err: unknown) => (err instanceof Error ? err.message : 'Something went wrong.');
-
-export interface Plugin {
-  id: string;
-  name: string;
-  desc: string;
-  schema: unknown;
-  rules: Record<string, string>;
-  version: number;
-  prefix: string | null;
-  subscriber_count?: number;
-  result_count?: number;
-}

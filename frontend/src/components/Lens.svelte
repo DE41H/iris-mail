@@ -65,8 +65,6 @@
     else play(0);
     return () => clearTimeout(timer);
   });
-
-  const show = (v: unknown) => JSON.stringify(v);
 </script>
 
 <figure class="bench" data-phase={phase}>
@@ -112,7 +110,7 @@
     <div class="answers">
       <div class="label">output</div>
       {#key scene}
-        <pre>{'{'}{#each Object.entries(s.out) as [k, v], i}<span class="line" style:--i={i}>  <b>"{k}"</b>: <em class:str={typeof v === 'string'}>{show(v)}</em>{i < Object.keys(s.out).length - 1 ? ',' : ''}</span>{/each}{'}'}</pre>
+        <pre>{'{'}{#each Object.entries(s.out) as [k, v], i}<span class="line" style:--i={i}>  <b>"{k}"</b>: <em class:str={typeof v === 'string'}>{JSON.stringify(v)}</em>{i < Object.keys(s.out).length - 1 ? ',' : ''}</span>{/each}{'}'}</pre>
       {/key}
     </div>
   </div>
