@@ -27,5 +27,9 @@ const { title, wide = false } = Astro.props;
     <main class:list={['container', { narrow: !wide }]}>
       <slot />
     </main>
+    <footer class="footer">
+      <a href="/terms">terms</a>
+      <a href="/privacy">privacy</a>
+    </footer>
   </body>
 </html>
