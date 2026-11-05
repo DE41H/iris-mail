@@ -5,9 +5,6 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P0: launch blockers
 
-- [ ] **Legal pages name no operator or contact.** `frontend/src/pages/terms.astro` and `privacy.astro` need
-  who runs Iris, a contact email, governing law, and a lawyer's read before launch.
-
 ## P1: bugs, security and privacy
 
 - [ ] **Consent copy says "Never the emails" but rules store email text.** Rule matches (`_match`,
