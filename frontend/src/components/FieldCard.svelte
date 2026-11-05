@@ -49,7 +49,7 @@
 
 <article class="card field" class:bad={touched && issues.length} onfocusout={() => (touched = true)}>
   <div class="line">
-    <span class="num">{String(n).padStart(2, '0')}</span>
+    <span class="num">{n}</span>
     <div class="seg" role="radiogroup" aria-label={`Question ${n} answer type`}>
       {#each KINDS as k}
         <label title={k.note}>
@@ -82,8 +82,8 @@
           <input class="mono" type="number" step="1" value={field.min} oninput={(e) => field.kind === 'scale' && (field.min = num(e))} aria-label={`Question ${n} lowest value`} />
           <span class="muted">–</span>
           <input class="mono" type="number" step="1" value={field.max} oninput={(e) => field.kind === 'scale' && (field.max = num(e))} aria-label={`Question ${n} highest value`} />
-          <select class="mono" onchange={scalePreset} aria-label="Pick a common range">
-            <option value="">range…</option>
+          <select onchange={scalePreset} aria-label="Pick a common range">
+            <option value="">Range…</option>
             {#each SCALES as [label], i}<option value={i}>{label}</option>{/each}
           </select>
           {#if levels && levels <= MAX_LEVELS}
@@ -106,26 +106,25 @@
 </article>
 
 <style>
-  .field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 10px 12px; transition: border-color 0.25s, box-shadow 0.25s; }
-  .field:focus-within { border-color: var(--border-strong); box-shadow: 0 0 0 1px var(--green-soft), 0 12px 32px rgba(0, 0, 0, 0.35); }
-  .field.bad { border-color: rgba(255, 95, 95, 0.4); }
+  .field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px 14px; border-radius: 14px; box-shadow: none; transition: border-color 0.25s, box-shadow 0.35s var(--ease); }
+  .field:focus-within { border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); box-shadow: var(--shadow-lift); }
+  .field.bad { border-color: color-mix(in oklab, var(--danger) 40%, transparent); }
   .line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .num { font: 600 12px var(--mono); color: var(--green); }
+  .num { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 640; font-variant-numeric: tabular-nums; }
   .q { flex: 1 1 220px; width: auto; min-width: 0; }
   .tools { display: flex; gap: 2px; }
   .del:hover { color: var(--danger); }
 
-  .seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 6px; overflow: hidden; }
+  .seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); }
   .seg label { position: relative; }
   .seg input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
-  .seg span { display: block; padding: 4px 8px; font: 12px var(--mono); color: var(--muted); transition: background 0.2s, color 0.2s; white-space: nowrap; }
+  .seg span { display: block; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 540; color: var(--muted); transition: background 0.25s, color 0.2s, box-shadow 0.25s; white-space: nowrap; }
   .seg i { font-style: normal; margin-right: 4px; }
-  .seg label + label span { border-left: 1px solid var(--border-strong); }
-  .seg input:checked + span { background: var(--green-soft); color: var(--green); }
-  .seg input:focus-visible + span { outline: 2px solid var(--green); outline-offset: -2px; }
+  .seg input:checked + span { background: var(--surface); color: var(--accent); box-shadow: 0 1px 3px color-mix(in oklab, var(--accent) 25%, transparent); }
+  .seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 0; }
   @media (max-width: 340px) { .seg i { display: none; } }
 
-  .key { display: flex; align-items: center; gap: 6px; font: 13px var(--mono); padding-left: 22px; max-width: 100%; }
+  .key { display: flex; align-items: center; gap: 6px; font: 13px var(--mono); padding-left: 34px; max-width: 100%; }
   .key input { flex: 0 1 170px; width: 170px; min-width: 0; padding-top: 6px; padding-bottom: 6px; }
   .answer { flex: 1 1 280px; min-width: 0; }
 
@@ -139,12 +138,12 @@
     padding: 3px 0;
     text-align: center;
     font: 11px var(--mono);
-    color: var(--green);
-    border-radius: 4px;
-    background: rgba(61, 220, 132, calc(0.06 + var(--i) * 0.04));
+    color: var(--accent);
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--accent) calc(6% + var(--i) * 5%), transparent);
     animation: rise 0.35s var(--ease) both;
     animation-delay: calc(var(--i) * 30ms);
   }
   .bool { display: flex; align-items: center; gap: 6px; }
-  .issues { margin: 0; padding: 0 0 0 40px; color: var(--danger); font-size: 12px; }
+  .issues { margin: 0; padding: 0 0 0 52px; color: var(--danger); font-size: 13px; }
 </style>

@@ -56,15 +56,15 @@
     {#each KINDS as k}
       <button type="button" class="btn btn-sm" disabled={full} title={k.note} onclick={() => add(blank(k.kind))}>+ {k.label}</button>
     {/each}
-    <select class="mono" disabled={full || !unused.length} onchange={preset} aria-label="Insert a ready-made question">
-      <option value="">insert ready-made…</option>
+    <select disabled={full || !unused.length} onchange={preset} aria-label="Insert a ready-made question">
+      <option value="">Add a ready-made question…</option>
       {#each KINDS as k}
         <optgroup label={k.label}>
           {#each unused.filter((p) => p.kind === k.kind) as p}<option value={p.name}>{p.question}</option>{/each}
         </optgroup>
       {/each}
     </select>
-    <button type="button" class="btn btn-sm btn-ghost" aria-expanded={importing} onclick={() => (importing = !importing)}>{'{ }'} paste schema</button>
+    <button type="button" class="btn btn-sm btn-ghost" aria-expanded={importing} onclick={() => (importing = !importing)}>Paste a schema</button>
     <span class="count" class:full>{fields.length}/{MAX_FIELDS}</span>
   </div>
 
@@ -73,8 +73,8 @@
       <textarea class="mono" rows="6" bind:value={pasted} placeholder={'{ "type": "object", "properties": { … } }'} aria-label="JSON schema to import"></textarea>
       {#if importError}<div class="error">{importError}</div>{/if}
       <div class="actions">
-        <span class="help">Replaces all questions.</span>
-        <button type="button" class="btn btn-sm btn-primary" disabled={!pasted.trim()} onclick={load}>import</button>
+        <span class="help">This replaces every question above.</span>
+        <button type="button" class="btn btn-sm btn-primary" disabled={!pasted.trim()} onclick={load}>Import</button>
       </div>
     </div>
   {/if}
@@ -92,7 +92,7 @@
         />
       </div>
     {:else}
-      <div class="empty">No questions yet. Add one above.</div>
+      <div class="empty">No questions yet. Pick an answer type above to add the first one.</div>
     {/each}
   </div>
 </div>
@@ -100,9 +100,9 @@
 <style>
   .builder { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
   .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .toolbar select { width: auto; max-width: min(260px, 100%); padding-top: 4px; padding-bottom: 4px; font-size: 12px; }
-  .count { margin-left: auto; font: 12px var(--mono); color: var(--muted); }
-  .count.full { color: var(--amber); }
+  .toolbar select { width: auto; max-width: min(280px, 100%); padding-top: 5px; padding-bottom: 5px; font-size: 13px; border-radius: 999px; }
+  .count { margin-left: auto; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .count.full { color: var(--signal-text); }
   .import { display: grid; gap: 8px; }
   .import .actions { justify-content: space-between; }
   .list { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 10px; flex: 1; min-height: 0; overflow: auto; padding-right: 2px; }

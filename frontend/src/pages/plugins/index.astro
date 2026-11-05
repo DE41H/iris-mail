@@ -7,10 +7,9 @@ import PluginList from '../../components/PluginList.svelte';
   <div class="screen">
     <div class="page-head reveal">
       <div>
-        <div class="eyebrow">plugins</div>
-        <h1>Your plugins<span class="cursor"></span></h1>
+        <h1>Your plugins</h1>
       </div>
-      <a class="btn btn-primary" href="/plugins/new">+ new plugin</a>
+      <a class="btn btn-primary" href="/plugins/new">New plugin</a>
     </div>
     <PluginList client:only="svelte" />
   </div>

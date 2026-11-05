@@ -19,12 +19,12 @@
     overflow: auto;
     font-size: 12px;
     line-height: 1.6;
-    color: var(--muted);
-    background: var(--bg);
-    border-radius: 6px;
+    color: var(--faint);
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
   }
-  pre :global(.k) { color: var(--green); }
-  pre :global(.s) { color: #c9d8cf; }
-  pre :global(.n) { color: var(--amber); }
-  pre :global(.l) { color: #8ab4ff; }
+  pre :global(.k) { color: var(--accent); }
+  pre :global(.s) { color: var(--text); }
+  pre :global(.n) { color: var(--signal-text); }
+  pre :global(.l) { color: var(--signal-text); }
 </style>

@@ -47,16 +47,16 @@
     <div>{@render head()}</div>
     <div class="actions">
       {#if locked}
-        <span class="state">read only</span>
+        <span class="state">Read only</span>
       {:else if issues.length}
-        <button type="button" class="state warn" onclick={() => (open = !open)} aria-expanded={open}>● {issues.length} to fix {open ? '▴' : '▾'}</button>
+        <button type="button" class="state warn" onclick={() => (open = !open)} aria-expanded={open}>{issues.length} to fix <span class="caret" class:up={open}>▾</span></button>
       {:else if dirty}
-        <span class="state ok">● ready</span>
+        <span class="state ok">Ready to save</span>
       {:else}
-        <span class="state">saved</span>
+        <span class="state">All saved</span>
       {/if}
       {@render children?.()}
-      <button class="btn btn-primary" type="submit" disabled={busy || !dirty || !!locked}>{busy ? 'saving…' : submit}</button>
+      <button class="btn btn-primary" type="submit" disabled={busy || !dirty || !!locked}>{busy ? 'Saving…' : submit}</button>
     </div>
     {#if open && issues.length}
       <ul class="card issues" role="status" transition:fly={{ y: -6, duration: 150 }}>
@@ -70,12 +70,12 @@
     <div class="left">
       <section class="card ident reveal d1">
         <label>
-          <span class="label">name</span>
+          <span class="label">Name</span>
           <input class="mono" type="text" value={draft.name} oninput={slugify} placeholder="receipts" maxlength="255" autocomplete="off" spellcheck="false" />
         </label>
         <label>
-          <span class="label">description</span>
-          <input type="text" bind:value={draft.desc} placeholder="Shown to users" maxlength="1024" />
+          <span class="label">Description</span>
+          <input type="text" bind:value={draft.desc} placeholder="What it does, shown to the people who switch it on" maxlength="1024" />
         </label>
       </section>
 
@@ -106,13 +106,17 @@
   .cols { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; }
   .left { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
   .side { min-height: 0; display: flex; }
-  .ident { display: grid; grid-template-columns: 1fr 1.5fr 1.5fr; gap: 12px; padding: 12px 14px; }
+  .ident { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; padding: 14px 16px; }
   .ident .label { margin-bottom: 4px; }
-  .questions { display: flex; flex-direction: column; padding: 12px 14px; }
-  .rules { padding: 12px 14px; }
-  .state { font: 12px var(--mono); color: var(--muted); background: none; border: 0; padding: 0 6px; }
-  .state.ok { color: var(--green); }
-  .state.warn { color: var(--amber); cursor: pointer; }
+  .questions { display: flex; flex-direction: column; padding: 14px 16px; }
+  .rules { padding: 14px 16px; }
+  .state { display: inline-flex; align-items: center; gap: 7px; font: 540 13px var(--font); color: var(--muted); background: none; border: 0; padding: 0 6px; }
+  .state.ok, .state.warn { animation: pop 0.35s var(--spring); }
+  .state.ok::before, .state.warn::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .state.ok { color: var(--accent); }
+  .state.warn { color: var(--signal-text); cursor: pointer; }
+  .caret { display: inline-block; transition: rotate 0.3s var(--spring); }
+  .caret.up { rotate: 180deg; }
   .issues {
     position: absolute;
     right: 0;
@@ -122,10 +126,10 @@
     max-height: 240px;
     overflow: auto;
     margin: 0;
-    padding: 10px 14px 10px 28px;
-    color: var(--amber);
-    font-size: 12px;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    padding: 12px 16px 12px 32px;
+    color: var(--text);
+    font-size: 13px;
+    box-shadow: var(--shadow-lift);
   }
   @media (max-width: 960px) {
     .cols, .ident { grid-template-columns: minmax(0, 1fr); }

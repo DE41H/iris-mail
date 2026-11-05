@@ -28,32 +28,33 @@
   <div class="screen done" in:fly={{ y: 20, duration: 400 }}>
     <div class="page-head">
       <div>
-        <div class="eyebrow">plugin created</div>
-        <h1 class="mono">{created.name}<span class="cursor"></span></h1>
+        <div class="eyebrow">Plugin created</div>
+        <h1>{created.name}</h1>
       </div>
     </div>
     <KeyCard key={created.key} />
     <div class="actions">
-      <a class="btn" href="/plugins">all plugins</a>
-      <a class="btn btn-primary" href={`/plugins/detail?id=${created.id}`}>open plugin →</a>
+      <a class="btn" href="/plugins">All plugins</a>
+      <a class="btn btn-primary" href={`/plugins/detail?id=${created.id}`}>Open plugin</a>
     </div>
   </div>
 {:else if draft}
   <div class="screen" in:fade={{ duration: 200 }}>
-    <PluginEditor bind:draft submit="create" onsubmit={create}>
+    <PluginEditor bind:draft submit="Create plugin" onsubmit={create}>
       {#snippet head()}
-        <div class="eyebrow"><button type="button" class="back" onclick={() => (draft = null)}>templates</button> / new</div>
-        <h1>New plugin<span class="cursor"></span></h1>
+        <div class="eyebrow"><button type="button" class="back" onclick={() => (draft = null)}>Templates</button> <span aria-hidden="true">/</span> new</div>
+        <h1>New plugin</h1>
       {/snippet}
-      <a class="btn btn-ghost" href="/plugins">cancel</a>
+      <a class="btn btn-ghost" href="/plugins">Cancel</a>
     </PluginEditor>
   </div>
 {:else}
   <div class="screen">
     <div class="page-head reveal">
       <div>
-        <div class="eyebrow">plugins / new</div>
-        <h1>Pick a template<span class="cursor"></span></h1>
+        <div class="eyebrow"><a href="/plugins">Plugins</a> <span aria-hidden="true">/</span> new</div>
+        <h1>Start from a template</h1>
+        <p>Every template is a starting point. You can change all of it.</p>
       </div>
     </div>
     <div class="templates grow scroll">
@@ -64,7 +65,7 @@
           <span class="kinds">
             {#each t.fields as f}<span class="chip">{f.name}</span>{/each}
           </span>
-          <span class="go">use →</span>
+          <span class="go">Use this template</span>
         </button>
       {/each}
     </div>
@@ -82,13 +83,14 @@
     color: inherit;
     font: inherit;
     cursor: pointer;
-    transition: border-color 0.25s, transform 0.25s var(--ease), box-shadow 0.25s;
+    transition: border-color 0.25s, translate 0.35s var(--ease), box-shadow 0.35s var(--ease);
   }
-  .tpl:hover, .tpl:focus-visible { border-color: var(--green); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(61, 220, 132, 0.08); }
-  .title { font: 600 15px var(--mono); }
+  .tpl:hover, .tpl:focus-visible { border-color: color-mix(in oklab, var(--accent) 45%, var(--border)); translate: 0 -3px; box-shadow: var(--shadow-lift); }
+  .tpl:active { translate: 0 -1px; }
+  .title { font-size: 17px; font-weight: 640; font-stretch: 110%; }
   .kinds { display: flex; flex-wrap: wrap; gap: 4px; }
-  .go { font: 12px var(--mono); color: var(--green); opacity: 0; transform: translateX(-6px); transition: 0.25s var(--ease); }
-  .tpl:hover .go, .tpl:focus-visible .go { opacity: 1; transform: none; }
-  .done { max-width: 760px; justify-content: center; }
+  .go { margin-top: 4px; font-size: 13px; font-weight: 560; color: var(--accent); opacity: 0; translate: -6px 0; transition: opacity 0.25s, translate 0.35s var(--spring); }
+  .tpl:hover .go, .tpl:focus-visible .go { opacity: 1; translate: 0; }
+  .done { width: 100%; max-width: 760px; margin-inline: auto; justify-content: center; }
   .back { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 </style>

@@ -1,16 +1,27 @@
 <script lang="ts">
-  let { text, label = 'copy' }: { text: string; label?: string } = $props();
-  let copied = $state(false);
+  let { text, label = 'Copy' }: { text: string; label?: string } = $props();
+  let status = $state<'idle' | 'copied' | 'failed'>('idle');
 
+  // The clipboard API is missing on plain http and can be refused, so say so instead of failing silently.
   async function copy() {
-    await navigator.clipboard.writeText(text);
-    copied = true;
-    setTimeout(() => (copied = false), 1500);
+    try {
+      await navigator.clipboard.writeText(text);
+      status = 'copied';
+    } catch {
+      status = 'failed';
+    }
+    setTimeout(() => (status = 'idle'), 1800);
   }
 </script>
 
-<button type="button" class="btn btn-sm" class:copied onclick={copy}>{copied ? '✓ copied' : label}</button>
+<button type="button" class="btn btn-sm {status}" onclick={copy} aria-live="polite">
+  {#key status}<span class="txt">{status === 'copied' ? 'Copied' : status === 'failed' ? 'Copy failed, select it' : label}</span>{/key}
+</button>
 
 <style>
-  .copied { color: var(--green); border-color: var(--green); }
+  .txt { display: inline-block; animation: swap 0.3s var(--spring); }
+  @keyframes swap { from { opacity: 0; translate: 0 6px; } }
+  .copied { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .copied .txt::before { content: '✓ '; }
+  .failed { color: var(--danger); border-color: var(--danger); }
 </style>

@@ -22,14 +22,14 @@
 </script>
 
 <section class="card key">
-  <div class="card-head"><span class="green">● api key issued</span><span class="amber">shown once · copy it now</span></div>
+  <div class="card-head"><h2>Your API key</h2><span class="once">Shown once. Copy it now.</span></div>
   <div class="card-body stack">
     <div class="row">
       <code>{shown}</code>
-      <CopyButton text={key} label="copy key" />
+      <CopyButton text={key} label="Copy key" />
     </div>
     <div>
-      <div class="label">fetch new results</div>
+      <div class="label">Fetch new results</div>
       <div class="row">
         <code class="small">{curl}</code>
         <CopyButton text={curl} />
@@ -39,18 +39,20 @@
 </section>
 
 <style>
-  .key { border-color: rgba(61, 220, 132, 0.45); box-shadow: 0 0 40px rgba(61, 220, 132, 0.08); animation: rise 0.5s var(--ease) both; }
+  .key { border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); box-shadow: var(--shadow-lift); animation: rise 0.5s var(--ease) both; }
+  h2 { color: var(--text); }
+  .once { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--signal-soft); color: var(--signal-text); font-weight: 560; }
   .row { display: flex; align-items: center; gap: 8px; }
   code {
     flex: 1;
     min-width: 0;
     padding: 10px 12px;
-    background: var(--bg);
+    background: var(--surface-2);
     border: 1px dashed var(--border-strong);
-    border-radius: 6px;
-    color: var(--green);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    font-size: 14px;
     word-break: break-all;
   }
-  .small { font-size: 12px; color: var(--text); }
-  .amber { color: var(--amber); }
+  .small { font-size: 12.5px; color: var(--text); }
 </style>

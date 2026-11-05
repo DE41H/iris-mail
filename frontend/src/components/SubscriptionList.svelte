@@ -18,21 +18,26 @@
   <div class="alert alert-danger" role="alert">{error}</div>
 {:else if subs}
   <section class="card reveal list">
-    <div class="card-head"><span>{subs.length} {subs.length === 1 ? 'plugin' : 'plugins'}</span><span class="green">{active} on</span></div>
+    <div class="card-head"><span>{subs.length} {subs.length === 1 ? 'plugin' : 'plugins'}</span><span class="count" class:live={active}>{active} on</span></div>
     {#if subs.length}
       <ul class="grow scroll">
         {#each subs as _, i (subs[i].id)}<SubscriptionRow bind:sub={subs[i]} onremove={() => (subs = subs!.filter((s) => s.id !== subs![i].id))} />{/each}
       </ul>
     {:else}
-      <div class="empty">Nothing yet. Plugins you're added to show up here.</div>
+      <div class="empty">No plugins yet. When an app built on Iris asks to read your mail, it shows up here, off until you switch it on.</div>
     {/if}
   </section>
 {:else}
-  <div class="empty">loading<span class="cursor"></span></div>
+  <div class="card skeleton list-skel"></div>
 {/if}
 
 <style>
-  .list { display: flex; flex-direction: column; min-height: 0; }
+  .list { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .list-skel { height: 240px; }
+  .count { display: inline-flex; align-items: center; gap: 7px; }
+  .count.live { color: var(--accent); }
+  .count.live::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 0 currentColor; animation: ping 2s var(--ease) infinite; }
+  @keyframes ping { 70%, 100% { box-shadow: 0 0 0 6px transparent; } }
   ul { list-style: none; margin: 0; padding: 0; }
   ul :global(li:first-child) { border-top: 0; }
 </style>

@@ -12,14 +12,14 @@
 </script>
 
 <nav aria-label="Account">
-  <a href="/docs" aria-current={current('/docs')}>docs</a>
+  <a href="/docs" aria-current={current('/docs')}>Docs</a>
   {#if $session}
-    <a href="/plugins" aria-current={current('/plugins')}>plugins</a>
-    <a href="/subscriptions" aria-current={current('/subscriptions')}><span class="long">subscriptions</span><span class="short">inbox</span></a>
+    <a href="/plugins" aria-current={current('/plugins')}>Plugins</a>
+    <a href="/subscriptions" aria-current={current('/subscriptions')}><span class="long">Subscriptions</span><span class="short">Inbox</span></a>
     <span class="who" title={$session.email}>{$session.email}</span>
-    <a class="btn btn-sm" href="/accounts/logout/">sign out</a>
+    <a class="btn btn-sm" href="/accounts/logout/">Sign out</a>
   {:else if $session === null}
-    <a class="btn btn-sm btn-primary" href="/accounts/login/">sign in</a>
+    <a class="btn btn-sm btn-primary" href="/accounts/login/">Sign in</a>
   {/if}
 </nav>
 
@@ -29,8 +29,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--muted);
-    padding: 0 8px;
+    color: var(--faint);
+    font-size: 13px;
+    padding: 0 10px 0 14px;
     border-left: 1px solid var(--border);
     margin-left: 8px;
   }

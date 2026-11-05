@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { fade } from 'svelte/transition';
   import { api, message, type Plugin } from '../lib/api';
   import { fromRules, fromSchema, toRules, toSchema, type Draft } from '../lib/schema';
   import ConfirmButton from './ConfirmButton.svelte';
@@ -15,6 +14,7 @@
   let key = $state('');
   let error = $state('');
   let notice = $state('');
+  let sheet = $state<HTMLDialogElement>();
 
   const snapshot = () => JSON.stringify(draft);
   const dirty = $derived(snapshot() !== saved);
@@ -45,6 +45,7 @@
   async function rotate() {
     try {
       key = (await api<{ key: string }>(`/api/plugins/${id}/rotate_key/`, { method: 'POST' })).key;
+      sheet?.showModal();
       const fresh = await api<Plugin>(`/api/plugins/${id}/`);
       if (plugin) plugin.prefix = fresh.prefix;
     } catch (err) {
@@ -55,6 +56,7 @@
   async function remove() {
     try {
       await api(`/api/plugins/${id}/`, { method: 'DELETE' });
+      saved = snapshot(); // the plugin is gone, so there is nothing left to warn about
       location.href = '/plugins';
     } catch (err) {
       error = message(err);
@@ -62,37 +64,36 @@
   }
 </script>
 
-<svelte:window onbeforeunload={(e) => dirty && e.preventDefault()} onkeydown={(e) => e.key === 'Escape' && (key = '')} />
+<svelte:window onbeforeunload={(e) => dirty && e.preventDefault()} />
 
-{#if notice}<div class="alert alert-success toast" role="status">✓ {notice}</div>{/if}
+{#if notice}<div class="alert alert-success toast" role="status">{notice}</div>{/if}
 
 <div class="screen">
   {#if error}<div class="alert alert-danger" role="alert">{error}</div>{/if}
   {#if plugin}
-    <PluginEditor bind:draft submit="save" onsubmit={save} {dirty} {locked}>
+    <PluginEditor bind:draft submit="Save changes" onsubmit={save} {dirty} {locked}>
       {#snippet head()}
-        <div class="eyebrow"><a href="/plugins">plugins</a> / {plugin!.prefix ? `${plugin!.prefix}…` : 'no key'} / v{plugin!.version}</div>
-        <h1 class="mono">{plugin!.name}<span class="cursor"></span></h1>
+        <div class="eyebrow"><a href="/plugins">Plugins</a> <span aria-hidden="true">/</span> version {plugin!.version}{#if plugin!.prefix} <span aria-hidden="true">/</span> key <code>{plugin!.prefix}…</code>{/if}</div>
+        <h1>{plugin!.name}</h1>
       {/snippet}
-      {#if dirty}<button type="button" class="btn btn-ghost" onclick={() => fill(plugin!)}>discard</button>{/if}
-      <ConfirmButton label="rotate key" confirm="confirm rotate" onconfirm={rotate} />
-      <ConfirmButton label="delete" confirm="really delete?" danger onconfirm={remove} />
+      {#if dirty}<button type="button" class="btn btn-ghost" onclick={() => fill(plugin!)}>Discard</button>{/if}
+      <ConfirmButton label="New key" confirm="Replace the key?" onconfirm={rotate} />
+      <ConfirmButton label="Delete" confirm="Delete for good?" danger onconfirm={remove} />
     </PluginEditor>
   {/if}
 </div>
 
-{#if key}
-  <div class="overlay" transition:fade={{ duration: 150 }}>
+<!-- Escape is ignored: the key is shown once, so only "Done" closes it. -->
+<dialog bind:this={sheet} oncancel={(e) => e.preventDefault()} onclose={() => (key = '')} aria-label="New API key">
+  {#if key}
     <div class="sheet">
       <KeyCard {key} />
-      <div class="actions"><button type="button" class="btn" onclick={() => (key = '')}>done</button></div>
+      <form method="dialog" class="actions"><button class="btn btn-primary">Done, I copied it</button></form>
     </div>
-  </div>
-{/if}
+  {/if}
+</dialog>
 
 <style>
-  .eyebrow a { color: inherit; }
-  .toast { position: fixed; top: 68px; left: 50%; translate: -50% 0; z-index: 20; }
-  .overlay { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 16px; background: rgba(5, 8, 7, 0.8); backdrop-filter: blur(6px); }
-  .sheet { width: min(720px, 100%); display: grid; gap: 12px; }
+  .toast { position: fixed; top: 72px; left: 50%; translate: -50% 0; z-index: 20; animation: pop 0.45s var(--spring) both; }
+  .sheet { display: grid; gap: 12px; }
 </style>

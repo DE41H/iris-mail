@@ -59,8 +59,8 @@
       spellcheck="false"
     />
   </div>
-  <select class="mono" onchange={useSet} aria-label="Fill answers from a common set">
-    <option value="">set…</option>
+  <select onchange={useSet} aria-label="Fill answers from a common set">
+    <option value="">Use a set…</option>
     {#each Object.entries(OPTION_SETS) as [name, values]}
       <option value={name}>{name} · {values.length}</option>
     {/each}
@@ -75,25 +75,25 @@
     gap: 6px;
     padding: 3px;
     border: 1px solid var(--border-strong);
-    border-radius: 6px;
-    background: var(--bg);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
     transition: border-color 0.2s, box-shadow 0.2s;
   }
-  .box:focus-within { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
+  .box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
   .box input { flex: 1 0 120px; border: 0; padding: 3px 6px; background: none; box-shadow: none; }
   .tag {
     display: inline-flex;
     align-items: center;
     gap: 2px;
     padding: 2px 4px 2px 10px;
-    border: 1px solid rgba(61, 220, 132, 0.35);
+    border: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
     border-radius: 999px;
-    background: var(--green-soft);
-    color: var(--green);
+    background: var(--accent-soft);
+    color: var(--accent);
     font: 12px/1.6 var(--mono);
   }
   .tag button { border: 0; background: none; color: inherit; cursor: pointer; padding: 0 6px; border-radius: 999px; font-size: 14px; line-height: 1; }
-  .tag button:hover { background: var(--green); color: var(--bg); }
+  .tag button:hover { background: var(--accent); color: var(--on-accent); }
   select { width: auto; }
   @media (max-width: 640px) { .wrap { grid-template-columns: 1fr; } }
 </style>

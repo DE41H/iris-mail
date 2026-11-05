@@ -21,12 +21,13 @@
   <div class="alert alert-danger" role="alert">{error}</div>
 {:else if !plugins}
   <div class="grid">
-    {#each { length: 3 } as _}<div class="card skeleton"></div>{/each}
+    {#each { length: 3 } as _, i}<div class="card skeleton reveal" style:--i={i}></div>{/each}
   </div>
 {:else if !plugins.length}
   <div class="card empty reveal">
-    <p>No plugins yet.</p>
-    <p><a class="btn btn-primary" href="/plugins/new">+ create one</a></p>
+    <h2>No plugins yet</h2>
+    <p>Start from a template and you'll have an API key in a minute.</p>
+    <p><a class="btn btn-primary" href="/plugins/new">Create a plugin</a></p>
   </div>
 {:else}
   <div class="grid grow scroll">
@@ -35,11 +36,11 @@
       <a class="card plugin reveal" style:--i={i} href={`/plugins/detail?id=${p.id}`}>
         <div class="top">
           <span class="name">{p.name}</span>
-          <span class="chip" class:on={p.prefix}>{p.prefix ? 'key active' : 'no key'}</span>
+          <span class="chip" class:on={p.prefix}>{p.prefix ? 'Key active' : 'No key'}</span>
         </div>
         {#if p.desc}<p class="muted desc">{p.desc}</p>{/if}
         <div class="fields">
-          {#each fields.slice(0, 5) as f}<span class="chip"><span class="green">{icon(f.kind)}</span>{f.name}</span>{/each}
+          {#each fields.slice(0, 5) as f}<span class="chip"><span class="ico">{icon(f.kind)}</span>{f.name}</span>{/each}
           {#if fields.length > 5}<span class="chip">+{fields.length - 5}</span>{/if}
         </div>
         <div class="stats">
@@ -64,29 +65,21 @@
     color: var(--text);
     position: relative;
     overflow: hidden;
-    transition: border-color 0.25s, transform 0.25s var(--ease), box-shadow 0.25s;
+    transition: border-color 0.25s, translate 0.35s var(--ease), box-shadow 0.35s var(--ease);
   }
-  .plugin::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(120deg, transparent 30%, rgba(61, 220, 132, 0.07), transparent 70%);
-    transform: translateX(-100%);
-    transition: transform 0.7s var(--ease);
-    pointer-events: none;
-  }
-  .plugin:hover { color: var(--text); border-color: var(--green); transform: translateY(-3px); box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45); }
-  .plugin:hover::after { transform: translateX(100%); }
+  .plugin:hover { color: var(--text); border-color: color-mix(in oklab, var(--accent) 45%, var(--border)); translate: 0 -3px; box-shadow: var(--shadow-lift); }
+  .plugin:active { translate: 0 -1px; }
   .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .top .chip { flex-shrink: 0; white-space: nowrap; }
-  .name { font: 600 15px var(--mono); overflow: hidden; text-overflow: ellipsis; }
+  .name { font-size: 17px; font-weight: 640; font-stretch: 110%; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; }
+  .ico { color: var(--accent); }
   .desc { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .fields { display: flex; flex-wrap: wrap; gap: 4px; }
   .fields .chip { overflow-wrap: anywhere; }
-  .stats { display: flex; gap: 16px; font: 12px var(--mono); color: var(--muted); }
-  .stats b { color: var(--green); font-weight: 600; }
-  .foot { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); padding-top: 10px; border-top: 1px solid var(--border); }
-  .skeleton { height: 195px; background: linear-gradient(90deg, var(--surface) 0%, var(--surface-2) 50%, var(--surface) 100%) 0 0 / 200% 100%; animation: shimmer 1.4s linear infinite; }
-  @keyframes shimmer { to { background-position: -200% 0; } }
+  .stats { display: flex; gap: 20px; font-size: 13px; color: var(--muted); }
+  .stats b { display: block; color: var(--text); font-size: 22px; font-weight: 680; font-stretch: 115%; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .foot { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); padding-top: 10px; border-top: 1px solid var(--border); }
+  .skeleton { height: 220px; }
   .empty { display: grid; gap: 10px; justify-items: center; }
+  .empty h2 { color: var(--text); font-size: 20px; }
 </style>

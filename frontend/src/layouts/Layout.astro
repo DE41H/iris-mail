@@ -14,7 +14,9 @@ const { title, wide = false } = Astro.props;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#050807" />
+    <meta name="theme-color" content="#f3f4f8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#10112a" media="(prefers-color-scheme: dark)" />
+    <link rel="preload" href="/static/fonts/mona-sans-latin-wdth-normal.woff2" as="font" type="font/woff2" crossorigin />
     <title>{title} · Iris</title>
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/static/iris.css" />
@@ -28,8 +30,8 @@ const { title, wide = false } = Astro.props;
       <slot />
     </main>
     <footer class="footer">
-      <a href="/terms">terms</a>
-      <a href="/privacy">privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="/privacy">Privacy</a>
     </footer>
   </body>
 </html>

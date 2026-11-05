@@ -50,17 +50,17 @@
   <label class="switch">
     <input type="checkbox" role="switch" checked={sub.active} disabled={busy || asking} onchange={toggle} aria-label={`Share ${sub.plugin_name} results`} />
     <span class="track" aria-hidden="true"></span>
-    <span class="state">{sub.active ? 'on' : 'off'}</span>
+    <span class="state">{sub.active ? 'On' : 'Off'}</span>
   </label>
-  <ConfirmButton label="remove" confirm="remove?" danger onconfirm={remove} />
+  <ConfirmButton label="Remove" confirm="Remove it?" danger onconfirm={remove} />
 
   {#if asking}
     <div class="consent" transition:slide={{ duration: 220 }}>
       <p><strong>{sub.plugin_name}</strong>'s creator will receive answers and short matched snippets from your new emails. Never whole emails.</p>
       <div class="actions">
-        <button type="button" class="btn btn-sm" onclick={() => (asking = false)}>cancel</button>
+        <button type="button" class="btn btn-sm" onclick={() => (asking = false)}>Cancel</button>
         <!-- svelte-ignore a11y_autofocus -->
-        <button type="button" class="btn btn-sm btn-primary" autofocus onclick={() => set(true)}>turn on</button>
+        <button type="button" class="btn btn-sm btn-primary" autofocus onclick={() => set(true)}>Turn on</button>
       </div>
     </div>
   {/if}
@@ -68,30 +68,36 @@
 </li>
 
 <style>
-  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 16px 18px; border-top: 1px solid var(--border); transition: background 0.3s; }
-  .row.on { background: linear-gradient(90deg, var(--green-soft), transparent 60%); }
+  .row { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 16px 20px; border-top: 1px solid var(--border); transition: background 0.4s; }
+  .row::before { content: ''; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); scale: 1 0; transition: scale 0.45s var(--spring); }
+  .row.on::before { scale: 1 1; }
+  .row.on { background: color-mix(in oklab, var(--accent) 4%, transparent); }
   .info { flex: 1 1 220px; min-width: 0; }
-  .name { font: 600 14px var(--mono); }
+  .name { font-size: 16px; font-weight: 640; font-stretch: 108%; }
   .switch { margin-right: auto; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; position: relative; }
   .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
-  .track { width: 38px; height: 22px; border-radius: 999px; background: var(--border-strong); position: relative; transition: background 0.25s, box-shadow 0.25s; }
+  .track { width: 44px; height: 26px; border-radius: 999px; background: var(--border-strong); position: relative; transition: background 0.3s; }
   .track::after {
     content: '';
     position: absolute;
     top: 3px;
     left: 3px;
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
-    background: var(--text);
-    transition: transform 0.3s var(--ease);
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+    transition: translate 0.45s var(--spring), width 0.2s var(--ease);
   }
-  input:checked + .track { background: var(--green); box-shadow: 0 0 14px var(--green-glow); }
-  input:checked + .track::after { transform: translateX(16px); background: var(--bg); }
-  input:focus-visible + .track { outline: 2px solid var(--green); outline-offset: 2px; }
+  /* The thumb stretches while pressed, like a physical switch. */
+  .switch:active .track::after { width: 26px; }
+  input:checked + .track { background: var(--accent); }
+  input:checked + .track::after { translate: 18px 0; }
+  .switch:active input:checked + .track::after { translate: 12px 0; }
+  input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
   input:disabled + .track { opacity: 0.5; }
-  .state { width: 22px; font: 12px var(--mono); color: var(--muted); }
-  .on .state { color: var(--green); }
+  .state { width: 24px; font-size: 13px; font-weight: 560; color: var(--muted); }
+  .on .state { color: var(--accent); }
   .consent, .wide { flex-basis: 100%; }
-  .consent { display: grid; gap: 10px; padding: 12px 14px; border: 1px solid rgba(242, 193, 78, 0.35); border-radius: 6px; background: rgba(242, 193, 78, 0.06); font-size: 13px; }
+  .consent { display: grid; gap: 10px; padding: 14px 16px; border: 1px solid color-mix(in oklab, var(--signal) 40%, transparent); border-radius: var(--radius-sm); background: var(--signal-soft); font-size: 14px; }
 </style>

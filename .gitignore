@@ -49,3 +49,4 @@ Thumbs.db
 # frontend
 frontend/node_modules/
 frontend/.astro/
+.claude/

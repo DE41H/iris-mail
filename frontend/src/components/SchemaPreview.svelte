@@ -5,12 +5,8 @@
 
   let { fields, rules }: { fields: Field[]; rules: Rule[] } = $props();
 
-  const TABS = [
-    ['schema', 'schema'],
-    ['laya', 'laya'],
-    ['result', 'result'],
-  ] as const;
-  let tab = $state<(typeof TABS)[number][0]>('schema');
+  const TABS = ['schema', 'laya', 'result'] as const;
+  let tab = $state<(typeof TABS)[number]>('schema');
 
   const example = (f: Field) => (f.kind === 'boolean' ? true : f.kind === 'scale' ? f.min : (f.options[0] ?? null));
   const value = $derived(
@@ -20,13 +16,13 @@
 
 <section class="card preview">
   <div class="tabs" role="tablist">
-    {#each TABS as [key, label]}
-      <button type="button" role="tab" aria-selected={tab === key} onclick={() => (tab = key)}>{label}</button>
+    {#each TABS as t}
+      <button type="button" role="tab" aria-selected={tab === t} onclick={() => (tab = t)}>{t === 'laya' ? 'Laya' : t[0].toUpperCase() + t.slice(1)}</button>
     {/each}
-    <span class="live" title="Updates as you type">live</span>
+    <span class="live" title="Updates as you type">Live</span>
   </div>
   <Json {value} />
-  <div class="foot"><CopyButton text={JSON.stringify(value, null, 2)} label="copy json" /></div>
+  <div class="foot"><CopyButton text={JSON.stringify(value, null, 2)} label="Copy JSON" /></div>
 </section>
 
 <style>
@@ -39,12 +35,12 @@
     border: 0;
     background: none;
     color: var(--muted);
-    font: 12px var(--mono);
+    font: 540 13px var(--font);
     cursor: pointer;
     transition: color 0.2s;
   }
   .tabs button:hover { color: var(--text); }
-  .tabs button[aria-selected='true'] { color: var(--green); }
+  .tabs button[aria-selected='true'] { color: var(--accent); }
   .tabs button[aria-selected='true']::after {
     content: '';
     position: absolute;
@@ -52,13 +48,13 @@
     right: 8px;
     bottom: -1px;
     height: 2px;
-    background: var(--green);
-    box-shadow: 0 0 8px var(--green-glow);
-    animation: grow 0.25s var(--ease);
+    border-radius: 2px;
+    background: var(--accent);
+    animation: grow 0.35s var(--spring);
   }
   @keyframes grow { from { transform: scaleX(0); } }
-  .live { margin-left: auto; font: 11px var(--mono); color: var(--green); display: inline-flex; align-items: center; gap: 6px; }
-  .live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.6s infinite; }
+  .live { margin-left: auto; font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+  .live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
   .preview :global(pre) { flex: 1; min-height: 0; background: transparent; }
   .foot { display: flex; justify-content: flex-end; padding: 0 12px 12px; }
 </style>
