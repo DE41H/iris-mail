@@ -211,9 +211,8 @@ SPECTACULAR_SETTINGS = {
     'TAGS': [
         {'name': 'users', 'description': 'Users sharing their mail with your plugin.'},
         {'name': 'subscriptions', 'description': 'Invite users to your plugin, or remove them.'},
-        {'name': 'results', 'description': 'Answers extracted from new mail.'},
+        {'name': 'results', 'description': 'Answers extracted from new inbox mail. Mail that lands in Spam is skipped, even if moved to the inbox later.'},
     ],
-    # Documented endpoints are the plugin API, so hide session auth from the docs.
     'AUTHENTICATION_WHITELIST': ['plugins.authentication.PluginKeyAuthentication'],
 }
 
