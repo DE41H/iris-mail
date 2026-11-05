@@ -11,6 +11,7 @@
 
   // Sends the state the user chose, not a flip, so a stale tab cannot change sharing by mistake.
   async function set(active: boolean) {
+    if (busy) return;
     asking = false;
     busy = true;
     error = '';
@@ -24,12 +25,15 @@
   }
 
   async function remove() {
+    if (busy) return;
+    busy = true;
     error = '';
     try {
       await api(`/api/subscriptions/${sub.id}/`, { method: 'DELETE' });
       onremove();
     } catch (err) {
       error = message(err);
+      busy = false;
     }
   }
 
@@ -99,5 +103,6 @@
   .state { width: 24px; font-size: 13px; font-weight: 560; color: var(--muted); }
   .on .state { color: var(--accent); }
   .consent, .wide { flex-basis: 100%; }
-  .consent { display: grid; gap: 10px; padding: 14px 16px; border: 1px solid color-mix(in oklab, var(--signal) 40%, transparent); border-radius: var(--radius-sm); background: var(--signal-soft); font-size: 14px; }
+  /* Accent panel with a saffron edge: saffron washes turn brown over the dark indigo. */
+  .consent { display: grid; gap: 10px; padding: 14px 16px 14px 18px; border: 1px solid var(--border); border-left: 3px solid var(--signal); border-radius: var(--radius-sm); background: var(--accent-soft); font-size: 14px; animation: rise 0.35s var(--ease) both; }
 </style>

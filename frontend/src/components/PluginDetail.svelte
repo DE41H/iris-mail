@@ -83,12 +83,12 @@
   {/if}
 </div>
 
-<!-- Escape is ignored: the key is shown once, so only "Done" closes it. -->
-<dialog bind:this={sheet} oncancel={(e) => e.preventDefault()} onclose={() => (key = '')} aria-label="New API key">
+<!-- The key is shown once, so only "Done" closes this. Chrome still closes on a second Escape, so reopen right after. -->
+<dialog bind:this={sheet} oncancel={(e) => (e.preventDefault(), setTimeout(() => key && !sheet?.open && sheet?.showModal()))} aria-label="New API key">
   {#if key}
     <div class="sheet">
       <KeyCard {key} />
-      <form method="dialog" class="actions"><button class="btn btn-primary">Done, I copied it</button></form>
+      <div class="actions"><button type="button" class="btn btn-primary" onclick={() => (sheet?.close(), (key = ''))}>Done, I copied it</button></div>
     </div>
   {/if}
 </dialog>

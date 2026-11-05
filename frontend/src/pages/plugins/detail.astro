@@ -4,5 +4,10 @@ import PluginDetail from '../../components/PluginDetail.svelte';
 ---
 
 <Layout title="Plugin" wide>
-  <PluginDetail client:only="svelte" />
+  <!-- Static, so it exists at first paint: the clicked plugin card grows into it. -->
+  <div class="vt-plugin"><PluginDetail client:only="svelte" /></div>
 </Layout>
+
+<style>
+  .vt-plugin { view-transition-name: plugin; min-height: calc(100dvh - 60px - 48px - 36px); }
+</style>

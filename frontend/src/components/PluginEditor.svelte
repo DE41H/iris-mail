@@ -29,6 +29,7 @@
 
   async function save(e: SubmitEvent) {
     e.preventDefault();
+    if (busy) return; // Enter pressed again while saving would send a second request
     if (issues.length || locked) return (open = true);
     busy = true;
     error = '';

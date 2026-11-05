@@ -25,7 +25,20 @@ const describe = (data: unknown) =>
     ? Object.entries(data).map(([k, v]) => `${k}: ${[v].flat().join(' ')}`).join(' ')
     : 'Request failed.';
 
-export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+// Identical GETs already in flight share one request, so a double click or two islands asking at once fetch once.
+const inflight = new Map<string, Promise<unknown>>();
+
+export function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+  if ((init.method ?? 'GET') !== 'GET') return send<T>(path, init);
+  let req = inflight.get(path) as Promise<T> | undefined;
+  if (!req) {
+    req = send<T>(path, init).finally(() => inflight.delete(path));
+    inflight.set(path, req);
+  }
+  return req;
+}
+
+async function send<T>(path: string, init: RequestInit): Promise<T> {
   const method = init.method ?? 'GET';
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (init.body) headers['Content-Type'] = 'application/json';

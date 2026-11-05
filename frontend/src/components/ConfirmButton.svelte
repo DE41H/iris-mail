@@ -10,6 +10,7 @@
   onDestroy(() => clearTimeout(timer));
 
   async function click() {
+    if (busy) return;
     if (!armed) {
       armed = true;
       timer = setTimeout(() => (armed = false), 4000);

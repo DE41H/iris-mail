@@ -54,7 +54,6 @@
       <div>
         <div class="eyebrow"><a href="/plugins">Plugins</a> <span aria-hidden="true">/</span> new</div>
         <h1>Start from a template</h1>
-        <p>Every template is a starting point. You can change all of it.</p>
       </div>
     </div>
     <div class="templates grow scroll">
