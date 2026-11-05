@@ -45,6 +45,4 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
   `RefreshError`, so such a user is reset every 3 minutes and never disconnected. Mostly gone once the
   P1 "mail skipped" fix lands.
 - [ ] `POST /api/subscriptions/remove/` returns 400 for an unknown user id, though the docs say always 204.
-- [ ] **The Laya model downloads on the first mail.** The first `process` took 26 s and warned about
-  unauthenticated Hugging Face requests. Download the model at worker start (or at image build into the
-  `models` volume) and set `HF_TOKEN` in `.env` if downloads get rate-limited.
+- [ ] Set `HF_TOKEN` in `.env` if Hugging Face model downloads (worker start) get rate-limited.
