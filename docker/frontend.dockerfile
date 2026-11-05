@@ -10,4 +10,4 @@ RUN npm run build
 FROM busybox:1.37 AS site
 
 COPY --from=build /app/build /site
-CMD ["sh", "-c", "cp -a /site/_astro /out/ && cp -a /site/. /out/"]
+CMD ["sh", "-c", "cp -R /site/_astro /out/ && find /out/_astro -type f -mtime +7 -delete && cp -R /site/. /out/"]
