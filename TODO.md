@@ -22,10 +22,3 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
   non-retryable `RefreshError` and call `disconnect(user)`.
 
 ## P3: nice to have
-
-- **Wasted work on already-answered mail.** `_extract` calls Laya even when `todo` is empty (`decide_batch` with
-  0 states, which may load the model), and `process` re-fetches messages that already have results. Fix: return
-  early in `_guess` when `msgs` is empty; skip ids already in `Result` before `fetch`.
-- **Misleading error for an empty subscription create.** Sending neither `user` nor `email` to
-  `POST /api/subscriptions/` returns "Send either user or email, not both."
-  (`SubscriptionSerializer.validate`). Fix: say "Send `user` or `email`."

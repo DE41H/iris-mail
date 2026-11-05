@@ -47,6 +47,7 @@ def _decide(plugin, states):
 
 
 def _guess(user, plugin, msgs, states):
+    if not msgs: return []
     if not plugin.schema.get("properties"): return [(m, {}) for m in msgs]
     extra = {"plugin_id": plugin.id, "user_id": user.pk}
     try:
@@ -64,15 +65,24 @@ def _refine(html):
     return "\n".join(line for line in (" ".join(raw.split()) for raw in text.splitlines()) if line)
 
 
-def _extract(user, subs, msgs, added):
+def _done(user, ids):
+    rows = Result.objects.filter(user=user, message__in=[bytes.fromhex(i) for i in ids]).values_list("message", "plugin_id")
+    return {(bytes(b), p) for b, p in rows}
+
+
+def _todo(sub, ids, added, done):
+    return [i for i in ids if added[i] > sub.hist_from and (bytes.fromhex(i), sub.plugin_id) not in done]
+
+
+def _extract(user, subs, msgs, added, done):
     bodies = {m.id: m.plain or _refine(m.html or "") for m in msgs}
     states = {m.id: laya.email_state(m.subject, bodies[m.id], sender=m.sender) for m in msgs}
-    done = {(bytes(b), p) for b, p in Result.objects.filter(user=user, message__in=[bytes.fromhex(m.id) for m in msgs]).values_list("message", "plugin_id")}
     saved = 0
     for sub in subs:
         plugin = sub.plugin
         rules = _compile(plugin)
-        todo = [m for m in msgs if added[m.id] > sub.hist_from and (bytes.fromhex(m.id), plugin.id) not in done]
+        want = set(_todo(sub, [m.id for m in msgs], added, done))
+        todo = [m for m in msgs if m.id in want]
         results = []
         for m, output in _guess(user, plugin, todo, states):
             if plugin.rules: output["rules"] = _match(rules, f"{m.subject or ''}\n{bodies[m.id]}")
@@ -104,9 +114,12 @@ def process(user_id):
     ids = sorted((i for i, h in added.items() if h > low), key=added.__getitem__)
     fetched = saved = 0
     for n in range(0, len(ids), CHUNK_SIZE):
-        msgs = fetch(gmail, ids[n:n + CHUNK_SIZE])
+        chunk = ids[n:n + CHUNK_SIZE]
+        done = _done(user, chunk)
+        need = {i for s in subs for i in _todo(s, chunk, added, done)}
+        msgs = fetch(gmail, [i for i in chunk if i in need]) if need else []
         fetched += len(msgs)
-        saved += _extract(user, subs, msgs, added)
+        saved += _extract(user, subs, msgs, added, done)
         if n + CHUNK_SIZE < len(ids):
             CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=added[ids[n + CHUNK_SIZE]] - 1)  # pyright: ignore[reportAttributeAccessIssue]
     if latest != user.hist_id:
