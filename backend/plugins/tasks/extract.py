@@ -63,6 +63,9 @@ def _guess(user, plugin, msgs, states):
     except SchemaError as error:
         logger.warning("Laya cannot answer plugin schema, skipped", extra={**extra, "error": str(error)})
         return []
+    except Exception:
+        logger.exception("Laya failed, batch skipped for this plugin", extra=extra)
+        return []
 
 
 def _refine(html):

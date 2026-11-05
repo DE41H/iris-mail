@@ -88,7 +88,9 @@ def get(gmail: Gmail, id):
     try:
         return gmail._build_message_from_ref("me", {"id": id}, attachments="ignore")
     except HttpError as error:
-        if error.resp.status != 404: raise  # deleted before fetch
+        if error.resp.status != 404: raise
+    except Exception:
+        logger.warning("Message could not be read, skipped", extra={"message_id": id}, exc_info=True)
 
 def fetch(gmail: Gmail, ids):
     size = -(-len(ids) // THREADS)
