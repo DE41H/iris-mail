@@ -33,8 +33,11 @@ Full API reference: `/docs`.
 
 ```bash
 cp docker/.env.example docker/.env    # fill in the secrets
-cd docker && docker compose up -d --build
+docker/deploy.sh
 ```
+
+`deploy.sh` needs the [docker-rollout](https://github.com/wowu/docker-rollout) plugin and swaps the backend with no
+downtime.
 
 Stack: Django + DRF, PostgreSQL, Procrastinate, Valkey, Gmail API, Laya, Astro + Svelte, Caddy, Docker.
 Contributor notes are in [`AGENTS.md`](AGENTS.md).

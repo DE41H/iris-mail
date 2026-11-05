@@ -17,7 +17,7 @@ django-otp, Laya, Astro 7 + Svelte 5, Caddy, Docker. Python 3.13 with uv.
 | `backend/static/`        | `iris.css` (dashboard and auth pages)                             |
 | `backend/templates/`     | allauth pages                                                     |
 | `frontend/src/`          | `pages/` (Astro), `components/` (Svelte), `lib/`                  |
-| `docker/`                | compose, Dockerfiles, caddyfile, `.env.example`                   |
+| `docker/`                | compose, Dockerfiles, `caddyfile`, `deploy.sh`, `.env.example` |
 
 ## Commands
 
@@ -25,7 +25,7 @@ django-otp, Laya, Astro 7 + Svelte 5, Caddy, Docker. Python 3.13 with uv.
 cd backend && uv sync && uv run manage.py migrate && uv run manage.py invalidate all && uv run manage.py runserver
 cd backend && uv run manage.py procrastinate worker
 cd frontend && npm install && npm run dev     # :4321, proxies to :8000
-cd docker && docker compose up -d --build     # iris.css: rebuild backend image; frontend: rebuild caddy image
+docker/deploy.sh                              # build, migrate, roll out backend, copy frontend, reload Caddy
 ```
 
 Admin login is password + TOTP. Give each superuser a device and scan the printed URL:
@@ -46,6 +46,8 @@ uv run manage.py shell -c "from django_otp.plugins.otp_totp.models import TOTPDe
 - Gmail: use `simplegmail` (`Gmail`, `Message`); call `gmail.service` only for what it lacks (history, profile).
 - Log with `logging.getLogger(__name__)`, ids in `extra=`, never email content.
 - `uuid7` PKs. Index every new query pattern; constraints go in `Meta.constraints`.
+- Migrations run while the previous release still serves: keep them backward-compatible (new columns nullable or
+  defaulted; drop or rename one release later).
 - cacheops caches `CustomUser`, `Plugin`, `Subscription`: use `.invalidated_update()` and `prefetch_related`, never
   `.update()` or `select_related`. Run `manage.py invalidate all` after migrations.
 - `/docs` shows the OpenAPI schema for API-key endpoints only; mark dashboard views `@extend_schema(exclude=True)`.
