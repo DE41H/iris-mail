@@ -4,10 +4,12 @@ from django.utils.deconstruct import deconstructible
 from laya.structured import SchemaError, plan_from_json_schema
 
 KEY = re2.compile(r"[a-z][a-z0-9_]*")
-MAX_OPTIONS = 32
-MAX_RULES = 16
-MAX_MATCHES = 20
-MAX_PATTERN = 512
+MAX_OPTIONS = 32  # answers per choice question
+MAX_RULES = 16  # rules per plugin
+MAX_MATCHES = 20  # matches kept per rule per email
+MAX_MATCH_LENGTH = 200  # characters kept per match
+MAX_PATTERN = 512  # characters in a rule pattern
+MAX_NAME_LENGTH = 64  # characters in a question key or rule name
 EMPTY_SCHEMA = {"type": "object", "properties": {}}
 RE2 = re2.Options()
 RE2.log_errors = False
@@ -17,7 +19,7 @@ def _problem(prop):
     match prop:
         case dict() if not isinstance(prop.get("description", ""), str):
             return "description must be a string"
-        case {"enum": [bool(), bool()] as values} if set(values) == {True, False}:  # bool() rejects 1 and 0
+        case {"enum": [bool(), bool()] as values} if set(values) == {True, False}:
             return None
         case {"enum": list(values)}:
             answers = {v.strip() for v in values if isinstance(v, str)}
@@ -47,6 +49,8 @@ class SchemaValidator:
         for key, prop in value["properties"].items():
             if not KEY.fullmatch(key):
                 raise ValidationError(f"properties.{key}: key must match ^[a-z][a-z0-9_]*$", code="invalid_schema")
+            if len(key) > MAX_NAME_LENGTH:
+                raise ValidationError(f"properties.{key}: key must be at most {MAX_NAME_LENGTH} characters", code="invalid_schema")
             if key == "rules":
                 raise ValidationError("properties.rules: key is reserved for rule matches", code="invalid_schema")
             if problem := _problem(prop):
@@ -64,6 +68,8 @@ class RuleValidator:
         for name, pattern in value.items():
             if not KEY.fullmatch(name):
                 raise ValidationError(f"{name}: name must match ^[a-z][a-z0-9_]*$", code="invalid_rules")
+            if len(name) > MAX_NAME_LENGTH:
+                raise ValidationError(f"{name}: name must be at most {MAX_NAME_LENGTH} characters", code="invalid_rules")
             if not isinstance(pattern, str) or not 0 < len(pattern) <= MAX_PATTERN:
                 raise ValidationError(f"{name}: pattern must be 1 to {MAX_PATTERN} characters", code="invalid_rules")
             try:

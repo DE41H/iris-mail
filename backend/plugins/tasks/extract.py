@@ -11,7 +11,7 @@ from procrastinate.contrib.django import app
 
 from plugins.gmail import client, disconnect, fetch, get_hist, reset_hist, save_token
 from plugins.models import CustomUser, Result, Subscription
-from plugins.validation import MAX_MATCHES, RE2
+from plugins.validation import MAX_MATCH_LENGTH, MAX_MATCHES, RE2
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def _compile(plugin):
 
 def _first(m):
     groups = m.groups()
-    return next((g for g in groups if g), groups[0] or "") if groups else m.group(0)
+    return (next((g for g in groups if g), groups[0] or "") if groups else m.group(0))[:MAX_MATCH_LENGTH]
 
 
 def _match(rules, content):

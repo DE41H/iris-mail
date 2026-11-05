@@ -3,11 +3,12 @@
 // Laya reads a flat JSON Schema: one property per question. Each property is an enum (choice),
 // a boolean (yes/no), or an integer range of at most MAX_LEVELS (scale). Nothing else is accepted.
 
-export const MAX_FIELDS = 32;
-export const MAX_LEVELS = 10;
-export const MAX_OPTIONS = 32;
-export const MAX_RULES = 16;
-export const MAX_PATTERN = 512;
+export const MAX_FIELDS = 32; // questions per plugin
+export const MAX_LEVELS = 10; // steps on a scale question (max - min + 1)
+export const MAX_OPTIONS = 32; // answers per choice question
+export const MAX_RULES = 16; // rules per plugin
+export const MAX_PATTERN = 512; // characters in a rule pattern
+export const MAX_NAME_LENGTH = 64; // characters in a question key or rule name
 
 export type Field =
   | { kind: 'choice'; name: string; question: string; options: string[] }
@@ -43,6 +44,7 @@ export const toSchema = (fields: Field[]) => ({
 export function fieldProblems(f: Field, fields: Field[]): string[] {
   const out: string[] = [];
   if (!/^[a-z][a-z0-9_]*$/.test(f.name)) out.push('Key must start with a letter and use only a-z, 0-9 and _.');
+  else if (f.name.length > MAX_NAME_LENGTH) out.push(`Key: at most ${MAX_NAME_LENGTH} characters.`);
   else if (f.name === 'rules') out.push('Key `rules` is reserved for rule matches.');
   else if (fields.some((g) => g !== f && g.name === f.name)) out.push('Key is already used by another question.');
   if (f.kind === 'choice') {
@@ -73,6 +75,7 @@ export function problems(fields: Field[], rules: Rule[]): string[] {
 export function ruleProblems(r: Rule, rules: Rule[]): string[] {
   const out: string[] = [];
   if (!/^[a-z][a-z0-9_]*$/.test(r.name)) out.push('Name must start with a letter and use only a-z, 0-9 and _.');
+  else if (r.name.length > MAX_NAME_LENGTH) out.push(`Name: at most ${MAX_NAME_LENGTH} characters.`);
   else if (rules.some((g) => g !== r && g.name === r.name)) out.push('Name is already used by another rule.');
   if (!r.pattern) out.push('Pattern is required.');
   else if (r.pattern.length > MAX_PATTERN) out.push(`Pattern: at most ${MAX_PATTERN} characters.`);

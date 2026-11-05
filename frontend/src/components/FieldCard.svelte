@@ -1,6 +1,6 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
-  import { fieldProblems, MAX_LEVELS, slug, type Field } from '../lib/schema';
+  import { fieldProblems, MAX_LEVELS, MAX_NAME_LENGTH, slug, type Field } from '../lib/schema';
   import { KINDS, retype, SCALES } from '../lib/presets';
   import OptionsInput from './OptionsInput.svelte';
 
@@ -70,7 +70,7 @@
   <div class="line">
     <div class="key" title="Result key">
       <span class="muted">→</span>
-      <input class="mono" type="text" value={field.name} oninput={key} placeholder="result_key" aria-label={`Question ${n} result key`} aria-invalid={touched && issues.some((i) => i.startsWith('Key'))} autocomplete="off" spellcheck="false" />
+      <input class="mono" type="text" value={field.name} oninput={key} placeholder="result_key" maxlength={MAX_NAME_LENGTH} aria-label={`Question ${n} result key`} aria-invalid={touched && issues.some((i) => i.startsWith('Key'))} autocomplete="off" spellcheck="false" />
       {#if auto && field.name}<span class="chip">auto</span>{/if}
     </div>
 

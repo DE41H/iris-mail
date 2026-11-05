@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MAX_RULES, MAX_PATTERN, ruleProblems, type Rule } from '../lib/schema';
+  import { MAX_NAME_LENGTH, MAX_RULES, MAX_PATTERN, ruleProblems, type Rule } from '../lib/schema';
 
   let { rules = $bindable() }: { rules: Rule[] } = $props();
   const full = $derived(rules.length >= MAX_RULES);
@@ -15,7 +15,7 @@
   {#each rules as r, i}
     {@const issues = ruleProblems(r, rules)}
     <div class="row">
-      <input class="mono" type="text" bind:value={r.name} placeholder="order_id" aria-label={`Rule ${i + 1} name`} autocomplete="off" spellcheck="false" />
+      <input class="mono" type="text" bind:value={r.name} placeholder="order_id" maxlength={MAX_NAME_LENGTH} aria-label={`Rule ${i + 1} name`} autocomplete="off" spellcheck="false" />
       <input class="mono" type="text" bind:value={r.pattern} placeholder={'#(\\d+)'} maxlength={MAX_PATTERN} aria-label={`Rule ${i + 1} pattern`} aria-invalid={!!issues.length && !!r.pattern} autocomplete="off" spellcheck="false" />
       <button type="button" class="btn btn-sm btn-ghost" aria-label={`Remove rule ${r.name || i + 1}`} onclick={() => rules.splice(i, 1)}>×</button>
     </div>

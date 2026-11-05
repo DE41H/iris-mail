@@ -8,11 +8,10 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P1: bugs, security and privacy
 
-- [ ] **A rule can copy whole emails to the developer.** `_match` (`plugins/tasks/extract.py`) stores each
-  match in full, and `RuleValidator` accepts any pattern, so the rule `(?s).+` returns the whole subject and
-  body (reproduced). Breaks "never store email bodies" and the consent copy "Never the emails."
-  (`SubscriptionRow.svelte`, `subscriptions.astro`). Fix: cut each stored match to ~200 characters
-  (`m[:200]`) and say "answers and short matched snippets" in the consent copy.
+- [ ] **Consent copy says "Never the emails" but rules store email text.** Rule matches (`_match`,
+  `plugins/tasks/extract.py`) are cut to `MAX_MATCH_LENGTH` (200) but still store up to 16 × 20 snippets per
+  mail. Fix: say "answers and short matched snippets" (`SubscriptionRow.svelte`, `subscriptions.astro`) and
+  reword the "never store email bodies" invariant in AGENTS.md.
 - [ ] **Mail right after turning a plugin on can be skipped.** `process` starts history from `user.hist_id`,
   set at sign-up and only advanced while a plugin is on. Sign up, wait over a week, turn a plugin on and
   send a test mail: the first poll gets a 404, `reset_hist` jumps to now and returns, and the test mail is
@@ -32,9 +31,7 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
   the foreign key (`ignore_conflicts` does not cover it), so the next poll calls Laya again for the others.
   Fix: save each plugin's results right after its `_guess`, inside `suppress(IntegrityError)`, and drop the
   `try/finally`.
-- [ ] **Bad keys from one IP lock out valid keys from that IP.** `PluginKeyAuthentication` checks the
-  per-IP fail counter before the key, so 10 bad keys from a shared IP (cloud NAT, serverless) block every
-  developer behind it for an hour. Fix: check the key first; only on failure count and raise `Throttled`.
+
 
 
 ## P3: nice to have
