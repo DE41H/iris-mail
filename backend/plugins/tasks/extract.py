@@ -1,4 +1,5 @@
 import logging
+from itertools import islice
 
 import laya
 import re2
@@ -18,16 +19,24 @@ ROUTER = laya.Router(max_loaded=1)
 CHUNK_SIZE = 250
 
 
-def _match(plugin, content):
+def _compile(plugin):
     out = {}
     for name, pattern in plugin.rules.items():
         try:
-            found = re2.compile(pattern, RE2).findall(content)
+            out[name] = re2.compile(pattern, RE2)
         except re2.error:
             logger.warning("Rule does not compile, skipped", extra={"plugin_id": plugin.id, "rule": name})
-            found = []
-        out[name] = [next((g for g in m if g), m[0]) if isinstance(m, tuple) else m for m in found[:MAX_MATCHES]]
+            out[name] = None
     return out
+
+
+def _first(m):
+    groups = m.groups()
+    return next((g for g in groups if g), groups[0] or "") if groups else m.group(0)
+
+
+def _match(rules, content):
+    return {name: [_first(m) for m in islice(r.finditer(content), MAX_MATCHES)] if r else [] for name, r in rules.items()}
 
 
 def _decide(plugin, states):
@@ -52,9 +61,10 @@ def _extract(user, subs, msgs, added):
     try:
         for sub in subs:
             plugin = sub.plugin
+            rules = _compile(plugin)
             todo = [m for m in msgs if added[m.id] > sub.hist_from and (bytes.fromhex(m.id), plugin.id) not in done]
             for m, output in _guess(user, plugin, todo, states):
-                if plugin.rules: output["rules"] = _match(plugin, f"{m.subject or ''}\n{bodies[m.id]}")
+                if plugin.rules: output["rules"] = _match(rules, f"{m.subject or ''}\n{bodies[m.id]}")
                 results.append(Result(user=user, plugin=plugin, version=plugin.version, output=output, message=bytes.fromhex(m.id)))
     finally:
         Result.objects.bulk_create(results, ignore_conflicts=True)
@@ -75,6 +85,7 @@ def process(user_id):
     except HttpError as error:
         if error.resp.status != 404: raise
         return reset_hist(user, "history expired")
+    save_token(user, gmail)
     Subscription.objects.filter(user=user, active=True, hist_from=None).invalidated_update(hist_from=latest)  # pyright: ignore[reportAttributeAccessIssue]
     subs = Subscription.objects.filter(user=user, active=True).prefetch_related("plugin")
     low = min((s.hist_from for s in subs), default=latest)
@@ -82,7 +93,6 @@ def process(user_id):
     fetched = saved = 0
     for n in range(0, len(ids), CHUNK_SIZE):
         msgs = fetch(gmail, ids[n:n + CHUNK_SIZE])
-        save_token(user, gmail)
         fetched += len(msgs)
         saved += _extract(user, subs, msgs, added)
         if n + CHUNK_SIZE < len(ids):

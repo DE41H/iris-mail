@@ -27,10 +27,6 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P2: should do soon
 
-- [ ] **The Google token is refreshed on every poll.** `save_token` runs only inside the fetch loop of
-  `process`, so with no new mail the token refreshed during `get_hist` is never saved: after the first hour
-  every poll (480 a day per user) refreshes again. Fix: call `save_token(user, gmail)` once right after
-  `get_hist` and drop it from the loop.
 - [ ] **Deleting a plugin mid-run throws away other plugins' answers.** `_extract` saves all plugins'
   results in one `bulk_create` in `finally`; a plugin (or account) deleted meanwhile makes the insert fail on
   the foreign key (`ignore_conflicts` does not cover it), so the next poll calls Laya again for the others.
@@ -43,9 +39,6 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P3: nice to have
 
-- [ ] **Rules are compiled for every message.** `_match` calls `re2.compile` per rule per message and builds
-  the full `findall` list before keeping 20 (the rule `.` on a big newsletter makes ~1M strings). Compile once
-  per plugin per chunk.
 - [ ] **One deleted message refetches the whole chunk one by one** (`gmail.fetch` 404 fallback). Fine for
   now; retry only the failed ids if it shows up in logs.
 - [ ] **Revoked token with expired history loops.** `reset_hist` uses `get_hist_id`, which swallows
