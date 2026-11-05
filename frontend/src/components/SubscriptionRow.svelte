@@ -56,7 +56,7 @@
 
   {#if asking}
     <div class="consent" transition:slide={{ duration: 220 }}>
-      <p><strong>{sub.plugin_name}</strong>'s creator will receive answers from your new emails. Never the emails.</p>
+      <p><strong>{sub.plugin_name}</strong>'s creator will receive answers and short matched snippets from your new emails. Never whole emails.</p>
       <div class="actions">
         <button type="button" class="btn btn-sm" onclick={() => (asking = false)}>cancel</button>
         <!-- svelte-ignore a11y_autofocus -->

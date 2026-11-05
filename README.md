@@ -4,7 +4,7 @@
 
 Developers describe the information they want from email (invoices, shipping updates, receipts) as a
 plugin. Users connect Gmail and turn the plugin on. Iris turns matching mail into structured answers
-that the developer pulls with an API key. The email is never stored, only the answer.
+that the developer pulls with an API key. The email is never stored, only the answer and short rule matches.
 
 ## How it works
 
@@ -21,7 +21,7 @@ The full API reference is at `/docs`.
 
 ## Privacy
 
-- Email contents are never stored. Developers get only the answers, plus each subscriber's email and username.
+- Whole emails are never stored. Developers get only the answers and short rule matches, plus each subscriber's email and username.
 - Users can turn a plugin off, remove it, or delete their account. Deleting revokes Google access
   and removes everything Iris holds about them.
 - If a user revokes Google access, Iris turns all their plugins off until they sign in again.

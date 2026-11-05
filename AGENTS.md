@@ -46,7 +46,7 @@ allauth (Google), django-otp, Laya, Astro 7 + Svelte 5, Caddy, Docker. Python 3.
 
 ## Invariants
 
-- Never store email bodies or headers.
+- Never store email headers or whole bodies; only rule matches, cut to `MAX_MATCH_LENGTH`.
 - API keys are stored as SHA-256 only and shown once.
 - Google OAuth tokens are encrypted at rest (`plugins/token.py`, key from `DJANGO_SECRET_KEY` + `DJANGO_SALT_KEY`).
 - Extract only for active subscriptions, and never call Laya twice for the same user, message and plugin.
