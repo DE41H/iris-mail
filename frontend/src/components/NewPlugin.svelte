@@ -10,7 +10,7 @@
   let created = $state<(Plugin & { key: string }) | null>(null);
 
   function start(t: Template) {
-    draft = structuredClone({ name: t.name, desc: t.desc, fields: t.fields, rules: [] });
+    draft = structuredClone({ name: t.name, desc: t.desc, fields: t.fields, rules: t.rules });
     scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -63,6 +63,7 @@
           <span class="muted">{t.blurb}</span>
           <span class="kinds">
             {#each t.fields as f}<span class="chip">{f.name}</span>{/each}
+            {#each t.rules as r}<span class="chip rule" title="Rule">{r.name}</span>{/each}
           </span>
           <span class="go">Use this template</span>
         </button>
@@ -72,7 +73,7 @@
 {/if}
 
 <style>
-  .templates { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); align-content: start; gap: 14px; padding: 4px; margin: -4px; }
+  .templates { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); grid-auto-rows: max-content; align-content: start; gap: 14px; padding: 4px; margin: -4px; }
   .tpl {
     display: grid;
     align-content: start;
@@ -88,8 +89,10 @@
   .tpl:active { translate: 0 -1px; }
   .title { font-size: 17px; font-weight: 640; font-stretch: 110%; }
   .kinds { display: flex; flex-wrap: wrap; gap: 4px; }
+  .rule { color: var(--signal-text); background: var(--signal-soft); border-color: transparent; }
   .go { margin-top: 4px; font-size: 13px; font-weight: 560; color: var(--accent); opacity: 0; translate: -6px 0; transition: opacity 0.25s, translate 0.35s var(--spring); }
   .tpl:hover .go, .tpl:focus-visible .go { opacity: 1; translate: 0; }
+  @media (hover: none) { .go { opacity: 1; translate: 0; } }
   .done { width: 100%; max-width: 760px; margin-inline: auto; justify-content: center; }
   .back { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 </style>

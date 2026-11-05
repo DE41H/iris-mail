@@ -5,25 +5,25 @@
   // Example mail for the landing demo, answered with the matching template's questions.
   const SCENES = [
     {
-      title: 'Receipt tracker',
-      from: 'orders@shop.example',
-      subject: 'Your receipt for $12.00',
-      body: ['Thanks for your order.', 'Pro plan, billed monthly.', 'Total charged: $12.00'],
-      out: { receipt: true, spend_category: 'software', subscription: true },
+      title: 'Spending',
+      from: 'receipts@northwind.example',
+      subject: 'Your receipt from Northwind',
+      body: ['Pro plan, billed monthly.', 'Renews on the 5th.', 'Total charged: $12.00'],
+      out: { receipt: true, spend_category: 'software', subscription: true, rules: { amount: ['$12.00'] } },
     },
     {
-      title: 'Support triage',
-      from: 'dana@client.example',
-      subject: 'Charged twice this month',
-      body: ['Our card was billed two times.', 'Second time this year.', 'Please refund the extra charge today.'],
-      out: { department: 'billing', urgency: 3, sentiment: 'negative', refund_request: true },
+      title: 'Inbox priority',
+      from: 'sam@team.example',
+      subject: 'Contract needs your signature',
+      body: ['The client signed their part.', 'Can you sign and send it back', 'before Friday noon?'],
+      out: { importance: 5, needs_reply: true, has_deadline: true, next_action: 'reply' },
     },
     {
-      title: 'Job hunt',
-      from: 'talent@studio.example',
-      subject: 'Next steps for your application',
-      body: ['We enjoyed your portfolio.', 'Could you meet the team', 'on Thursday at 2pm?'],
-      out: { job_related: true, status: 'interview', interview_invite: true },
+      title: 'Security alerts',
+      from: 'no-reply@accounts.example',
+      subject: 'New sign-in to your account',
+      body: ['Chrome on Windows, near Lisbon.', 'IP address 203.0.113.42', 'Not you? Reset your password.'],
+      out: { alert: 'new_sign_in', risk: 3, rules: { ip_address: ['203.0.113.42'] } },
     },
   ];
   const PHASES = ['arrive', 'read', 'answer', 'drop'] as const;
