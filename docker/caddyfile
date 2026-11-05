@@ -2,28 +2,47 @@
 	header {
 		Content-Security-Policy "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		Strict-Transport-Security "max-age={$DJANGO_HSTS_SECONDS:3600}"
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		Cross-Origin-Opener-Policy same-origin
+		Cross-Origin-Resource-Policy same-origin
 	}
 }
 
 {$SITE_ADDRESS} {
 	handle_path /static/* {
 		root * /srv/static
+		import site_headers
+		encode zstd br gzip
 		file_server
 	}
 
 	@django path /api/* /accounts/* /admin/* /signup/*
 	handle @django {
-		reverse_proxy backend:8000
+		reverse_proxy {
+			dynamic a backend 8000 {
+				refresh 1s
+			}
+			lb_try_duration 5s
+			lb_try_interval 250ms
+			fail_duration 2s
+			transport http {
+				dial_timeout 1s
+			}
+		}
 	}
 
 	handle {
-		root * /srv
+		root * /srv/site
 		import site_headers
+		header /_astro/* Cache-Control "public, max-age=31536000, immutable"
+		encode zstd gzip
 		file_server
 	}
 
 	handle_errors 404 {
-		root * /srv
+		root * /srv/site
 		import site_headers
 		rewrite * /404.html
 		file_server
