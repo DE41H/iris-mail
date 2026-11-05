@@ -19,12 +19,6 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
   send a test mail: the first poll gets a 404, `reset_hist` jumps to now and returns, and the test mail is
   never answered (same when `hist_id` is `None`). Fix: load active subscriptions before `get_hist` and start
   from `max(user.hist_id or 0, min(hist_from of subs that have one))`; only `reset_hist` when both are missing.
-- [ ] **Dashboard counts are stale for up to 15 minutes.** `PluginViewSet.get_queryset` annotates
-  `subscriber_count` and `result_count` with `Coalesce(Subquery(...))`. cacheops only tracks bare `Subquery`
-  annotations (`cacheops/tree.py`) and `Result` is not cached, so turning a plugin on does not refresh the
-  developer's count. Fix: `.nocache()` on that queryset. Reproduced live: after turning sharing off,
-  `/api/plugins/` still showed 1 subscriber while the database had 0.
-
 
 ## P2: should do soon
 
