@@ -101,6 +101,7 @@ class Subscription(models.Model):
         )
 
     def set_active(self, active: bool, **fields):
+        if self.active == active and not fields: return
         self.__class__.objects.filter(pk=self.pk).invalidated_update(active=active, **fields)  # pyright: ignore[reportAttributeAccessIssue]
         self.refresh_from_db(fields=("active", *fields))
 

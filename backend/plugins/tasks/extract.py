@@ -100,6 +100,7 @@ def process(user_id):
         saved += _extract(user, subs, msgs, added)
         if n + CHUNK_SIZE < len(ids):
             CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=added[ids[n + CHUNK_SIZE]] - 1)  # pyright: ignore[reportAttributeAccessIssue]
-    CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=latest)  # pyright: ignore[reportAttributeAccessIssue]
+    if latest != user.hist_id:
+        CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=latest)  # pyright: ignore[reportAttributeAccessIssue]
     if added:
         logger.info("Mail processed", extra={"user_id": user.pk, "seen": len(added), "fetched": fetched, "results": saved})
