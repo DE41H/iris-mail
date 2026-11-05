@@ -77,10 +77,11 @@ def _extract(user, subs, msgs, added):
 def process(user_id):
     user = CustomUser.objects.filter(pk=user_id).first()
     if user is None: return
-    if user.hist_id is None: return reset_hist(user, "no history id")
+    froms = [s.hist_from for s in Subscription.objects.filter(user=user, active=True) if s.hist_from is not None]
+    start = max(user.hist_id or 0, min(froms, default=0))
+    if not start: return reset_hist(user, "no history id")
     gmail = client(user)
-    try:
-        added, latest = get_hist(gmail, user.hist_id)
+    try: added, latest = get_hist(gmail, start)
     except RefreshError as error:
         if error.retryable: raise
         return disconnect(user)
