@@ -16,9 +16,5 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P2: should do soon
 
-- **A permanent Gmail API error fails every poll forever.** In `process`, any `HttpError` other than 404 is re-raised
-  (`get_hist`, and `fetch` for non-404). A 401/403 (Gmail API disabled for the project, scope removed) then fails
-  every 3 minutes with no disconnect and no message to the user. Not reproduced. Fix: treat 401/403 like a
-  non-retryable `RefreshError` and call `disconnect(user)`.
 
 ## P3: nice to have

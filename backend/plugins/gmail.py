@@ -57,11 +57,16 @@ def get_hist_id(user: CustomUser) -> int | None:
         logger.warning("Could not read Gmail history id", extra={"user_id": user.pk}, exc_info=True)
         return None
 
+def revoked(error):
+    if isinstance(error, RefreshError): return not error.retryable
+    status = error.resp.status
+    return status == 401 or (status == 403 and b"insufficientPermissions" in error.content)
+
 def reset_hist(user, reason):
     try:
         hist_id = _read_hist_id(user)
-    except RefreshError as error:
-        if error.retryable: raise
+    except (RefreshError, HttpError) as error:
+        if not revoked(error): raise
         return disconnect(user)
     logger.warning("Gmail history reset, older mail skipped", extra={"user_id": user.pk, "reason": reason})
     CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=hist_id)  # pyright: ignore[reportAttributeAccessIssue]

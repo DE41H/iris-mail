@@ -11,7 +11,15 @@ from googleapiclient.errors import HttpError
 from laya.structured import SchemaError
 from procrastinate.contrib.django import app
 
-from plugins.gmail import client, disconnect, fetch, get_hist, reset_hist, save_token
+from plugins.gmail import (
+    client,
+    disconnect,
+    fetch,
+    get_hist,
+    reset_hist,
+    revoked,
+    save_token,
+)
 from plugins.models import CustomUser, Result, Subscription
 from plugins.validation import MAX_MATCH_LENGTH, MAX_MATCHES, RE2
 
@@ -101,12 +109,10 @@ def process(user_id):
     if not start: return reset_hist(user, "no history id")
     gmail = client(user)
     try: added, latest = get_hist(gmail, start)
-    except RefreshError as error:
-        if error.retryable: raise
-        return disconnect(user)
-    except HttpError as error:
-        if error.resp.status != 404: raise
-        return reset_hist(user, "history expired")
+    except (RefreshError, HttpError) as error:
+        if revoked(error): return disconnect(user)
+        if isinstance(error, HttpError) and error.resp.status == 404: return reset_hist(user, "history expired")
+        raise
     save_token(user, gmail)
     Subscription.objects.filter(user=user, active=True, hist_from=None).invalidated_update(hist_from=latest)  # pyright: ignore[reportAttributeAccessIssue]
     subs = Subscription.objects.filter(user=user, active=True).prefetch_related("plugin")
@@ -117,7 +123,10 @@ def process(user_id):
         chunk = ids[n:n + CHUNK_SIZE]
         done = _done(user, chunk)
         need = {i for s in subs for i in _todo(s, chunk, added, done)}
-        msgs = fetch(gmail, [i for i in chunk if i in need]) if need else []
+        try: msgs = fetch(gmail, [i for i in chunk if i in need]) if need else []
+        except (RefreshError, HttpError) as error:
+            if revoked(error): return disconnect(user)
+            raise
         fetched += len(msgs)
         saved += _extract(user, subs, msgs, added, done)
         if n + CHUNK_SIZE < len(ids):
