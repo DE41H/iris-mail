@@ -25,8 +25,6 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P3: nice to have
 
-- [ ] **One deleted message refetches the whole chunk one by one** (`gmail.fetch` 404 fallback). Fine for
-  now; retry only the failed ids if it shows up in logs.
 - [ ] **Revoked token with expired history loops.** `reset_hist` uses `get_hist_id`, which swallows
   `RefreshError`, so such a user is reset every 3 minutes and never disconnected. Mostly gone once the
   P1 "mail skipped" fix lands.

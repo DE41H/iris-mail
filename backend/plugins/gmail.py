@@ -1,4 +1,5 @@
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 TOKEN_URI = "https://oauth2.googleapis.com/token"
 REVOKE_URI = "https://oauth2.googleapis.com/revoke"
+THREADS = 12
 
 def client(user: CustomUser):
     token = SocialToken.objects.select_related("account").get(
@@ -76,11 +78,14 @@ def get(gmail: Gmail, id):
         logger.info("Gmail message deleted before fetch, skipped", extra={"message_id": id})
 
 def fetch(gmail: Gmail, ids):
-    try:
-        return gmail._get_messages_from_refs("me", [{"id": i} for i in ids], attachments="ignore")
-    except HttpError as error:
-        if error.resp.status != 404: raise
-    return [m for m in (get(gmail, id) for id in ids) if m]
+    size = -(-len(ids) // THREADS)
+    def part(n):
+        g = Gmail(credentials=gmail.creds)
+        try: return [m for m in (get(g, i) for i in ids[n:n + size]) if m]
+        finally: g.service.close()
+
+    with ThreadPoolExecutor(THREADS) as pool:
+        return [m for ms in pool.map(part, range(0, len(ids), size or 1)) for m in ms]
 
 def revoke(user: CustomUser):
     token = SocialToken.objects.filter(account__user=user, account__provider="google").first()
