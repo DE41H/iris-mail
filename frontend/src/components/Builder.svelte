@@ -12,16 +12,20 @@
   let importing = $state(false);
   let pasted = $state('');
   let importError = $state('');
+  // Only one question is open for editing; the rest stay one line each so the list is easy to scan.
+  // An empty list starts nothing open; a new or clicked question opens.
+  let active = $state<Field | null>(null);
   const full = $derived(fields.length >= MAX_FIELDS);
   const unused = $derived(FIELD_PRESETS.filter((p) => !fields.some((f) => f.name === p.name)));
 
   async function add(field: Field, at = fields.length) {
     if (full) return;
     fields.splice(at, 0, field);
+    active = fields[at];
     await tick();
     const card = list.querySelectorAll('article')[at];
     card?.querySelector<HTMLInputElement>('input[type="text"]')?.focus({ preventScroll: true });
-    card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function move(i: number, by: number) {
@@ -31,18 +35,12 @@
 
   const duplicate = (i: number) => add({ ...$state.snapshot(fields[i]), name: `${fields[i].name}_copy` }, i + 1);
 
-  function preset(e: Event) {
-    const select = e.currentTarget as HTMLSelectElement;
-    const found = FIELD_PRESETS.find((p) => p.name === select.value);
-    if (found) add(structuredClone(found));
-    select.value = '';
-  }
-
   function load() {
     try {
       const parsed = fromSchema(JSON.parse(pasted));
       if ('error' in parsed) throw new Error(parsed.error);
       fields = parsed.fields.slice(0, MAX_FIELDS);
+      active = null;
       importing = false;
       pasted = importError = '';
     } catch (err) {
@@ -54,11 +52,13 @@
 <div class="builder">
   <div class="list" bind:this={list}>
     {#each fields as field, i (field)}
-      <div animate:flip={{ duration: 260 }} in:fly={{ y: 16, duration: 280 }} out:fly={{ x: -24, duration: 180 }}>
+      <div animate:flip={{ duration: 260 }} in:fly={{ y: 12, duration: 240 }} out:fly={{ x: -24, duration: 180 }}>
         <FieldCard
           bind:field={fields[i]}
           {fields}
           index={i}
+          open={active === field}
+          onopen={() => (active = field)}
           onmove={(by) => move(i, by)}
           onduplicate={() => duplicate(i)}
           onremove={() => fields.splice(i, 1)}
@@ -68,27 +68,27 @@
   </div>
 
   <div class="add" class:first={!fields.length}>
-    <span class="label">{fields.length ? 'Add another question' : 'Add your first question'}</span>
-    <div class="kinds">
+    <div class="kinds" role="group" aria-label="Add a question">
+      <span class="label">{fields.length ? 'Add' : 'Add your first question'}</span>
       {#each KINDS as k}
-        <button type="button" class="kind" disabled={full} onclick={() => add(blank(k.kind))}>
-          <i aria-hidden="true">{k.icon}</i>
-          <b>{k.label}</b>
-          <span>{k.note}</span>
+        <button type="button" class="add-pill" disabled={full} title={k.note} onclick={() => add(blank(k.kind))}>
+          <i aria-hidden="true">{k.icon}</i>{k.label}
         </button>
       {/each}
+      <button type="button" class="text-btn" aria-expanded={importing} onclick={() => (importing = !importing)}>Paste JSON schema</button>
     </div>
-    <div class="more">
-      <select disabled={full || !unused.length} onchange={preset} aria-label="Add a ready-made question">
-        <option value="">Or pick a ready-made question…</option>
-        {#each KINDS as k}
-          <optgroup label={k.label}>
-            {#each unused.filter((p) => p.kind === k.kind) as p}<option value={p.name}>{p.question}</option>{/each}
-          </optgroup>
+
+    {#if unused.length && !full}
+      <div class="ideas" role="group" aria-label="Ready-made questions">
+        <span class="label">Ready-made</span>
+        {#each unused.slice(0, fields.length ? 6 : 10) as p (p.name)}
+          <button type="button" class="idea" title={p.question} onclick={() => add(structuredClone(p))} animate:flip={{ duration: 200 }} out:fly={{ y: -6, duration: 140 }}>
+            <i aria-hidden="true">+</i>{p.name.replaceAll('_', ' ')}
+          </button>
         {/each}
-      </select>
-      <button type="button" class="link" aria-expanded={importing} onclick={() => (importing = !importing)}>Paste a JSON schema</button>
-    </div>
+      </div>
+    {/if}
+
     {#if full}<span class="help warn">That is the most questions a plugin can have.</span>{/if}
     {#if importing}
       <div class="import" transition:slide={{ duration: 200 }}>
@@ -104,40 +104,16 @@
 </div>
 
 <style>
-  .builder, .add { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
-  .list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .builder { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .list { container-type: inline-size; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; margin: 0 -10px; }
   .list:empty { display: none; }
-  .add { gap: 10px; }
-  .add .label { margin: 0; }
-  .kinds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-  .kind {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    align-items: baseline;
-    column-gap: 8px;
-    padding: 12px 14px;
-    text-align: left;
-    border: 1px dashed var(--border-strong);
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--text);
-    font: inherit;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s, translate 0.3s var(--spring);
-  }
-  .kind i { font-style: normal; color: var(--accent); }
-  .kind b { font-size: 14px; font-weight: 600; }
-  .kind span { grid-column: 2; font-size: 12.5px; color: var(--muted); line-height: 1.35; }
-  .kind:hover:not(:disabled) { border-style: solid; border-color: var(--accent); background: var(--accent-soft); translate: 0 -2px; }
-  .kind:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .kind:disabled { opacity: 0.5; cursor: not-allowed; }
-  .first .kind { padding-block: 16px; }
-  .more { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-  .more select { flex: 1 1 220px; min-width: 0; width: auto; font-size: 13.5px; }
-  .link { border: 0; background: none; padding: 0; font: 540 13px var(--font); color: var(--accent); cursor: pointer; }
-  .link:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .add { display: grid; gap: 10px; }
+  .label { margin: 0 4px 0 0; font-size: 13px; }
+  .kinds, .ideas { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .first .add-pill { padding: 9px 18px; }
+  .text-btn { margin-left: auto; }
   .warn { color: var(--signal-text); margin: 0; }
   .import { display: grid; gap: 8px; }
   .import .actions { justify-content: space-between; }
-  @media (max-width: 640px) { .kinds { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 640px) { .text-btn { margin-left: 0; flex-basis: 100%; text-align: left; } }
 </style>

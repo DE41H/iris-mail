@@ -5,8 +5,8 @@
 
   let { fields, rules }: { fields: Field[]; rules: Rule[] } = $props();
 
-  const TABS = ['result', 'schema', 'laya'] as const;
-  let tab = $state<(typeof TABS)[number]>('result');
+  const TABS = { result: 'Example result', schema: 'JSON schema', laya: 'Laya questions' } as const;
+  let tab = $state<keyof typeof TABS>('result');
 
   const example = (f: Field) => (f.kind === 'boolean' ? true : f.kind === 'scale' ? f.min : (f.options[0] ?? null));
   const value = $derived(
@@ -14,23 +14,24 @@
   );
 </script>
 
-<section class="preview">
+<div class="preview">
   <div class="tabs" role="tablist">
-    {#each TABS as t}
-      <button type="button" role="tab" aria-selected={tab === t} onclick={() => (tab = t)}>{t === 'laya' ? 'Laya questions' : t === 'result' ? 'Example result' : 'JSON schema'}</button>
+    {#each Object.entries(TABS) as [t, label]}
+      <button type="button" role="tab" aria-selected={tab === t} onclick={() => (tab = t as keyof typeof TABS)}>{label}</button>
     {/each}
-    <span class="live" title="Updates as you type">Live</span>
   </div>
-  <Json {value} />
-  <div class="foot"><CopyButton text={JSON.stringify(value, null, 2)} label="Copy JSON" /></div>
-</section>
+  <div class="code">
+    <Json {value} />
+    <div class="copy"><CopyButton text={JSON.stringify(value, null, 2)} label="Copy" /></div>
+  </div>
+</div>
 
 <style>
-  .preview { overflow: hidden; display: flex; flex-direction: column; min-height: 0; border-top: 1px solid var(--border); }
-  .tabs { display: flex; align-items: center; border-bottom: 1px solid var(--border); padding: 0 12px 0 54px; overflow-x: auto; }
+  .preview { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .tabs { display: flex; gap: 2px; padding: 10px 14px 0; border-bottom: 1px solid var(--border); overflow-x: auto; }
   .tabs button {
     position: relative;
-    padding: 10px;
+    padding: 8px 8px 10px;
     white-space: nowrap;
     border: 0;
     background: none;
@@ -53,8 +54,7 @@
     animation: grow 0.35s var(--spring);
   }
   @keyframes grow { from { transform: scaleX(0); } }
-  .live { margin-left: auto; font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
-  .live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-  .preview :global(pre) { flex: 1; min-height: 0; max-height: 340px; background: transparent; }
-  .foot { display: flex; justify-content: flex-end; padding: 0 12px 12px; }
+  .code { position: relative; flex: 1; min-height: 0; display: flex; }
+  .code :global(pre) { flex: 1; min-height: 120px; background: transparent; border-radius: 0; }
+  .copy { position: absolute; top: 10px; right: 12px; }
 </style>

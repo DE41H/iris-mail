@@ -40,7 +40,8 @@ allauth (Google), django-otp, Laya, Astro 7 + Svelte 5, Caddy, Docker. Python 3.
   `@extend_schema(exclude=True)`. Check: `uv run manage.py spectacular --validate --file /dev/null`.
 - Frontend: one screen per page, `client:only="svelte"` islands, short copy.
 - CSP: no inline `<script>` or `style="…"` in `.astro` files.
-- Schema and extraction-rule checks live in `plugins/validation.py` and `frontend/src/lib/schema.ts`; change both together.
+- Schema and extraction-rule checks live in `plugins/validation.py` and `frontend/src/lib/schema.ts` (`rules.ts` for
+  rules, RE2 via re2js); change both together.
   `rules` is reserved: rule matches land in `output.rules`.
 - Destructive actions use an inline confirmation (`ConfirmButton`), never `confirm()`.
 

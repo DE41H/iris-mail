@@ -62,36 +62,6 @@ export function fieldProblems(f: Field, fields: Field[]): string[] {
   return out;
 }
 
-export function problems(fields: Field[], rules: Rule[]): string[] {
-  const out: string[] = [];
-  if (!fields.length && !rules.length) out.push('Add at least one question or rule.');
-  if (fields.length > MAX_FIELDS) out.push(`Use at most ${MAX_FIELDS} questions.`);
-  fields.forEach((f, i) => fieldProblems(f, fields).forEach((p) => out.push(`Question ${i + 1}: ${p}`)));
-  if (rules.length > MAX_RULES) out.push(`Use at most ${MAX_RULES} rules.`);
-  rules.forEach((r, i) => ruleProblems(r, rules).forEach((p) => out.push(`Rule ${i + 1}: ${p}`)));
-  return out;
-}
-
-// Best effort: JS and Python regex syntax differ slightly, the server has the final say.
-export function ruleProblems(r: Rule, rules: Rule[]): string[] {
-  const out: string[] = [];
-  if (!/^[a-z][a-z0-9_]*$/.test(r.name)) out.push('Name must start with a letter and use only a-z, 0-9 and _.');
-  else if (r.name.length > MAX_NAME_LENGTH) out.push(`Name: at most ${MAX_NAME_LENGTH} characters.`);
-  else if (rules.some((g) => g !== r && g.name === r.name)) out.push('Name is already used by another rule.');
-  if (!r.pattern) out.push('Pattern is required.');
-  else if (r.pattern.length > MAX_PATTERN) out.push(`Pattern: at most ${MAX_PATTERN} characters.`);
-  // the server matches with RE2, which has no lookarounds, backreferences, atomic groups or possessive quantifiers
-  else if (/\(\?<?[=!>]|\\[1-9k]|[*+?}]\+/.test(r.pattern)) out.push('Pattern: lookarounds, backreferences and ++ are not supported.');
-  else {
-    try {
-      new RegExp(r.pattern);
-    } catch {
-      out.push('Pattern does not compile.');
-    }
-  }
-  return out;
-}
-
 export const toRules = (rules: Rule[]) => Object.fromEntries(rules.map((r) => [r.name, r.pattern]));
 export const fromRules = (rules: unknown): Rule[] =>
   Object.entries((rules as Record<string, string> | null) ?? {}).map(([name, pattern]) => ({ name, pattern }));

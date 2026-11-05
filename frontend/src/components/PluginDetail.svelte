@@ -11,13 +11,17 @@
   let draft = $state<Draft>({ name: '', desc: '', fields: [], rules: [] });
   let locked = $state('');
   let saved = $state('');
+  let shape = $state(''); // questions and rules as saved: changing them starts a new version
   let key = $state('');
   let error = $state('');
   let notice = $state('');
   let sheet = $state<HTMLDialogElement>();
 
   const snapshot = () => JSON.stringify(draft);
+  const shapeOf = () => JSON.stringify([draft.fields, draft.rules]);
   const dirty = $derived(snapshot() !== saved);
+  const bumps = $derived(shapeOf() !== shape);
+  const next = $derived(plugin ? (plugin.version % 32767) + 1 : 0); // same wrap as PluginSerializer.update
 
   function fill(p: Plugin) {
     plugin = p;
@@ -25,6 +29,7 @@
     locked = 'error' in parsed ? parsed.error : '';
     draft = { name: p.name, desc: p.desc, fields: 'fields' in parsed ? parsed.fields : [], rules: fromRules(p.rules) };
     saved = snapshot();
+    shape = shapeOf();
   }
 
   onMount(() => {
@@ -36,9 +41,10 @@
     const { fields, rules, ...rest } = draft;
     const body = { ...rest, schema: toSchema(fields), rules: toRules(rules) };
     const p = await api<Plugin>(`/api/plugins/${id}/`, { method: 'PATCH', body: JSON.stringify(body) });
-    plugin = p;
+    notice = p.version !== plugin?.version ? `Saved as version ${p.version}.` : 'Changes saved.';
+    plugin = { ...plugin, ...p };
     saved = snapshot();
-    notice = 'Changes saved.';
+    shape = shapeOf();
     setTimeout(() => (notice = ''), 2500);
   }
 
@@ -71,14 +77,38 @@
 <div class="screen">
   {#if error}<div class="alert alert-danger" role="alert">{error}</div>{/if}
   {#if plugin}
-    <PluginEditor bind:draft submit="Save changes" onsubmit={save} {dirty} {locked}>
+    <PluginEditor bind:draft submit="Save changes" onsubmit={save} {dirty} {locked} steps={false}>
       {#snippet head()}
-        <div class="eyebrow"><a href="/plugins">Plugins</a> <span aria-hidden="true">/</span> version {plugin!.version}{#if plugin!.prefix} <span aria-hidden="true">/</span> key <code>{plugin!.prefix}…</code>{/if}</div>
+        <div class="eyebrow"><a href="/plugins">Plugins</a> <span aria-hidden="true">/</span> {plugin!.name}</div>
         <h1>{plugin!.name}</h1>
       {/snippet}
       {#snippet tools()}
-        <ConfirmButton label="New key" confirm="Replace the key?" onconfirm={rotate} />
-        <ConfirmButton label="Delete" confirm="Delete for good?" danger onconfirm={remove} />
+        <ConfirmButton label="Delete plugin" confirm="Delete for good?" danger onconfirm={remove} />
+      {/snippet}
+      {#snippet aside()}
+        <section class="card meta">
+          <div class="key">
+            <div class="key-text">
+              <h2>API key</h2>
+              {#if plugin!.prefix}
+                <code class="prefix" title="Only the start of the key is kept">{plugin!.prefix}<span aria-hidden="true">••••••••••••</span></code>
+              {:else}
+                <span class="muted">No key yet</span>
+              {/if}
+            </div>
+            <ConfirmButton label={plugin!.prefix ? 'Rotate' : 'Create key'} confirm={plugin!.prefix ? 'Old key stops. Sure?' : 'Create?'} onconfirm={rotate} />
+          </div>
+          <p class="help">The full key is shown once. Rotating makes a new one and the old key stops working at once.</p>
+          <dl class="stats">
+            <div>
+              <dt>Version</dt>
+              <dd>{plugin!.version}{#if bumps && !locked}<span class="next" title="Saving changed questions or rules starts a new version">→ {next}</span>{/if}</dd>
+            </div>
+            <div><dt>Users</dt><dd>{plugin!.subscriber_count ?? 0}</dd></div>
+            <div><dt>Results</dt><dd>{plugin!.result_count ?? 0}</dd></div>
+          </dl>
+          {#if bumps && !locked}<p class="help bump">Saving starts version {next}. Results keep the version they came from.</p>{/if}
+        </section>
       {/snippet}
       {#if dirty}<button type="button" class="btn btn-ghost" onclick={() => fill(plugin!)}>Discard</button>{/if}
     </PluginEditor>
@@ -98,4 +128,18 @@
 <style>
   .toast { position: fixed; top: 72px; left: 50%; translate: -50% 0; z-index: 20; animation: pop 0.45s var(--spring) both; }
   .sheet { display: grid; gap: 12px; }
+
+  .meta { display: grid; gap: 12px; padding: 16px 18px; }
+  .key { display: flex; align-items: center; gap: 12px; }
+  .key-text { flex: 1; min-width: 0; display: grid; gap: 6px; }
+  .key h2 { font-size: 15px; color: var(--text); }
+  .prefix { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; color: var(--accent); }
+  .prefix span { color: var(--faint); letter-spacing: 0.05em; }
+  .help { margin: 0; font-size: 12.5px; line-height: 1.45; }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; padding-top: 12px; border-top: 1px solid var(--border); }
+  .stats div + div { padding-left: 12px; border-left: 1px solid var(--border); }
+  .stats dt { font-size: 12.5px; color: var(--muted); }
+  .stats dd { display: flex; align-items: baseline; gap: 6px; margin: 2px 0 0; font-size: 20px; font-weight: 640; font-stretch: 110%; font-variant-numeric: tabular-nums; }
+  .next { font-size: 13px; font-weight: 600; color: var(--signal-text); animation: pop 0.35s var(--spring); }
+  .bump { color: var(--signal-text); }
 </style>
