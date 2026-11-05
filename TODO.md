@@ -55,9 +55,6 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
   `RefreshError`, so such a user is reset every 3 minutes and never disconnected. Mostly gone once the
   P1 "mail skipped" fix lands.
 - [ ] `POST /api/subscriptions/remove/` returns 400 for an unknown user id, though the docs say always 204.
-- [ ] **`ack` counts already-acknowledged results.** Acking the same id twice returns `acknowledged: 1` both
-  times. Filter `fetched=False` in the update if the count should mean "newly acknowledged", or reword the
-  help text.
 - [ ] **Mail in Spam is never read, even if moved to the inbox later.** `get_hist` only sees `messageAdded`
   with label INBOX; a message rescued from Spam is a `labelAdded` event. Fine as a choice; say so in the
   docs, or also read `labelAdded` INBOX events.

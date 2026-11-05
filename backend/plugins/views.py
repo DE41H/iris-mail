@@ -202,7 +202,7 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         description="Marks results as fetched. Unknown ids are ignored.",
         request=inline_serializer("Ack", {"ids": serializers.ListField(
             child=serializers.UUIDField(), min_length=1, max_length=500, help_text="Result ids, 1 to 500.")}),
-        responses=inline_serializer("Acknowledged", {"acknowledged": serializers.IntegerField(help_text="Results marked as fetched.")}),
+        responses=inline_serializer("Acknowledged", {"acknowledged": serializers.IntegerField(help_text="Results newly marked as fetched; already acknowledged ones are not counted.")}),
     )
     @action(detail=False, methods=["post"])
     def ack(self, request):
@@ -210,7 +210,7 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             ids = serializers.ListField(child=serializers.UUIDField(), allow_empty=False, max_length=500).run_validation(request.data.get("ids"))
         except ValidationError as err:
             raise ValidationError({"ids": err.detail}) from err
-        acked = Result.objects.filter(plugin=request.auth, pk__in=ids).update(fetched=True)
+        acked = Result.objects.filter(plugin=request.auth, pk__in=ids, fetched=False).update(fetched=True)
         return Response({"acknowledged": acked})
 
 
