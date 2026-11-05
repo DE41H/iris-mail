@@ -58,12 +58,12 @@ def get_hist_id(user: CustomUser) -> int | None:
         return None
 
 def reset_hist(user, reason):
-    logger.warning("Gmail history reset, older mail skipped", extra={"user_id": user.pk, "reason": reason})
     try:
         hist_id = _read_hist_id(user)
     except RefreshError as error:
         if error.retryable: raise
         return disconnect(user)
+    logger.warning("Gmail history reset, older mail skipped", extra={"user_id": user.pk, "reason": reason})
     CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=hist_id)  # pyright: ignore[reportAttributeAccessIssue]
 
 def get_hist(gmail: Gmail, start):
@@ -83,8 +83,7 @@ def get(gmail: Gmail, id):
     try:
         return gmail._build_message_from_ref("me", {"id": id}, attachments="ignore")
     except HttpError as error:
-        if error.resp.status != 404: raise
-        logger.info("Gmail message deleted before fetch, skipped", extra={"message_id": id})
+        if error.resp.status != 404: raise  # deleted before fetch
 
 def fetch(gmail: Gmail, ids):
     size = -(-len(ids) // THREADS)

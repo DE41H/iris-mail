@@ -70,12 +70,6 @@ class PluginViewSet(
         logger.info("Plugin created", extra={"plugin_id": plugin.pk, "user_id": request.user.pk})
         return Response({**serializer.data, "key": key}, status=201)
 
-    def perform_update(self, serializer):
-        version = serializer.instance.version
-        plugin = serializer.save()
-        if plugin.version != version:
-            logger.info("Plugin version changed", extra={"plugin_id": plugin.pk, "version": plugin.version})
-
     def perform_destroy(self, instance):
         logger.info("Plugin deleted", extra={"plugin_id": instance.pk, "user_id": instance.developer_id})
         instance.delete()
@@ -149,7 +143,7 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
 
     def perform_destroy(self, instance):
         by = "developer" if isinstance(self.request.auth, Plugin) else "user"  # pyright: ignore[reportAttributeAccessIssue]
-        logger.info("Subscription removed", extra={"subscription_id": instance.pk, "plugin_id": instance.plugin_id, "user_id": instance.user_id, "by": by})
+        logger.info("Subscription removed", extra={"plugin_id": instance.plugin_id, "user_id": instance.user_id, "by": by})
         instance.delete()
 
     @action(detail=False, methods=["post"])
@@ -174,7 +168,7 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
             subscription.set_active(True, hist_from=get_hist_id(request.user))
         else:
             subscription.set_active(active)
-        logger.info("Plugin turned on" if subscription.active else "Plugin turned off", extra={"subscription_id": subscription.pk, "plugin_id": subscription.plugin_id, "user_id": subscription.user_id, "active": subscription.active})
+        logger.info("Plugin turned on" if subscription.active else "Plugin turned off", extra={"plugin_id": subscription.plugin_id, "user_id": subscription.user_id})
         return Response(self.get_serializer(subscription).data)
 
 

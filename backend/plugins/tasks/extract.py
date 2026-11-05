@@ -50,8 +50,8 @@ def _guess(user, plugin, msgs, states):
     extra = {"plugin_id": plugin.id, "user_id": user.pk}
     try:
         return list(zip(msgs, _decide(plugin, [states[m.id] for m in msgs]), strict=True))
-    except SchemaError:
-        logger.exception("Laya cannot answer plugin schema, skipped", extra=extra)
+    except SchemaError as error:
+        logger.warning("Laya cannot answer plugin schema, skipped", extra={**extra, "error": str(error)})
         return []
 
 
