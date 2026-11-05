@@ -1,9 +1,11 @@
 import logging
+from contextlib import suppress
 from itertools import islice
 
 import laya
 import re2
 from bs4 import BeautifulSoup
+from django.db import IntegrityError
 from google.auth.exceptions import RefreshError
 from googleapiclient.errors import HttpError
 from laya.structured import SchemaError
@@ -57,18 +59,18 @@ def _extract(user, subs, msgs, added):
     bodies = {m.id: m.plain or BeautifulSoup(m.html or "", "lxml").get_text("\n") for m in msgs}
     states = {m.id: laya.email_state(m.subject, bodies[m.id], sender=m.sender) for m in msgs}
     done = {(bytes(b), p) for b, p in Result.objects.filter(user=user, message__in=[bytes.fromhex(m.id) for m in msgs]).values_list("message", "plugin_id")}
-    results = []
-    try:
-        for sub in subs:
-            plugin = sub.plugin
-            rules = _compile(plugin)
-            todo = [m for m in msgs if added[m.id] > sub.hist_from and (bytes.fromhex(m.id), plugin.id) not in done]
-            for m, output in _guess(user, plugin, todo, states):
-                if plugin.rules: output["rules"] = _match(rules, f"{m.subject or ''}\n{bodies[m.id]}")
-                results.append(Result(user=user, plugin=plugin, version=plugin.version, output=output, message=bytes.fromhex(m.id)))
-    finally:
-        Result.objects.bulk_create(results, ignore_conflicts=True)
-    return len(results)
+    saved = 0
+    for sub in subs:
+        plugin = sub.plugin
+        rules = _compile(plugin)
+        todo = [m for m in msgs if added[m.id] > sub.hist_from and (bytes.fromhex(m.id), plugin.id) not in done]
+        results = []
+        for m, output in _guess(user, plugin, todo, states):
+            if plugin.rules: output["rules"] = _match(rules, f"{m.subject or ''}\n{bodies[m.id]}")
+            results.append(Result(user=user, plugin=plugin, version=plugin.version, output=output, message=bytes.fromhex(m.id)))
+        with suppress(IntegrityError):
+            saved += len(Result.objects.bulk_create(results, ignore_conflicts=True))
+    return saved
 
 
 @app.task(name="plugins.tasks.process")

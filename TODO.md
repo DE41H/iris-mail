@@ -15,11 +15,5 @@ Each item says what is wrong, where, and the fix. Remove an item when it ships.
 
 ## P2: should do soon
 
-- [ ] **Deleting a plugin mid-run throws away other plugins' answers.** `_extract` saves all plugins'
-  results in one `bulk_create` in `finally`; a plugin (or account) deleted meanwhile makes the insert fail on
-  the foreign key (`ignore_conflicts` does not cover it), so the next poll calls Laya again for the others.
-  Fix: save each plugin's results right after its `_guess`, inside `suppress(IntegrityError)`, and drop the
-  `try/finally`.
-
 ## P3: nice to have
 
