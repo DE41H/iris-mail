@@ -28,6 +28,36 @@
     el.style.setProperty('--my', `${e.clientY - r.top}px`);
   }
 
+  // Keeps the chips on one line: hides the ones that wrap and counts them in the last "+N" chip.
+  function oneLine(row: HTMLElement) {
+    const more = row.lastElementChild as HTMLElement;
+    const chips = [...row.children].slice(0, -1) as HTMLElement[];
+    const fit = () => {
+      if (!chips.length) return;
+      chips.forEach((c) => (c.hidden = false));
+      chips[0].style.maxWidth = '';
+      more.hidden = true;
+      const top = chips[0].offsetTop;
+      let shown = chips.filter((c) => c.offsetTop === top).length;
+      if (shown === chips.length) return;
+      chips.slice(shown).forEach((c) => (c.hidden = true));
+      more.hidden = false;
+      // the "+N" chip needs room too; drop chips until it fits on the line
+      while (true) {
+        more.textContent = `+${chips.length - shown}`;
+        if (more.offsetTop === top) return;
+        if (shown === 1) break;
+        chips[--shown].hidden = true;
+      }
+      // one chip as wide as the line: shorten it (it ends in an ellipsis) to make room
+      chips[0].style.maxWidth = `${row.clientWidth - more.offsetWidth - parseFloat(getComputedStyle(row).columnGap)}px`;
+    };
+    const ro = new ResizeObserver(fit);
+    ro.observe(row);
+    document.fonts.ready.then(fit); // web fonts change chip widths
+    return { destroy: () => ro.disconnect() };
+  }
+
   // Names only the clicked card, so the detail page can grow out of it.
   const open = (e: MouseEvent) => ((e.currentTarget as HTMLElement).style.viewTransitionName = 'plugin');
 </script>
@@ -57,10 +87,10 @@
           <span class="name">{p.name}</span>
           <span class="chip" title={`Version ${p.version}`}>v{p.version}</span>
         </div>
-        {#if p.desc}<p class="muted desc">{p.desc}</p>{/if}
-        <div class="fields">
-          {#each chips.slice(0, 5) as c}<span class="chip" class:rule={!c.ico}>{#if c.ico}<span class="ico">{c.ico}</span>{/if}{c.name}</span>{/each}
-          {#if chips.length > 5}<span class="chip">+{chips.length - 5}</span>{/if}
+        <p class="muted desc" title={p.desc}>{p.desc}</p>
+        <div class="fields" use:oneLine>
+          {#each chips as c}<span class="chip" class:rule={!c.ico} title={c.name}>{#if c.ico}<span class="ico">{c.ico}</span>{/if}<span class="text">{c.name}</span></span>{/each}
+          <span class="chip more" hidden></span>
         </div>
         <div class="stats">
           <span><b><Count value={p.subscriber_count ?? 0} delay={i * 60} /></b>{p.subscriber_count === 1 ? 'person' : 'people'}</span>
@@ -80,8 +110,8 @@
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(310px, 100%), 1fr)); grid-auto-rows: max-content; align-content: start; gap: 16px; padding: 6px; margin: -6px; }
   .plugin {
     --tint: oklch(0.58 0.19 var(--h));
-    display: grid;
-    align-content: start;
+    display: flex;
+    flex-direction: column;
     gap: 12px;
     padding: 18px;
     color: var(--text);
@@ -109,12 +139,16 @@
   .top .chip { flex-shrink: 0; font-variant-numeric: tabular-nums; transition: color 0.3s, background 0.3s, border-color 0.3s; }
   .plugin:hover .top .chip { color: var(--tint); border-color: color-mix(in oklab, var(--tint) 30%, transparent); background: color-mix(in oklab, var(--tint) 10%, var(--surface)); }
 
-  .desc { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .fields { display: flex; flex-wrap: wrap; gap: 5px; }
-  .fields .chip { overflow-wrap: anywhere; }
+  /* Every section keeps a fixed height, so the stats line up across cards. */
+  .desc { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2lh; margin: 0; overflow-wrap: anywhere; }
+  .fields { display: flex; flex-wrap: wrap; gap: 5px; min-width: 0; }
+  .fields .chip { max-width: 100%; min-width: 0; white-space: nowrap; }
+  .fields .chip[hidden] { display: none; }
+  .text { overflow: hidden; text-overflow: ellipsis; }
+  .more { flex-shrink: 0; font-variant-numeric: tabular-nums; }
   .ico { color: var(--tint); }
   .fields .rule { color: var(--signal-text); background: var(--signal-soft); border-color: transparent; }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
+  .stats { margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
   .stats b { display: block; color: var(--text); font-size: 22px; font-weight: 680; font-stretch: 115%; line-height: 1.15; }
 
   .add {
