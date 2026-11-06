@@ -83,9 +83,9 @@
     cursor: pointer;
     transition: color 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.25s, translate 0.25s var(--ease), scale 0.15s var(--ease);
   }
-  .theme:hover { color: var(--signal-text); background: var(--surface); border-color: var(--border); translate: 0 -1px; box-shadow: var(--sheen), var(--raise); }
+  .theme:hover { color: var(--signal-text); background: var(--surface); border-color: var(--border); translate: 0 -1px; box-shadow: var(--shadow); }
   .theme.dark:hover { color: var(--accent); }
-  .theme:active { scale: 0.92; translate: 0; box-shadow: var(--press); }
+  .theme:active { scale: 0.92; translate: 0; }
   .theme:focus-visible { border-radius: 50%; }
 
   svg { width: 20px; height: 20px; overflow: visible; transition: rotate 0.7s var(--spring); }

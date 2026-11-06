@@ -148,7 +148,7 @@
   .tag-desc { margin: 0; padding: 0 16px 10px; font-size: 13px; }
   details { border-top: 1px solid var(--border); }
   summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 11px 18px; cursor: pointer; list-style: none; transition: background 0.2s; }
-  details[open] { background: var(--surface-2); box-shadow: var(--well); }
+  details[open] summary { background: var(--surface-2); }
   details[open] .op { animation: rise 0.4s var(--ease) both; }
   summary::-webkit-details-marker { display: none; }
   summary:hover { background: var(--accent-soft); }

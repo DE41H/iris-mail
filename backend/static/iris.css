@@ -48,12 +48,6 @@
   --signal-soft: color-mix(in oklab, var(--signal) 14%, transparent);
   --shadow: 0 1px 2px color-mix(in oklab, var(--accent) 6%, transparent), 0 10px 30px -14px color-mix(in oklab, var(--accent) 28%, transparent);
   --shadow-lift: 0 2px 4px color-mix(in oklab, var(--accent) 8%, transparent), 0 22px 44px -18px color-mix(in oklab, var(--accent) 40%, transparent);
-  /* Light comes from above: raised things catch it on their top edge, wells are shaded inside. */
-  --sheen: inset 0 1px 0 rgb(255 255 255 / 0.9);
-  --well: inset 0 1px 2px color-mix(in oklab, var(--accent) 10%, transparent), inset 0 0 0 1px rgb(0 0 0 / 0.01);
-  --raise: 0 1px 1px color-mix(in oklab, var(--accent) 10%, transparent), 0 2px 6px -2px color-mix(in oklab, var(--accent) 16%, transparent);
-  --press: inset 0 2px 4px color-mix(in oklab, var(--accent) 18%, transparent);
-  --glow: radial-gradient(1100px 520px at 50% -180px, color-mix(in oklab, var(--accent) 11%, transparent), transparent 70%);
   --radius: 16px;
   --radius-sm: 10px;
   /* Buttons are squircle rectangles; a squircle needs a larger radius to look as round. */
@@ -82,13 +76,8 @@
   --signal: #ffc233;
   --signal-text: #ffc233;
   --danger: #ff7484;
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 14px 34px -14px rgb(0 0 0 / 0.75);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -16px rgb(0 0 0 / 0.6);
   --shadow-lift: 0 2px 6px rgb(0 0 0 / 0.35), 0 24px 48px -16px color-mix(in oklab, var(--accent) 30%, rgb(0 0 0 / 0.6));
-  --sheen: inset 0 1px 0 rgb(255 255 255 / 0.1);
-  --well: inset 0 1px 3px rgb(0 0 0 / 0.35);
-  --raise: 0 1px 2px rgb(0 0 0 / 0.4), 0 3px 8px -3px rgb(0 0 0 / 0.5);
-  --press: inset 0 2px 5px rgb(0 0 0 / 0.45);
-  --glow: radial-gradient(1100px 520px at 50% -180px, color-mix(in oklab, var(--accent) 16%, transparent), transparent 70%);
 }
 
 * { box-sizing: border-box; }
@@ -98,7 +87,7 @@ html { scrollbar-color: var(--border-strong) transparent; scrollbar-width: thin;
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--glow) no-repeat, var(--bg);
+  background: var(--bg);
   color: var(--text);
   font: 15px/1.55 var(--font);
   -webkit-font-smoothing: antialiased;
@@ -134,11 +123,6 @@ code, pre, kbd { font-family: var(--mono); font-size: 0.92em; }
   backdrop-filter: blur(14px) saturate(1.4);
   border-bottom: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
   view-transition-name: topbar;
-}
-/* The bar floats once the page scrolls under it. */
-@supports (animation-timeline: scroll()) {
-  .topbar { animation: float linear both; animation-timeline: scroll(root); animation-range: 0 80px; }
-  @keyframes float { to { box-shadow: 0 10px 30px -18px color-mix(in oklab, var(--accent) 45%, rgb(0 0 0 / 0.4)); border-bottom-color: transparent; } }
 }
 .brand { font-size: 18px; font-weight: 700; font-stretch: 120%; letter-spacing: -0.03em; color: var(--text); display: inline-flex; align-items: center; gap: 9px; }
 .brand:hover { color: var(--text); }
@@ -200,11 +184,10 @@ code, pre, kbd { font-family: var(--mono); font-size: 0.92em; }
 
 /* Surfaces */
 .card, .box {
-  /* Lit from above; a no-op on white. */
-  background: linear-gradient(color-mix(in oklab, var(--surface) 95%, white), var(--surface) 120px);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--sheen), var(--shadow);
+  box-shadow: var(--shadow);
 }
 .card-head, .box-head {
   display: flex;
@@ -232,26 +215,24 @@ code, pre, kbd { font-family: var(--mono); font-size: 0.92em; }
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-btn);
   corner-shape: squircle;
-  background: linear-gradient(var(--surface), color-mix(in oklab, var(--surface) 94%, var(--accent))) padding-box;
-  box-shadow: var(--sheen), var(--raise);
+  background: var(--surface);
   color: var(--text);
   font: 540 14px/1.35 var(--font);
   cursor: pointer;
   white-space: nowrap;
   transition: border-color 0.2s, background 0.2s, box-shadow 0.25s, translate 0.25s var(--ease), scale 0.15s var(--ease), color 0.2s;
 }
-.btn:hover:not(:disabled) { color: var(--text); border-color: var(--accent); translate: 0 -1px; box-shadow: var(--sheen), 0 8px 18px -10px color-mix(in oklab, var(--accent) 55%, transparent); }
-.btn:active:not(:disabled) { scale: 0.97; translate: 0 0; box-shadow: var(--press); transition-duration: 0.08s; }
+.btn:hover { color: var(--text); border-color: var(--accent); }
+.btn:active:not(:disabled) { scale: 0.96; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.btn-primary { background: linear-gradient(color-mix(in oklab, var(--accent) 86%, white), var(--accent)) padding-box; border-color: var(--accent-strong); color: var(--on-accent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 2px color-mix(in oklab, var(--accent) 40%, transparent), 0 6px 16px -8px var(--accent); }
-.btn-primary:hover:not(:disabled) { color: var(--on-accent); border-color: var(--accent-strong); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 2px 4px color-mix(in oklab, var(--accent) 35%, transparent), 0 14px 28px -10px var(--accent); }
-.btn-primary:active:not(:disabled) { box-shadow: inset 0 2px 6px rgb(0 0 0 / 0.3); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn-primary:hover:not(:disabled) { color: var(--on-accent); background: var(--accent-strong); border-color: var(--accent-strong); translate: 0 -1px; box-shadow: 0 10px 24px -10px var(--accent); }
 .btn-danger { color: var(--danger); border-color: color-mix(in oklab, var(--danger) 40%, transparent); }
-.btn-danger:hover:not(:disabled) { color: var(--danger); border-color: var(--danger); background: var(--danger-soft); box-shadow: var(--sheen), 0 8px 18px -10px color-mix(in oklab, var(--danger) 60%, transparent); }
+.btn-danger:hover { color: var(--danger); border-color: var(--danger); background: var(--danger-soft); }
 .btn-block { width: 100%; padding: 11px 18px; }
 .btn-sm { padding: 5px 12px; font-size: 13px; }
-.btn-ghost { background: transparent; border-color: transparent; color: var(--muted); box-shadow: none; }
-.btn-ghost:hover:not(:disabled) { background: var(--accent-soft); border-color: transparent; color: var(--text); translate: none; box-shadow: none; }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn-ghost:hover { background: var(--accent-soft); border-color: transparent; color: var(--text); }
 .actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 
 /* Forms */
@@ -263,17 +244,16 @@ input[type="text"], input[type="number"], input[type="email"], input:not([type])
   background: var(--surface);
   color: var(--text);
   font: 15px/1.4 var(--font);
-  box-shadow: var(--well);
-  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 /* Textareas grow with what is typed instead of showing a resize grip; rows is the fallback where field-sizing is missing. */
 textarea { resize: none; field-sizing: content; max-height: 240px; }
 input.mono, textarea.mono { font-family: var(--mono); font-size: 13.5px; }
 input::placeholder, textarea::placeholder { color: var(--faint); }
 input:hover, textarea:hover, select:hover { border-color: color-mix(in oklab, var(--accent) 35%, var(--border-strong)); }
-input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: var(--well), 0 0 0 4px var(--accent-soft); }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
 input[aria-invalid="true"] { border-color: var(--danger); }
-select { appearance: none; padding-right: 32px; cursor: pointer; box-shadow: var(--sheen), var(--raise); background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238b8ea8' fill='none' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center; }
+select { appearance: none; padding-right: 32px; cursor: pointer; background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238b8ea8' fill='none' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center; }
 .field { margin-bottom: 16px; }
 .field:last-child { margin-bottom: 0; }
 .field label, .label { display: block; font: 560 13px/1.4 var(--font); color: var(--muted); margin-bottom: 6px; }
@@ -313,11 +293,10 @@ select { appearance: none; padding-right: 32px; cursor: pointer; box-shadow: var
   color: var(--text);
   font: 540 13.5px var(--font);
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, color 0.2s, translate 0.3s var(--spring), box-shadow 0.3s var(--ease);
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
 }
 .add-pill i { font-style: normal; color: var(--accent); }
-.add-pill:hover:not(:disabled) { border-style: solid; border-color: var(--accent); background: var(--accent-soft); color: var(--accent); translate: 0 -1px; box-shadow: 0 6px 14px -8px color-mix(in oklab, var(--accent) 60%, transparent); }
-.add-pill:active:not(:disabled) { translate: 0 0; box-shadow: var(--press); }
+.add-pill:hover:not(:disabled) { border-style: solid; border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
 .add-pill:disabled { opacity: 0.5; cursor: not-allowed; }
 .idea {
   display: inline-flex;
@@ -330,11 +309,10 @@ select { appearance: none; padding-right: 32px; cursor: pointer; box-shadow: var
   color: var(--muted);
   font: 500 12.5px/1.6 var(--font);
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s, background 0.2s, translate 0.3s var(--spring), box-shadow 0.3s var(--ease);
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
 .idea i { font-style: normal; color: var(--accent); }
-.idea:hover { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); background: var(--accent-soft); translate: 0 -1px; box-shadow: 0 4px 10px -6px color-mix(in oklab, var(--accent) 60%, transparent); }
-.idea:active { translate: 0 0; box-shadow: var(--press); }
+.idea:hover { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); background: var(--accent-soft); }
 .text-btn { border: 0; background: none; padding: 0; font: 540 13px var(--font); color: var(--muted); cursor: pointer; }
 .text-btn:hover, .text-btn[aria-expanded="true"] { color: var(--accent); }
 
@@ -365,7 +343,7 @@ dialog::backdrop { background: color-mix(in oklab, var(--bg) 70%, transparent); 
 
 /* Django auth pages */
 .auth { max-width: 400px; margin: 14vh auto 0; padding: 0 16px; animation: rise 0.6s var(--ease) both; }
-.auth .box { padding: 32px; box-shadow: var(--sheen), var(--shadow-lift); }
+.auth .box { padding: 32px; box-shadow: var(--shadow-lift); }
 .auth h1 { text-align: center; margin-bottom: 16px; }
 .auth .box-body { padding: 0; display: grid; gap: 18px; }
 

@@ -215,14 +215,13 @@
   .name { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
   .figure { margin: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; color: var(--muted); font-size: 17px; }
   .figure b { color: var(--text); font-size: 40px; font-weight: 700; font-stretch: 115%; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-  .meter { position: relative; height: 14px; border-radius: 999px; background: var(--surface-2); box-shadow: var(--well), inset 0 0 0 1px var(--border); overflow: hidden; }
+  .meter { position: relative; height: 14px; border-radius: 999px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border); overflow: hidden; }
   .fill {
     position: absolute;
     inset: 0 auto 0 0;
     width: max(calc(var(--p) * 100%), 14px);
     border-radius: inherit;
     background: var(--accent);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3);
     animation: fill 1s 0.25s var(--ease) both;
   }
   .high .fill { background: var(--signal); }

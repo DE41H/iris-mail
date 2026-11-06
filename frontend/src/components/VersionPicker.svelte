@@ -104,15 +104,15 @@
     background: var(--surface);
     color: var(--text);
     font: 500 14px/1 var(--mono);
-    box-shadow: var(--sheen), var(--raise);
+    box-shadow: var(--shadow);
     cursor: pointer;
-    transition: border-color 0.2s, box-shadow 0.25s, translate 0.25s var(--ease), scale 0.2s var(--ease);
+    transition: border-color 0.2s, box-shadow 0.2s, scale 0.2s var(--ease);
     animation: bud 0.7s var(--spring) 0.2s both;
   }
-  .trigger:hover { border-color: color-mix(in oklab, var(--accent) 40%, var(--border-strong)); translate: 0 -1px; box-shadow: var(--sheen), 0 8px 18px -10px color-mix(in oklab, var(--accent) 55%, transparent); }
+  .trigger:hover { border-color: color-mix(in oklab, var(--accent) 40%, var(--border-strong)); }
   .trigger:active { scale: 0.97; }
   .trigger:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
-  .trigger[aria-expanded='true'] { border-color: var(--accent); translate: 0; box-shadow: var(--sheen), var(--shadow-lift); }
+  .trigger[aria-expanded='true'] { border-color: var(--accent); box-shadow: var(--shadow-lift); }
 
   .chev { fill: none; stroke: var(--muted); stroke-width: 1.5; transition: rotate 0.4s var(--spring), stroke 0.2s; }
   .trigger[aria-expanded='true'] .chev { rotate: 180deg; stroke: var(--accent); }
@@ -129,7 +129,7 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    box-shadow: var(--sheen), var(--shadow-lift);
+    box-shadow: var(--shadow-lift);
     transform-origin: top right;
     opacity: 0;
     visibility: hidden;

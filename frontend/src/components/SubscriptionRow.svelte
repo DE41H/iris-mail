@@ -68,7 +68,6 @@
 
 <style>
   .row { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 16px 20px; border-top: 1px solid var(--border); transition: background 0.4s; }
-  .row:hover { background: color-mix(in oklab, var(--accent) 3%, transparent); }
   .row::before { content: ''; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); scale: 1 0; transition: scale 0.45s var(--spring); }
   .row.on::before { scale: 1 1; }
   .row.on { background: color-mix(in oklab, var(--accent) 4%, transparent); }
@@ -76,7 +75,7 @@
   .name { font-size: 16px; font-weight: 640; font-stretch: 108%; }
   .switch { margin-right: auto; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; position: relative; }
   .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
-  .track { width: 44px; height: 26px; border-radius: 999px; background: var(--border-strong); box-shadow: var(--well); position: relative; transition: background 0.3s; }
+  .track { width: 44px; height: 26px; border-radius: 999px; background: var(--border-strong); position: relative; transition: background 0.3s; }
   .track::after {
     content: '';
     position: absolute;
@@ -86,11 +85,10 @@
     height: 20px;
     border-radius: 50%;
     background: var(--surface);
-    box-shadow: inset 0 -1px 0 rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.25), 0 2px 6px -2px rgb(0 0 0 / 0.2);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
     transition: translate 0.45s var(--spring), width 0.2s var(--ease);
   }
   /* The thumb stretches while pressed, like a physical switch. */
-  .switch:hover .track::after { box-shadow: 0 0 0 5px var(--accent-soft), 0 1px 3px rgb(0 0 0 / 0.25); }
   .switch:active .track::after { width: 26px; }
   input:checked + .track { background: var(--accent); }
   input:checked + .track::after { translate: 18px 0; }
