@@ -10,8 +10,13 @@ export interface User {
   avatar: string | null; // Google profile picture URL
 }
 
-// undefined until the first check, null when signed out.
-export const session = writable<User | null | undefined>(undefined);
+const KEY = 'iris-session';
+const cached = (): User | null | undefined => {
+  try { return JSON.parse(sessionStorage.getItem(KEY) ?? 'undefined'); } catch { return undefined; }
+};
+
+// undefined until the first check, null when signed out. Starts from the last page's answer so the nav doesn't reflow.
+export const session = writable<User | null | undefined>(cached());
 
 let loading: Promise<void> | undefined;
 
@@ -21,5 +26,7 @@ export const loadSession = () => (loading ??= check());
 async function check() {
   // Not through api(): a signed-out visitor is an answer here, not a reason to redirect.
   const res = await fetch('/api/me/', { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
-  session.set(res.ok ? ((await res.json()) as User) : null);
+  const user = res.ok ? ((await res.json()) as User) : null;
+  session.set(user);
+  try { sessionStorage.setItem(KEY, JSON.stringify(user)); } catch {}
 }

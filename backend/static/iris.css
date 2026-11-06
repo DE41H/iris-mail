@@ -80,7 +80,7 @@
 
 * { box-sizing: border-box; }
 
-html { scrollbar-color: var(--border-strong) transparent; scrollbar-width: thin; }
+html { scrollbar-color: var(--border-strong) transparent; scrollbar-width: thin; scrollbar-gutter: stable; }
 
 body {
   margin: 0;
