@@ -17,6 +17,15 @@ class UserTier(models.IntegerChoices):
     PRIME = 3, "Prime"
     ULTRA = 4, "Ultra"
 
+
+QUOTAS = {
+    UserTier.BASE: 2_000,
+    UserTier.CORE: 10_000,
+    UserTier.PRIME: 50_000,
+    UserTier.ULTRA: 250_000,
+}
+
+
 class CustomUser(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
     email = models.EmailField(unique=True)
@@ -26,8 +35,22 @@ class CustomUser(AbstractUser):
     class Meta(AbstractUser.Meta):
         indexes = (models.Index(Upper("email"), name="user_email_upper_idx"),)
 
+    @property
+    def quota(self) -> int:
+        return QUOTAS.get(self.tier, 0)
 
 
+class Usage(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
+    user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="usage", db_index=False)
+    date = models.DateField()
+    used = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = (models.UniqueConstraint(fields=("user", "date"), name="unique_user_usage_date"),)
+
+    def consume(self, value: int):
+        self.__class__.objects.filter(pk=self.id).update(used=models.F("used") + value)
 
 
 class Plugin(models.Model):

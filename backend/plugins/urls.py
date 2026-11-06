@@ -10,6 +10,7 @@ from plugins.views import (
     PluginViewSet,
     ResultViewSet,
     SubscriptionViewSet,
+    UsageViewSet,
     UserViewSet,
 )
 
@@ -18,6 +19,7 @@ r.register(r'plugins', PluginViewSet, basename='plugin')
 r.register(r'subscriptions', SubscriptionViewSet, basename='subscription')
 r.register(r'results', ResultViewSet, basename='results')
 r.register(r'users', UserViewSet, basename='users')
+r.register(r'usage', UsageViewSet, basename='usage')
 
 urlpatterns: list = [
     path("me/", ensure_csrf_cookie(MeViewSet.as_view({"get": "retrieve", "delete": "destroy"})), name="me"),

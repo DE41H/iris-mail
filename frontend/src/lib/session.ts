@@ -5,6 +5,7 @@ export interface User {
   email: string;
   tier: number;
   tier_name: string;
+  quota: number; // questions per day
   google: boolean; // false once Google access is revoked
   avatar: string | null; // Google profile picture URL
 }

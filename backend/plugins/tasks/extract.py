@@ -6,6 +6,7 @@ import laya
 import re2
 from bs4 import BeautifulSoup
 from django.db import IntegrityError
+from django.utils.timezone import localdate
 from google.auth.exceptions import RefreshError
 from googleapiclient.errors import HttpError
 from laya.structured import SchemaError
@@ -20,7 +21,7 @@ from plugins.gmail import (
     revoked,
     save_token,
 )
-from plugins.models import CustomUser, Result, Subscription
+from plugins.models import CustomUser, Result, Subscription, Usage
 from plugins.validation import MAX_MATCH_LENGTH, MAX_MATCHES, RE2
 
 logger = logging.getLogger(__name__)
@@ -58,14 +59,20 @@ def _guess(user, plugin, msgs, states):
     if not msgs: return []
     if not plugin.schema.get("properties"): return [(m, {}) for m in msgs]
     extra = {"plugin_id": plugin.id, "user_id": user.pk}
+    usage, _ = Usage.objects.get_or_create(user_id=plugin.developer_id, date=localdate())
+    if usage.used >= plugin.developer.quota:
+        logger.info("Usage quota reached, batch skipped", extra={**extra, "developer_id": plugin.developer_id})
+        return []
     try:
-        return list(zip(msgs, _decide(plugin, [states[m.id] for m in msgs]), strict=True))
+        pairs = list(zip(msgs, _decide(plugin, [states[m.id] for m in msgs]), strict=True))
     except SchemaError as error:
         logger.warning("Laya cannot answer plugin schema, skipped", extra={**extra, "error": str(error)})
         return []
     except Exception:
         logger.exception("Laya failed, batch skipped for this plugin", extra=extra)
         return []
+    usage.consume(len(msgs) * len(plugin.schema["properties"]))
+    return pairs
 
 
 def _refine(html):
@@ -118,7 +125,7 @@ def process(user_id):
         raise
     save_token(user, gmail)
     Subscription.objects.filter(user=user, active=True, hist_from=None).invalidated_update(hist_from=latest)  # pyright: ignore[reportAttributeAccessIssue]
-    subs = Subscription.objects.filter(user=user, active=True).prefetch_related("plugin")
+    subs = Subscription.objects.filter(user=user, active=True).prefetch_related("plugin__developer")
     low = min((s.hist_from for s in subs), default=latest)
     ids = sorted((i for i, h in added.items() if h > low), key=added.__getitem__)
     fetched = saved = 0

@@ -12,8 +12,12 @@ Granian, Astro 7, Svelte 5, Caddy, Docker, Python 3.13 (uv).
 - `backend/cfg/`: settings (env via `getenv`), urls, `middleware.py` (CSP, headers)
 - `backend/plugins/`: models, views, serializers, `gmail`, `token` (encrypted OAuth), `validation`, `schema`, `signals`,
   `adapters` (Google OAuth), `authentication`/`throttling` (API keys, flat developer rate), `pagination` (uuid cursor)
+- Usage: `Usage` is one row per developer per day (`used` = emails × schema questions sent to Laya, charged by
+  `usage.consume` in `extract._guess` after Laya succeeds). Dashboard reads it at `/api/usage/`. Daily quota per
+  tier is `QUOTAS` in `models.py` (`CustomUser.quota`), checked in `_guess` before each Laya batch;
+  `/api/me/` returns it as `quota`.
 - `backend/plugins/tasks/`: `poll` (`poll_hist` every 3 min, `init_hist`), `extract` (`process`), `cleanup`
-  (`cleanup` 03:00 daily: jobs >7d, results >100d, or >30d if fetched/unsubscribed; `revive` every 5 min: retry stalled jobs)
+  (`cleanup` 03:00 daily: jobs >7d, results >100d, or >30d if fetched/unsubscribed, usage >100d; `revive` every 5 min: retry stalled jobs)
 - `backend/static/iris.css` (dashboard, auth pages), `backend/templates/` (allauth)
 - `frontend/src/`: `pages/` (Astro), `components/` (Svelte), `lib/` (`api`, `session`, `schema`, `rules`, `presets`)
 - `docker/`: compose, Dockerfiles, `caddyfile`, `deploy.sh`, `.env.example` (all env vars)
@@ -76,4 +80,6 @@ Frontend
 - Mail simplegmail can't parse is skipped (`gmail.get`). A Laya failure skips that plugin's batch (`_guess`).
   `hist_id` moves on, so no retry. Both logged.
 - Dashboard plugin counts can be 5 min stale.
+- Usage quotas overshoot: the check runs before a whole batch, and two workers on one developer can both pass it.
+  Over-quota mail is skipped for good (`hist_id` moves on). Tier changes take up to 5 min (cacheops).
 - Sessions are in Valkey (`volatile-lru`, 256 MB); eviction logs users out. Polling is fine.

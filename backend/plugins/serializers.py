@@ -1,7 +1,7 @@
 from allauth.socialaccount.models import SocialAccount, SocialToken
 from rest_framework import serializers
 
-from plugins.models import CustomUser, Plugin, Result, Subscription
+from plugins.models import CustomUser, Plugin, Result, Subscription, Usage
 from plugins.validation import EMPTY_SCHEMA
 
 
@@ -17,9 +17,10 @@ class MeSerializer(CustomUserSerializer):
     google = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()
     tier_name = serializers.CharField(source="get_tier_display", read_only=True)
+    quota = serializers.IntegerField(read_only=True)
 
     class Meta(CustomUserSerializer.Meta):
-        fields = (*CustomUserSerializer.Meta.fields, "google", "avatar", "tier_name")
+        fields = (*CustomUserSerializer.Meta.fields, "google", "avatar", "tier_name", "quota")
         read_only_fields = fields
 
     def get_google(self, user) -> bool:
@@ -100,3 +101,10 @@ class ResultSerializer(serializers.ModelSerializer):
             "fetched": {"help_text": "Whether the result was acknowledged."},
             "time": {"help_text": "When the result was created."},
         }
+
+
+class UsageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Usage
+        fields = ("date", "used")
+        read_only_fields = fields

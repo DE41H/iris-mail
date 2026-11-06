@@ -9,7 +9,7 @@ from procrastinate.contrib.django import app
 from procrastinate.exceptions import UniqueViolation
 from procrastinate.jobs import Status
 
-from plugins.models import Result, Subscription
+from plugins.models import Result, Subscription, Usage
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 JOB_KEEP_FOR_HRS = 7 * 24
 RESULT_KEEP_FOR = 30
 RESULT_MAX_AGE = 100
+USAGE_KEEP_FOR = 100
 
 def _before(days):
     return UUID(int=int((now() - timedelta(days=days)).timestamp() * 1000) << 80)
@@ -37,8 +38,9 @@ async def cleanup(timestamp):
     cond_3 = Q(id__lt=_before(RESULT_KEEP_FOR))
     condition = (cond_1) | (cond_2 & cond_3)
     clean_results = Result.objects.filter(condition).adelete()
-    (count, _), _ = await gather(clean_results, delete_jobs)
-    logger.info("Old jobs and results deleted", extra={"results": count})
+    clean_usage = Usage.objects.filter(id__lt=_before(USAGE_KEEP_FOR)).adelete()
+    (count, _), (usage, _), _ = await gather(clean_results, clean_usage, delete_jobs)
+    logger.info("Old jobs, results and usage deleted", extra={"results": count, "usage": usage})
 
 @app.periodic(cron="*/5 * * * *")
 @app.task(name="plugins.tasks.revive", queueing_lock="revive")

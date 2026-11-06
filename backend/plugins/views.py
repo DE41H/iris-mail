@@ -21,7 +21,7 @@ from rest_framework.response import Response
 
 from plugins.authentication import PluginKeyAuthentication
 from plugins.gmail import get_hist_id, revoke
-from plugins.models import CustomUser, Plugin, Result, Subscription
+from plugins.models import CustomUser, Plugin, Result, Subscription, Usage
 from plugins.permissions import PluginKeyAuth, SessionPermission
 from plugins.serializers import (
     CustomUserSerializer,
@@ -29,6 +29,7 @@ from plugins.serializers import (
     PluginSerializer,
     ResultSerializer,
     SubscriptionSerializer,
+    UsageSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,7 +58,7 @@ class PluginViewSet(
         def count(qs):
             return Coalesce(Subquery(qs.filter(plugin=OuterRef("pk")).values("plugin").annotate(n=Count("pk")).values("n")), 0)
 
-        return Plugin.objects.filter(developer=self.request.user).annotate(
+        return Plugin.objects.filter(developer_id=self.request.user.pk).annotate(
             subscriber_count=count(Subscription.objects.filter(active=True)),
             result_count=count(Result.objects.all()),
         )
@@ -121,7 +122,7 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(self.request.auth, Plugin):  # pyright: ignore[reportAttributeAccessIssue]
             return Subscription.objects.filter(plugin=self.request.auth).prefetch_related("plugin")  # pyright: ignore[reportAttributeAccessIssue]
-        return Subscription.objects.filter(user=self.request.user).prefetch_related("plugin")
+        return Subscription.objects.filter(user_id=self.request.user.pk).prefetch_related("plugin")
 
     def create(self, request, *args, **kwargs):
         if "email" not in request.data:
@@ -241,3 +242,12 @@ class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return CustomUser.objects.filter(subscriptions__plugin=self.request.auth, subscriptions__active=True)  # pyright: ignore[reportAttributeAccessIssue]
+
+
+@extend_schema(exclude=True)
+class UsageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    serializer_class = UsageSerializer
+    permission_classes = (SessionPermission,)
+
+    def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+        return Usage.objects.filter(user_id=self.request.user.pk)
