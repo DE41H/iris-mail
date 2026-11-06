@@ -1,0 +1,8 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Account from '../components/Account.svelte';
+---
+
+<Layout title="Your account">
+  <Account client:only="svelte" />
+</Layout>

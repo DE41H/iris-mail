@@ -28,12 +28,29 @@
     {/if}
   </section>
 {:else}
-  <div class="card skeleton list-skel"></div>
+  <section class="card list skel" role="status" aria-label="Loading subscriptions">
+    <div class="card-head"><span class="bone w80"></span><span class="bone w40"></span></div>
+    {#each { length: 3 } as _}
+      <div class="sk-row">
+        <div class="sk-info"><span class="bone sk-name"></span><span class="bone sk-desc"></span></div>
+        <span class="bone sk-switch"></span>
+        <span class="bone sk-btn"></span>
+      </div>
+    {/each}
+  </section>
 {/if}
 
 <style>
   .list { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-  .list-skel { height: 240px; }
+  .sk-row { display: flex; align-items: center; gap: 16px; padding: 18px 20px; border-top: 1px solid var(--border); }
+  .card-head + .sk-row { border-top: 0; }
+  .sk-info { flex: 1; display: grid; gap: 8px; }
+  .sk-name { width: 30%; height: 13px; }
+  .sk-desc { width: 65%; }
+  .sk-switch { width: 44px; height: 26px; border-radius: 999px; }
+  .sk-btn { width: 78px; height: 34px; border-radius: 999px; }
+  .w80 { width: 80px; }
+  .w40 { width: 40px; }
   .count { display: inline-flex; align-items: center; gap: 7px; }
   .count.live { color: var(--accent); }
   .count.live::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 0 currentColor; animation: ping 2s var(--ease) infinite; }

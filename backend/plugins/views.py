@@ -5,6 +5,7 @@ from django.contrib.auth import logout
 from django.db import IntegrityError
 from django.db.models import Count, OuterRef, Subquery
 from django.db.models.functions import Coalesce
+from django.utils.timezone import localdate
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -36,11 +37,8 @@ logger = logging.getLogger(__name__)
 
 
 def _param(name, field, value):
-    # name the input in the error, like serializer errors do
-    try:
-        return field.run_validation(value)
-    except ValidationError as err:
-        raise ValidationError({name: err.detail}) from err
+    try: return field.run_validation(value)
+    except ValidationError as err: raise ValidationError({name: err.detail}) from err
 
 
 @extend_schema(exclude=True)
@@ -248,6 +246,11 @@ class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 class UsageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = UsageSerializer
     permission_classes = (SessionPermission,)
+    pagination_class = None
 
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
-        return Usage.objects.filter(user_id=self.request.user.pk)
+        return Usage.objects.filter(user_id=self.request.user.pk).order_by("-date")
+
+    def list(self, request, *args, **kwargs):
+        days = self.get_serializer(self.get_queryset(), many=True).data
+        return Response({"today": localdate(), "days": days})

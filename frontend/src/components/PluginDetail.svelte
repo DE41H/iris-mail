@@ -109,6 +109,24 @@
       {/snippet}
       {#if dirty}<button type="button" class="btn btn-ghost" onclick={() => fill(plugin!)}>Discard</button>{/if}
     </PluginEditor>
+  {:else if !error}
+    <div class="skel sk" role="status" aria-label="Loading plugin">
+      <div class="sk-head"><span class="bone" style:width="140px"></span><span class="bone sk-title"></span></div>
+      <div class="sk-cols">
+        <div class="sk-main">
+          {#each [2, 3] as n}
+            <div class="card sk-card">
+              <span class="bone sk-h2"></span>
+              {#each { length: n } as _}<span class="bone sk-field"></span>{/each}
+            </div>
+          {/each}
+        </div>
+        <div class="sk-main">
+          <div class="card sk-card"><span class="bone sk-h2"></span><span class="bone" style:width="70%"></span><span class="bone sk-field"></span></div>
+          <div class="card sk-card sk-out"><span class="bone sk-h2"></span>{#each [80, 55, 65, 40] as w}<span class="bone" style:width={`${w}%`}></span>{/each}</div>
+        </div>
+      </div>
+    </div>
   {/if}
 </div>
 
@@ -125,6 +143,17 @@
 <style>
   .toast { position: fixed; top: 72px; left: 50%; translate: -50% 0; z-index: 20; animation: pop 0.45s var(--spring) both; }
   .sheet { display: grid; gap: 12px; }
+
+  .sk { display: grid; gap: 18px; }
+  .sk-head { display: grid; gap: 12px; }
+  .sk-title { width: 240px; height: 34px; border-radius: 10px; }
+  .sk-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); gap: 16px; align-items: start; }
+  .sk-main { display: grid; gap: 16px; }
+  .sk-card { display: grid; gap: 14px; padding: 20px 22px; }
+  .sk-h2 { width: 110px; height: 15px; margin-bottom: 4px; }
+  .sk-field { height: 40px; border-radius: var(--radius-sm); }
+  .sk-out { min-height: 220px; align-content: start; }
+  @media (max-width: 960px) { .sk-cols { grid-template-columns: minmax(0, 1fr); } }
 
   .meta { display: grid; gap: 12px; padding: 16px 18px; }
   .key { display: flex; align-items: center; gap: 12px; }

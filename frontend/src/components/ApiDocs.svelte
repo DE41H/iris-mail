@@ -106,14 +106,26 @@
     </div>
   </section>
 {:else}
-  <div class="card skeleton docs-skel"></div>
+  <section class="card docs skel" role="status" aria-label="Loading docs">
+    <div class="card-head"><span class="bone sk-w" style:--w="110px"></span><span class="bone sk-w" style:--w="80px"></span></div>
+    <div class="card-body"><span class="bone sk-w" style:--w="55%"></span></div>
+    {#each [2, 4] as n}
+      <span class="bone sk-h"></span>
+      {#each { length: n } as _, i}
+        <div class="sk-op"><span class="bone sk-method"></span><span class="bone sk-w" style:--w={`${[38, 52, 30, 46][i]}%`}></span></div>
+      {/each}
+    {/each}
+  </section>
 {/if}
 
 <style>
   .docs { display: flex; flex-direction: column; min-height: 0; }
   .intro { margin: 0; }
   h2 { padding: 20px 18px 6px; margin: 0; text-transform: capitalize; }
-  .docs-skel { flex: 1; min-height: 300px; }
+  .sk-w { width: var(--w); }
+  .sk-h { width: 90px; height: 16px; margin: 20px 18px 10px; }
+  .sk-op { display: flex; align-items: center; gap: 12px; padding: 13px 18px; border-top: 1px solid var(--border); }
+  .sk-method { width: 60px; height: 18px; }
   .tag-desc { margin: 0; padding: 0 16px 10px; font-size: 13px; }
   details { border-top: 1px solid var(--border); }
   summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 11px 18px; cursor: pointer; list-style: none; transition: background 0.2s; }

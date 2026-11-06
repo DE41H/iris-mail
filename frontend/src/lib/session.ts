@@ -3,9 +3,9 @@ import { writable } from 'svelte/store';
 export interface User {
   username: string;
   email: string;
-  tier: number;
-  tier_name: string;
+  tier: string;
   quota: number; // questions per day
+  tiers: { tier: number; name: string; quota: number }[]; // every tier, lowest first
   google: boolean; // false once Google access is revoked
   avatar: string | null; // Google profile picture URL
 }

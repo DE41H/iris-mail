@@ -1,7 +1,15 @@
 from allauth.socialaccount.models import SocialAccount, SocialToken
 from rest_framework import serializers
 
-from plugins.models import CustomUser, Plugin, Result, Subscription, Usage
+from plugins.models import (
+    QUOTAS,
+    CustomUser,
+    Plugin,
+    Result,
+    Subscription,
+    Usage,
+    UserTier,
+)
 from plugins.validation import EMPTY_SCHEMA
 
 
@@ -16,15 +24,19 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class MeSerializer(CustomUserSerializer):
     google = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()
-    tier_name = serializers.CharField(source="get_tier_display", read_only=True)
+    tier = serializers.CharField(source="get_tier_display", read_only=True, help_text="Account tier name.")
     quota = serializers.IntegerField(read_only=True)
+    tiers = serializers.SerializerMethodField()
 
     class Meta(CustomUserSerializer.Meta):
-        fields = (*CustomUserSerializer.Meta.fields, "google", "avatar", "tier_name", "quota")
+        fields = (*CustomUserSerializer.Meta.fields, "google", "avatar", "quota", "tiers")
         read_only_fields = fields
 
     def get_google(self, user) -> bool:
         return SocialToken.objects.filter(account__user=user, account__provider="google").exists()
+
+    def get_tiers(self, user) -> list[dict]:
+        return [{"tier": t.value, "name": t.label, "quota": QUOTAS[t]} for t in UserTier]
 
     def get_avatar(self, user) -> str | None:
         account = SocialAccount.objects.filter(user=user, provider="google").first()

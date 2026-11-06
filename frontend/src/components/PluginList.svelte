@@ -65,8 +65,16 @@
 {#if error}
   <div class="alert alert-danger" role="alert">{error}</div>
 {:else if !plugins}
-  <div class="grid">
-    {#each { length: 3 } as _, i}<div class="card skeleton reveal" style:--i={i}></div>{/each}
+  <div class="grid skel" role="status" aria-label="Loading plugins">
+    {#each { length: 3 } as _}
+      <div class="card sk">
+        <div class="sk-row"><span class="bone sk-ico"></span><span class="bone w40"></span><span class="bone sk-pill"></span></div>
+        <span class="bone w90"></span>
+        <span class="bone w60"></span>
+        <div class="sk-row"><span class="bone sk-pill"></span><span class="bone sk-pill"></span><span class="bone sk-pill"></span></div>
+        <div class="sk-row sk-stats"><span class="bone w20"></span><span class="bone w20"></span><span class="bone w20"></span></div>
+      </div>
+    {/each}
   </div>
 {:else if !plugins.length}
   <div class="card empty reveal">
@@ -176,7 +184,15 @@
   .plus::after { rotate: 90deg; }
   .add:hover .plus { rotate: 90deg; background: var(--surface); }
 
-  .skeleton { height: 230px; }
+  .sk { display: flex; flex-direction: column; gap: 14px; padding: 18px; height: 230px; }
+  .sk-row { display: flex; align-items: center; gap: 10px; }
+  .sk-ico { width: 34px; height: 34px; border-radius: 50%; }
+  .sk-pill { width: 64px; height: 22px; border-radius: 999px; }
+  .sk-row > .w40 { flex: 0 0 40%; }
+  .sk-stats { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border); }
+  .sk-stats .bone { flex: 0 0 20%; height: 14px; }
+  .w90 { width: 90%; }
+  .w60 { width: 60%; }
   .empty { display: grid; gap: 12px; justify-items: center; }
   .empty h2 { color: var(--text); font-size: 20px; }
 
