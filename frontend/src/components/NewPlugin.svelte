@@ -19,7 +19,7 @@
   }
 
   async function create() {
-    if (draft) created = await api<Plugin & { key: string }>('/api/plugins/', { method: 'POST', body: toBody(draft) });
+    if (draft) created = await api<Plugin & { key: string }>('/api/v1/plugins/', { method: 'POST', body: toBody(draft) });
   }
 </script>
 

@@ -74,7 +74,7 @@ class PluginViewSet(
         instance.delete()
 
     @action(detail=True, methods=["post"])
-    def rotate_key(self, request, pk=None):
+    def rotate_key(self, request, pk=None, **kwargs):
         plugin = self.get_object()
         key = plugin.rot_key()
         logger.info("API key rotated", extra={"plugin_id": plugin.pk, "user_id": request.user.pk})
@@ -146,7 +146,7 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
         instance.delete()
 
     @action(detail=False, methods=["post"])
-    def remove(self, request):
+    def remove(self, request, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             errors = serializer.errors
@@ -158,7 +158,7 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins
         return Response(status=204)
 
     @action(detail=True, methods=["post"])
-    def set_active(self, request, pk=None):
+    def set_active(self, request, pk=None, **kwargs):
         subscription = self.get_object()
         active = _param("active", serializers.BooleanField(), request.data.get("active"))
         if active and not SocialToken.objects.filter(account__user=request.user, account__provider="google").exists():
@@ -206,7 +206,7 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         responses=inline_serializer("Acknowledged", {"acknowledged": serializers.IntegerField(help_text="Results newly marked as fetched; already acknowledged ones are not counted.")}),
     )
     @action(detail=False, methods=["post"])
-    def ack(self, request):
+    def ack(self, request, **kwargs):
         try:
             ids = serializers.ListField(child=serializers.UUIDField(), allow_empty=False, max_length=500).run_validation(request.data.get("ids"))
         except ValidationError as err:

@@ -26,11 +26,11 @@
   function set(active: boolean) {
     asking = false;
     return run(async () => {
-      sub = await api<Subscription>(`/api/subscriptions/${sub.id}/set_active/`, { method: 'POST', body: JSON.stringify({ active }) });
+      sub = await api<Subscription>(`/api/v1/subscriptions/${sub.id}/set_active/`, { method: 'POST', body: JSON.stringify({ active }) });
     });
   }
 
-  const remove = () => run(() => api(`/api/subscriptions/${sub.id}/`, { method: 'DELETE' }).then(onremove));
+  const remove = () => run(() => api(`/api/v1/subscriptions/${sub.id}/`, { method: 'DELETE' }).then(onremove));
 
   // Turning a plugin on shares extracted data with its creator, so it asks first, inline.
   function toggle(e: Event) {

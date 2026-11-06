@@ -10,7 +10,7 @@
 
   // Plain fetch: the docs are public, and api() would redirect a signed-out visitor to sign in.
   onMount(() =>
-    fetch('/api/schema/?format=json')
+    fetch('/api/v1/schema/?format=json')
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`Schema request failed (${r.status}).`))))
       .then((s) => (spec = s))
       .catch((err) => (error = err.message)),
@@ -57,7 +57,7 @@
   <div class="alert alert-danger" role="alert">{error}</div>
 {:else if spec}
   <section class="card reveal docs">
-    <div class="card-head"><span>{spec.info.title} {spec.info.version}</span><span>{ops.length} endpoints</span></div>
+    <div class="card-head"><span>{spec.info.title} {spec.info.version}</span></div>
     <div class="grow scroll">
       <p class="card-body muted intro">Plugin endpoints take <code>Authorization: Bearer &lt;api key&gt;</code>.</p>
       {#each tags as tag}
@@ -107,7 +107,7 @@
   </section>
 {:else}
   <section class="card docs skel" role="status" aria-label="Loading docs">
-    <div class="card-head"><span class="bone sk-w" style:--w="110px"></span><span class="bone sk-w" style:--w="80px"></span></div>
+    <div class="card-head"><span class="bone sk-w" style:--w="110px"></span></div>
     <div class="card-body"><span class="bone sk-w" style:--w="55%"></span></div>
     {#each [2, 4] as n}
       <span class="bone sk-h"></span>

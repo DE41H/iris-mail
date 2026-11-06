@@ -50,6 +50,8 @@
   --shadow-lift: 0 2px 4px color-mix(in oklab, var(--accent) 8%, transparent), 0 22px 44px -18px color-mix(in oklab, var(--accent) 40%, transparent);
   --radius: 16px;
   --radius-sm: 10px;
+  /* Buttons are squircle rectangles; a squircle needs a larger radius to look as round. */
+  --radius-btn: 10px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --font: "Mona Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -203,6 +205,7 @@ code, pre, kbd { font-family: var(--mono); font-size: 0.92em; }
 .empty { padding: 56px 16px; text-align: center; color: var(--muted); }
 
 /* Buttons */
+@supports (corner-shape: squircle) { :root { --radius-btn: 16px; } }
 .btn {
   display: inline-flex;
   align-items: center;
@@ -210,7 +213,8 @@ code, pre, kbd { font-family: var(--mono); font-size: 0.92em; }
   gap: 6px;
   padding: 8px 16px;
   border: 1px solid var(--border-strong);
-  border-radius: 999px;
+  border-radius: var(--radius-btn);
+  corner-shape: squircle;
   background: var(--surface);
   color: var(--text);
   font: 540 14px/1.35 var(--font);
@@ -283,7 +287,8 @@ select { appearance: none; padding-right: 32px; cursor: pointer; background: var
   gap: 6px;
   padding: 6px 14px;
   border: 1px dashed var(--border-strong);
-  border-radius: 999px;
+  border-radius: var(--radius-btn);
+  corner-shape: squircle;
   background: transparent;
   color: var(--text);
   font: 540 13.5px var(--font);

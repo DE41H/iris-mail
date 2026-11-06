@@ -9,7 +9,7 @@
   let plugins = $state<Plugin[] | null>(null);
   let error = $state('');
 
-  onMount(() => listAll<Plugin>('/api/plugins/').then((p) => (plugins = p)).catch((err) => (error = message(err))));
+  onMount(() => listAll<Plugin>('/api/v1/plugins/').then((p) => (plugins = p)).catch((err) => (error = message(err))));
 
   const questions = (p: Plugin) => {
     const parsed = fromSchema(p.schema);
@@ -75,12 +75,6 @@
         <div class="sk-row sk-stats"><span class="bone w20"></span><span class="bone w20"></span><span class="bone w20"></span></div>
       </div>
     {/each}
-  </div>
-{:else if !plugins.length}
-  <div class="card empty reveal">
-    <Iris breathe />
-    <h2>No plugins yet</h2>
-    <p><a class="btn btn-primary" href="/plugins/new">Create a plugin</a></p>
   </div>
 {:else}
   <div class="grid grow scroll">
@@ -193,8 +187,6 @@
   .sk-stats .bone { flex: 0 0 20%; height: 14px; }
   .w90 { width: 90%; }
   .w60 { width: 60%; }
-  .empty { display: grid; gap: 12px; justify-items: center; }
-  .empty h2 { color: var(--text); font-size: 20px; }
 
   @media (hover: none) { .plugin::before { display: none; } }
 </style>

@@ -13,9 +13,9 @@ Granian, Astro 7, Svelte 5, Caddy, Docker, Python 3.13 (uv).
 - `backend/plugins/`: `management/commands/mk_admin`, models, views, serializers, `gmail`, `token` (encrypted OAuth), `validation`, `schema`, `signals`,
   `adapters` (Google OAuth), `authentication`/`throttling` (API keys, flat developer rate), `pagination` (uuid cursor)
 - Usage: `Usage` is one row per developer per day (`used` = emails × schema questions sent to Laya, charged by
-  `usage.consume` in `extract._guess` after Laya succeeds). `/me` reads it at `/api/usage/` (`{today, days}`: every stored day, newest first, unpaginated); `/api/me/` also lists `tiers`. Daily quota per
+  `usage.consume` in `extract._guess` after Laya succeeds). `/me` reads it at `/api/v1/usage/` (`{today, days}`: every stored day, newest first, unpaginated); `/api/v1/me/` also lists `tiers`. Daily quota per
   tier is `QUOTAS` in `models.py` (`CustomUser.quota`), checked in `_guess` before each Laya batch;
-  `/api/me/` returns it as `quota`.
+  `/api/v1/me/` returns it as `quota`.
 - `backend/plugins/tasks/`: `poll` (`poll_hist` every 3 min, `init_hist`), `extract` (`process`), `cleanup`
   (`cleanup` 03:00 daily: jobs >7d, results >100d, or >30d if fetched/unsubscribed, usage >100d; `revive` every 5 min: retry stalled jobs)
 - `backend/static/iris.css` (dashboard, auth pages), `backend/templates/` (allauth)
@@ -57,6 +57,7 @@ Backend
 - cacheops caches `CustomUser`, `Plugin`, `Subscription` for 5 min. On them use `.invalidated_update()` and
   `prefetch_related`, never `.update()` or `select_related`.
 - `/docs` shows API-key endpoints only. Mark dashboard views `@extend_schema(exclude=True)`.
+- API is versioned in the URL: `/api/<version>/` (DRF `URLPathVersioning`); `ALLOWED_VERSIONS` in settings is the only list (now `v1`). No unversioned routes. New version: add it there, branch on `request.version`. `@action` handlers take `**kwargs` (they receive `version`). Frontend calls `/api/v1/` explicitly.
 
 Schema
 - Checks and `MAX_*` limits are in `plugins/validation.py` and `frontend/src/lib/schema.ts` (+ `rules.ts`, RE2 via

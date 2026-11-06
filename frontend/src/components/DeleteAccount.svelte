@@ -8,7 +8,7 @@
   async function leave() {
     error = '';
     try {
-      await api('/api/me/', { method: 'DELETE' });
+      await api('/api/v1/me/', { method: 'DELETE' });
       location.href = '/';
     } catch (err) {
       error = message(err);

@@ -38,11 +38,11 @@
 
   onMount(() => {
     if (!id) location.href = '/plugins';
-    else api<Plugin>(`/api/plugins/${id}/`).then(fill).catch((err) => (error = message(err)));
+    else api<Plugin>(`/api/v1/plugins/${id}/`).then(fill).catch((err) => (error = message(err)));
   });
 
   async function save() {
-    const p = await api<Plugin>(`/api/plugins/${id}/`, { method: 'PATCH', body: toBody(draft) });
+    const p = await api<Plugin>(`/api/v1/plugins/${id}/`, { method: 'PATCH', body: toBody(draft) });
     notice = p.version !== plugin?.version ? `Saved as version ${p.version}.` : 'Changes saved.';
     plugin = { ...plugin, ...p };
     saved = snapshot();
@@ -52,9 +52,9 @@
 
   async function rotate() {
     try {
-      key = (await api<{ key: string }>(`/api/plugins/${id}/rotate_key/`, { method: 'POST' })).key;
+      key = (await api<{ key: string }>(`/api/v1/plugins/${id}/rotate_key/`, { method: 'POST' })).key;
       sheet?.showModal();
-      const fresh = await api<Plugin>(`/api/plugins/${id}/`);
+      const fresh = await api<Plugin>(`/api/v1/plugins/${id}/`);
       if (plugin) plugin.prefix = fresh.prefix;
     } catch (err) {
       error = message(err);
@@ -63,7 +63,7 @@
 
   async function remove() {
     try {
-      await api(`/api/plugins/${id}/`, { method: 'DELETE' });
+      await api(`/api/v1/plugins/${id}/`, { method: 'DELETE' });
       saved = snapshot(); // the plugin is gone, so there is nothing left to warn about
       location.href = '/plugins';
     } catch (err) {

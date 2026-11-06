@@ -231,7 +231,8 @@
   .picker button {
     padding: 5px 14px;
     border: 1px solid var(--border);
-    border-radius: 999px;
+    border-radius: var(--radius-btn);
+    corner-shape: squircle;
     background: transparent;
     color: var(--muted);
     font: 500 13px var(--font);

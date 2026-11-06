@@ -20,7 +20,7 @@
 
   onMount(() => {
     loadSession();
-    api<NonNullable<typeof usage>>('/api/usage/').then((u) => (usage = u)).catch((err) => (error = message(err)));
+    api<NonNullable<typeof usage>>('/api/v1/usage/').then((u) => (usage = u)).catch((err) => (error = message(err)));
   });
 
   // Dates are plain YYYY-MM-DD from the server; UTC keeps the math free of DST shifts.

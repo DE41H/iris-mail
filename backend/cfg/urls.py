@@ -16,5 +16,5 @@ urlpatterns = [
     path("accounts/login/cancelled/", socialaccount_views.login_cancelled, name="socialaccount_login_cancelled"),
     path("signup/", socialaccount_views.signup, name="socialaccount_signup"),
     path("accounts/", include("allauth.account.urls")),
-    path("api/", include("plugins.urls")),
+    path("api/<str:version>/", include("plugins.urls")),
 ]

@@ -18,7 +18,7 @@
     return () => clearInterval(tick);
   });
 
-  const curl = $derived(`curl -H "Authorization: Bearer ${key}" ${location.origin}/api/results/?fetched=false`);
+  const curl = $derived(`curl -H "Authorization: Bearer ${key}" ${location.origin}/api/v1/results/?fetched=false`);
 </script>
 
 <section class="card key">

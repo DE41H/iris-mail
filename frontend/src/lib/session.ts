@@ -25,7 +25,7 @@ export const loadSession = () => (loading ??= check());
 
 async function check() {
   // Not through api(): a signed-out visitor is an answer here, not a reason to redirect.
-  const res = await fetch('/api/me/', { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+  const res = await fetch('/api/v1/me/', { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
   const user = res.ok ? ((await res.json()) as User) : null;
   session.set(user);
   try { sessionStorage.setItem(KEY, JSON.stringify(user)); } catch {}
