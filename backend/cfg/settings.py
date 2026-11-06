@@ -209,8 +209,6 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'Read answers extracted from your users\' mail. Authenticate every request with '
                    '`Authorization: Bearer <api key>`. Lists are cursor-paginated, 50 items per page.',
     'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
-    'EXTENSIONS_INFO': {'x-versions': REST_FRAMEWORK['ALLOWED_VERSIONS']},
     'SCHEMA_PATH_PREFIX': r'/api/v[0-9]+',
     'PARSER_WHITELIST': ['rest_framework.parsers.JSONParser'],
     'ENUM_NAME_OVERRIDES': {'Tier': 'plugins.models.UserTier'},

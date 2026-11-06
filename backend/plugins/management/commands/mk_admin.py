@@ -10,8 +10,6 @@ from plugins.models import CustomUser
 
 
 class Command(BaseCommand):
-    help = "Create the superuser from DJANGO_SUPERUSER_* env vars and print a TOTP QR code."
-
     def handle(self, *args, **options):
         username, email, password = (getenv(f"DJANGO_SUPERUSER_{k}") for k in ("USERNAME", "EMAIL", "PASSWORD"))
         if not (username and email and password):

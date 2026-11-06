@@ -10,7 +10,7 @@ Granian, Astro 7, Svelte 5, Caddy, Docker, Python 3.13 (uv).
 ## Layout
 
 - `backend/cfg/`: settings (env via `getenv`), urls, `middleware.py` (CSP, headers)
-- `backend/plugins/`: `management/commands/mk_admin`, models, views, serializers, `gmail`, `token` (encrypted OAuth), `validation`, `schema`, `signals`,
+- `backend/plugins/`: `management/commands/` (`mk_admin`, `gen_schema`), models, views, serializers, `gmail`, `token` (encrypted OAuth), `validation`, `schema`, `signals`,
   `adapters` (Google OAuth), `authentication`/`throttling` (API keys, flat developer rate), `pagination` (uuid cursor)
 - Usage: `Usage` is one row per developer per day (`used` = emails × schema questions sent to Laya, charged by
   `usage.consume` in `extract._guess` after Laya succeeds). `/me` reads it at `/api/v1/usage/` (`{today, days}`: every stored day, newest first, unpaginated); `/api/v1/me/` also lists `tiers`. Daily quota per
@@ -57,7 +57,7 @@ Backend
 - cacheops caches `CustomUser`, `Plugin`, `Subscription` for 5 min. On them use `.invalidated_update()` and
   `prefetch_related`, never `.update()` or `select_related`.
 - `/docs` shows API-key endpoints only. Mark dashboard views `@extend_schema(exclude=True)`.
-- API is versioned in the URL: `/api/<version>/` (DRF `URLPathVersioning`); `ALLOWED_VERSIONS` in settings is the only list (now `v1`). No unversioned routes. New version: add it there, branch on `request.version`. `@action` handlers take `**kwargs` (they receive `version`). Frontend calls `/api/v1/` explicitly; the `/docs` version picker lists `x-versions` from the schema (`EXTENSIONS_INFO`).
+- API is versioned in the URL: `/api/<version>/` (DRF `URLPathVersioning`); `ALLOWED_VERSIONS` in settings is the only list (now `v1`). No unversioned routes. New version: add it there, branch on `request.version`. `@action` handlers take `**kwargs` (they receive `version`). Frontend calls `/api/v1/` explicitly. No schema endpoint: `deploy.sh` runs `gen_schema` after collectstatic, writing `/static/schema/<version>.json` per allowed version plus `versions.json`; `/docs` fetches them.
 
 Schema
 - Checks and `MAX_*` limits are in `plugins/validation.py` and `frontend/src/lib/schema.ts` (+ `rules.ts`, RE2 via

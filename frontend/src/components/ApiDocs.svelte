@@ -7,16 +7,25 @@
 
   let spec = $state<Schema | null>(null);
   let error = $state('');
-  // shortcut: opens on v1, the picker lists the rest from the schema's x-versions; open on the newest once v2 ships.
-  let version = $state('v1');
-  const versions = $derived<string[]>(spec?.info['x-versions'] ?? [version]);
+  let versions = $state<string[]>([]);
+  let version = $state('');
 
-  // Plain fetch: the docs are public, and api() would redirect a signed-out visitor to sign in.
+  // Static files written by `gen_schema` in docker/deploy.sh.
+  const get = (file: string) =>
+    fetch(`/static/schema/${file}.json`).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`Could not load the docs (${r.status}).`))));
+
+  get('versions')
+    .then((vs: string[]) => {
+      versions = vs;
+      version = vs.at(-1)!;
+    })
+    .catch((err) => (error = err.message));
+
   $effect(() => {
     const v = version;
+    if (!v) return;
     error = '';
-    fetch(`/api/${v}/schema/?format=json`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`Schema request failed (${r.status}).`))))
+    get(v)
       .then((s) => v === version && (spec = s))
       .catch((err) => v === version && (error = err.message));
   });
