@@ -3,14 +3,105 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="Not found">
-  <div class="screen">
-    <div class="page-head reveal">
-      <div>
-        <div class="eyebrow">Error 404</div>
-        <h1>Nothing here</h1>
-        <p>The link may be old, or the page moved.</p>
-      </div>
+  <div class="screen lost">
+    <div class="code" role="img" aria-label="404">
+      <span class="digit">4</span>
+      <svg class="iris" viewBox="-64 -64 128 128" aria-hidden="true">
+        <defs>
+          <clipPath id="lost-lens"><circle r="56" /></clipPath>
+          <radialGradient id="lost-pupil">
+            <stop offset="0" class="s0" />
+            <stop offset="0.55" class="s1" />
+            <stop offset="1" class="s2" />
+          </radialGradient>
+        </defs>
+        <circle r="61" class="halo" />
+        <g clip-path="url(#lost-lens)">
+          <circle r="56" fill="url(#lost-pupil)" />
+          <g class="blades">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <g transform={`rotate(${i * 60})`}><path class="blade" d="M0,-80 A80,80 0 0 1 69.28,-40 L0,0 Z" /></g>
+            ))}
+          </g>
+        </g>
+        <circle r="56" class="rim" />
+      </svg>
+      <span class="digit">4</span>
     </div>
-    <div><a class="btn" href="/">Go home</a></div>
+
+    <h1>Nothing to see here</h1>
+
+    <nav class="cta" aria-label="Ways back">
+      <a class="btn btn-primary" href="/">Home</a>
+      <a class="btn btn-ghost" href="/plugins">Plugins</a>
+      <a class="btn btn-ghost" href="/docs">API docs</a>
+    </nav>
   </div>
 </Layout>
+
+<style>
+  /* Small screens drop .screen's fixed height; keep a full screen so the content stays centred, a little above middle. */
+  .lost { align-items: center; justify-content: center; text-align: center; gap: 0; min-height: calc(100dvh - 60px - 48px - 36px); padding-bottom: 6vh; }
+
+  /* The one load moment: the digits pull into focus while the aperture shuts on an empty frame. */
+  .code {
+    display: flex;
+    align-items: center;
+    gap: 0.04em;
+    font-size: clamp(112px, 24vw, 240px);
+    line-height: 0.9;
+    font-weight: 760;
+    font-stretch: 122%;
+    letter-spacing: -0.04em;
+    color: var(--text);
+    margin-bottom: 28px;
+    user-select: none;
+  }
+  .digit { animation: focus 1.3s var(--ease) both; }
+  .digit:last-child { animation-delay: 0.08s; }
+  @keyframes focus {
+    from { font-stretch: 75%; font-weight: 250; filter: blur(12px); opacity: 0; }
+    60% { filter: blur(0); opacity: 1; }
+  }
+
+  .iris {
+    width: 0.74em;
+    height: 0.74em;
+    overflow: visible;
+    filter: drop-shadow(0 0.06em 0.1em color-mix(in oklab, var(--accent) 30%, transparent));
+  }
+  .s0 { stop-color: var(--signal); }
+  .s1 { stop-color: color-mix(in oklab, var(--signal) 70%, var(--accent)); }
+  .s2 { stop-color: var(--accent-strong); }
+  .halo { fill: none; stroke: var(--accent-soft); stroke-width: 6; transition: stroke 0.6s, stroke-width 0.6s var(--ease); }
+  .rim { fill: none; stroke: var(--accent-strong); stroke-width: 2; }
+  .blades { transition: rotate 1.2s var(--ease); animation: shut-turn 1.6s 0.3s var(--ease) backwards; }
+  .blade {
+    transform-box: fill-box;
+    transform-origin: 0 0;
+    fill: color-mix(in oklab, var(--accent) var(--k, 100%), black);
+    stroke: color-mix(in oklab, var(--accent-strong) 60%, black);
+    stroke-width: 0.8;
+    rotate: -5deg;
+    transition: rotate 0.9s var(--spring);
+    animation: shut 1.4s 0.3s var(--spring) backwards;
+  }
+  g:nth-child(2) > .blade { --k: 94%; transition-delay: 30ms; animation-delay: 0.34s; }
+  g:nth-child(3) > .blade { --k: 88%; transition-delay: 60ms; animation-delay: 0.38s; }
+  g:nth-child(4) > .blade { --k: 82%; transition-delay: 90ms; animation-delay: 0.42s; }
+  g:nth-child(5) > .blade { --k: 76%; transition-delay: 120ms; animation-delay: 0.46s; }
+  g:nth-child(6) > .blade { --k: 70%; transition-delay: 150ms; animation-delay: 0.5s; }
+  @keyframes shut-turn { from { rotate: 60deg; } }
+  @keyframes shut { from { rotate: -34deg; } }
+
+  /* Pointing at a way out opens it again. */
+  .lost:has(.cta a:is(:hover, :focus-visible)) .halo { stroke: color-mix(in oklab, var(--accent) 24%, transparent); stroke-width: 12; }
+  .lost:has(.cta a:is(:hover, :focus-visible)) .blades { rotate: 60deg; }
+  .lost:has(.cta a:is(:hover, :focus-visible)) .blade { rotate: -34deg; }
+
+  h1 { font-size: clamp(26px, 3.4vw, 34px); letter-spacing: -0.02em; font-weight: 680; font-stretch: 110%; }
+  h1, .cta { animation: rise 0.8s 0.6s var(--ease) both; }
+
+  .cta { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 28px; animation-delay: 0.7s; }
+  .cta .btn-primary { padding: 11px 22px; font-size: 15px; }
+</style>
