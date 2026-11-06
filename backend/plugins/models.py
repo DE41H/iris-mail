@@ -24,18 +24,21 @@ class CustomUser(AbstractUser):
     hist_id = models.PositiveBigIntegerField(null=True, blank=True)
 
     class Meta(AbstractUser.Meta):
-        indexes = (models.Index(Upper("email"), name="user_email_upper_idx"),)  # email__iexact
+        indexes = (models.Index(Upper("email"), name="user_email_upper_idx"),)
+
+
+
 
 
 class Plugin(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
-    developer = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="dev_plugins", db_index=False)  # covered by unique (developer, name)
-    name = models.SlugField(max_length=255, db_index=False)  # covered by unique (developer, name)
+    developer = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="dev_plugins", db_index=False)
+    name = models.SlugField(max_length=255, db_index=False)
     desc = models.TextField(max_length=1024, default="")
     schema = models.JSONField(default=dict, validators=[SchemaValidator()])
     rules = models.JSONField(default=dict, blank=True, validators=[RuleValidator()])
     version = models.PositiveSmallIntegerField(default=1, editable=False)
-    key = models.BinaryField(max_length=32, blank=True, null=True)  # looked up by unique prefix
+    key = models.BinaryField(max_length=32, blank=True, null=True)
     prefix = models.CharField(max_length=16, unique=True, blank=True, null=True)
 
     class Meta:
@@ -86,7 +89,7 @@ class Subscription(models.Model):
     user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="subscriptions", db_index=False)  # covered by unique (user, plugin)
     plugin = models.ForeignKey(to=Plugin, on_delete=models.CASCADE, related_name="subscribers")
     active = models.BooleanField(default=False)
-    hist_from = models.PositiveBigIntegerField(null=True, blank=True)  # Gmail history id when turned on; None: set on next poll
+    hist_from = models.PositiveBigIntegerField(null=True, blank=True)
     time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -108,8 +111,8 @@ class Subscription(models.Model):
 
 class Result(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
-    user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="results", db_index=False)  # covered by unique (user, message, plugin)
-    plugin = models.ForeignKey(to=Plugin, on_delete=models.CASCADE, related_name="results", db_index=False)  # covered by (plugin, -id)
+    user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="results", db_index=False)
+    plugin = models.ForeignKey(to=Plugin, on_delete=models.CASCADE, related_name="results", db_index=False)
     output = models.JSONField(default=dict)
     version = models.PositiveSmallIntegerField(default=1)
     message = models.BinaryField(max_length=8)
