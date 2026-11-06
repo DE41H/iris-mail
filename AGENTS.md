@@ -11,7 +11,7 @@ Granian, Astro 7, Svelte 5, Caddy, Docker, Python 3.13 (uv).
 
 - `backend/cfg/`: settings (env via `getenv`), urls, `middleware.py` (CSP, headers)
 - `backend/plugins/`: models, views, serializers, `gmail`, `token` (encrypted OAuth), `validation`, `schema`, `signals`,
-  `adapters` (Google OAuth), `authentication`/`throttling` (API keys, tier rates), `pagination` (uuid cursor)
+  `adapters` (Google OAuth), `authentication`/`throttling` (API keys, flat developer rate), `pagination` (uuid cursor)
 - `backend/plugins/tasks/`: `poll` (`poll_hist` every 3 min, `init_hist`), `extract` (`process`), `cleanup`
   (`cleanup` 03:00 daily: jobs >7d, results >100d, or >30d if fetched/unsubscribed; `revive` every 5 min: retry stalled jobs)
 - `backend/static/iris.css` (dashboard, auth pages), `backend/templates/` (allauth)

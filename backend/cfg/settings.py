@@ -191,8 +191,9 @@ REST_FRAMEWORK = {
         'plugins.throttling.PluginKeyThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '500/hour',
-        'user': '200/minute'
+        'anon': '120/minute',
+        'user': '120/minute',
+        'dev': '1000/hour',
     },
     'NUM_PROXIES': 1 if BEHIND_PROXY else 0,
     'DEFAULT_PAGINATION_CLASS': 'plugins.pagination.UUIDCursorPagination',
