@@ -10,7 +10,7 @@ Granian, Astro 7, Svelte 5, Caddy, Docker, Python 3.13 (uv).
 ## Layout
 
 - `backend/cfg/`: settings (env via `getenv`), urls, `middleware.py` (CSP, headers)
-- `backend/plugins/`: models, views, serializers, `gmail`, `token` (encrypted OAuth), `validation`, `schema`, `signals`,
+- `backend/plugins/`: `management/commands/mk_admin`, models, views, serializers, `gmail`, `token` (encrypted OAuth), `validation`, `schema`, `signals`,
   `adapters` (Google OAuth), `authentication`/`throttling` (API keys, flat developer rate), `pagination` (uuid cursor)
 - Usage: `Usage` is one row per developer per day (`used` = emails × schema questions sent to Laya, charged by
   `usage.consume` in `extract._guess` after Laya succeeds). `/me` reads it at `/api/usage/` (`{today, days}`: every stored day, newest first, unpaginated); `/api/me/` also lists `tiers`. Daily quota per
@@ -35,10 +35,11 @@ dc logs -f backend worker
 dc exec backend python manage.py spectacular --validate --file /dev/null
 ```
 
-Admin needs password + TOTP. Make a device per superuser:
+Admin needs password + TOTP. Set `DJANGO_SUPERUSER_*` in `docker/.env`, deploy, then run this. It creates the
+superuser (or reuses one with that username) and prints its TOTP QR code (new or existing) to scan:
 
 ```bash
-dc exec backend python manage.py shell -c "from django_otp.plugins.otp_totp.models import TOTPDevice as T; from plugins.models import CustomUser as U; print(T.objects.create(user=U.objects.get(username='NAME'), name='admin').config_url)"
+dc exec backend python manage.py mk_admin
 ```
 
 ## Rules
