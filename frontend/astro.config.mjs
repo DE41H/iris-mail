@@ -16,7 +16,7 @@ export default defineConfig({
     csp: {
       directives: [
         "default-src 'self'",
-        "img-src 'self' data:",
+        "img-src 'self' data: https://lh3.googleusercontent.com",
         "connect-src 'self'",
         "base-uri 'self'",
         "object-src 'none'",

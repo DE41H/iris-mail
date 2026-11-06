@@ -1,4 +1,4 @@
-from allauth.socialaccount.models import SocialToken
+from allauth.socialaccount.models import SocialAccount, SocialToken
 from rest_framework import serializers
 
 from plugins.models import CustomUser, Plugin, Result, Subscription
@@ -15,13 +15,19 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
 class MeSerializer(CustomUserSerializer):
     google = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+    tier_name = serializers.CharField(source="get_tier_display", read_only=True)
 
     class Meta(CustomUserSerializer.Meta):
-        fields = (*CustomUserSerializer.Meta.fields, "google")
+        fields = (*CustomUserSerializer.Meta.fields, "google", "avatar", "tier_name")
         read_only_fields = fields
 
     def get_google(self, user) -> bool:
         return SocialToken.objects.filter(account__user=user, account__provider="google").exists()
+
+    def get_avatar(self, user) -> str | None:
+        account = SocialAccount.objects.filter(user=user, provider="google").first()
+        return account.extra_data.get("picture") if account else None
 
 
 class PluginSerializer(serializers.ModelSerializer):

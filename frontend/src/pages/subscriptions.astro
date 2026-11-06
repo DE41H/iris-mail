@@ -1,7 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import SubscriptionList from '../components/SubscriptionList.svelte';
-import DeleteAccount from '../components/DeleteAccount.svelte';
 ---
 
 <Layout title="Subscriptions">
@@ -10,7 +9,6 @@ import DeleteAccount from '../components/DeleteAccount.svelte';
       <div>
         <h1>What reads your inbox</h1>
       </div>
-      <DeleteAccount client:only="svelte" />
     </div>
     <SubscriptionList client:only="svelte" />
   </div>

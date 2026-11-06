@@ -4,7 +4,9 @@ export interface User {
   username: string;
   email: string;
   tier: number;
+  tier_name: string;
   google: boolean; // false once Google access is revoked
+  avatar: string | null; // Google profile picture URL
 }
 
 // undefined until the first check, null when signed out.
