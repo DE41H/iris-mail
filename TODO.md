@@ -19,7 +19,7 @@ _None._
 
 ## P2: should do soon
 
-- Usage on dashboard: `/api/usage/` exists but no frontend page shows it.
+_None._
 
 ## P3: nice to have
 

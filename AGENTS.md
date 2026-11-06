@@ -13,13 +13,15 @@ Granian, Astro 7, Svelte 5, Caddy, Docker, Python 3.13 (uv).
 - `backend/plugins/`: models, views, serializers, `gmail`, `token` (encrypted OAuth), `validation`, `schema`, `signals`,
   `adapters` (Google OAuth), `authentication`/`throttling` (API keys, flat developer rate), `pagination` (uuid cursor)
 - Usage: `Usage` is one row per developer per day (`used` = emails × schema questions sent to Laya, charged by
-  `usage.consume` in `extract._guess` after Laya succeeds). Dashboard reads it at `/api/usage/`. Daily quota per
+  `usage.consume` in `extract._guess` after Laya succeeds). `/me` reads it at `/api/usage/` (`{today, days}`: last 90 days, unpaginated). Daily quota per
   tier is `QUOTAS` in `models.py` (`CustomUser.quota`), checked in `_guess` before each Laya batch;
   `/api/me/` returns it as `quota`.
 - `backend/plugins/tasks/`: `poll` (`poll_hist` every 3 min, `init_hist`), `extract` (`process`), `cleanup`
   (`cleanup` 03:00 daily: jobs >7d, results >100d, or >30d if fetched/unsubscribed, usage >100d; `revive` every 5 min: retry stalled jobs)
-- `backend/static/iris.css` (dashboard, auth pages), `backend/templates/` (allauth)
-- `frontend/src/`: `pages/` (Astro), `components/` (Svelte), `lib/` (`api`, `session`, `schema`, `rules`, `presets`)
+- `backend/static/`: `iris.css` (dashboard, auth pages), `nav.js` (swipe direction for page view transitions);
+  `backend/templates/` (allauth)
+- `frontend/src/`: `pages/` (Astro; `me` = account, quota and usage), `components/` (Svelte), `lib/` (`api`, `session`,
+  `schema`, `rules`, `presets`)
 - `docker/`: compose, Dockerfiles, `caddyfile`, `deploy.sh`, `.env.example` (all env vars)
 
 ## Run
@@ -65,6 +67,7 @@ Frontend
 - One screen per page, `client:only="svelte"` islands, short copy.
 - CSP: no inline `<script>` or `style="…"` in `.astro`, no markdown pages.
 - Destructive actions: inline `ConfirmButton`, never `confirm()`.
+- Loading: content-shaped `.skel` wrapper with `.bone` placeholders (iris.css); it stays hidden for 150ms.
 
 ## Invariants
 
