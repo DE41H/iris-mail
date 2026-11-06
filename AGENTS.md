@@ -66,6 +66,7 @@ Frontend
 - One screen per page, `client:only="svelte"` islands, short copy.
 - CSP: no inline `<script>` or `style="…"` in `.astro`, no markdown pages.
 - Destructive actions: inline `ConfirmButton`, never `confirm()`.
+- Heavy code loads with `import()` beside the API calls: Chart.js in `Account`, `PluginEditor` (re2js) in `NewPlugin` and `PluginDetail`.
 - Loading: content-shaped `.skel` wrapper with `.bone` placeholders (iris.css); it stays hidden for 150ms.
 
 ## Invariants

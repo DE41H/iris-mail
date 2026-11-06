@@ -4,7 +4,11 @@
   import { fromRules, fromSchema, toBody, type Draft } from '../lib/schema';
   import ConfirmButton from './ConfirmButton.svelte';
   import KeyCard from './KeyCard.svelte';
-  import PluginEditor from './PluginEditor.svelte';
+  import type Editor from './PluginEditor.svelte';
+
+  // Loads beside the plugin fetch, so the skeleton paints before the editor's code arrives.
+  let PluginEditor = $state<typeof Editor>();
+  import('./PluginEditor.svelte').then((m) => (PluginEditor = m.default));
 
   const id = new URLSearchParams(location.search).get('id');
   let plugin = $state<Plugin | null>(null);
@@ -74,7 +78,7 @@
 
 <div class="screen">
   {#if error}<div class="alert alert-danger" role="alert">{error}</div>{/if}
-  {#if plugin}
+  {#if plugin && PluginEditor}
     <PluginEditor bind:draft submit="Save changes" onsubmit={save} {dirty} {locked} steps={false}>
       {#snippet head()}
         <div class="eyebrow"><a href="/plugins">Plugins</a> <span aria-hidden="true">/</span> {plugin!.name}</div>

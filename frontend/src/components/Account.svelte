@@ -1,11 +1,15 @@
 <script lang="ts">
-  import { BarController, BarElement, CategoryScale, Chart, LinearScale, Tooltip } from 'chart.js';
+  import type { Chart } from 'chart.js';
   import { onMount } from 'svelte';
   import { api, message } from '../lib/api';
   import { loadSession, session } from '../lib/session';
   import DeleteAccount from './DeleteAccount.svelte';
 
-  Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip);
+  // Chart.js is most of this page's code, so it loads beside the API calls instead of before the first paint.
+  const charts = import('chart.js').then(({ BarController, BarElement, CategoryScale, Chart, LinearScale, Tooltip }) => {
+    Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip);
+    return Chart;
+  });
 
   type Day = { date: string; used: number };
   const EMPTY_DAYS = 30; // span of the empty graph before any usage exists
@@ -48,13 +52,16 @@
   function graph(canvas: HTMLCanvasElement, days: Day[]) {
     const css = (name: string) => getComputedStyle(canvas).getPropertyValue(name).trim();
     const scheme = matchMedia('(prefers-color-scheme: dark)');
-    let chart: Chart<'bar'>;
+    let chart: Chart<'bar'> | undefined;
+    let gone = false;
 
-    function draw(days: Day[]) {
+    const draw = (days: Day[]) => charts.then((C) => !gone && paint(C, days));
+
+    function paint(C: typeof Chart, days: Day[]) {
       chart?.destroy();
       const [accent, faint, border, text, surface] = ['--accent', '--faint', '--border', '--text', '--surface'].map(css);
       const font = { family: css('--font'), size: 11.5 };
-      chart = new Chart(canvas, {
+      chart = new C(canvas, {
         type: 'bar',
         data: {
           labels: days.map((d) => d.date),
@@ -104,7 +111,7 @@
     draw(days);
     return {
       update: (next: Day[]) => draw((current = next)),
-      destroy: () => (scheme.removeEventListener('change', flip), chart.destroy()),
+      destroy: () => (scheme.removeEventListener('change', flip), (gone = true), chart?.destroy()),
     };
   }
 </script>

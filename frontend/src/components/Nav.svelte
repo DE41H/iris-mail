@@ -13,7 +13,7 @@
   const current = (href: string) => (path === href || path.startsWith(`${href}/`) ? 'page' : undefined);
 </script>
 
-<nav aria-label="Account">
+<nav aria-label="Main">
   <a href="/docs" aria-current={current('/docs')}>Docs</a>
   {#if $session}
     <a href="/plugins" aria-current={current('/plugins')}>Plugins</a>
@@ -28,16 +28,14 @@
       </a>
     </span>
   {:else if $session === null}
-    <a class="btn btn-sm btn-primary" href="/accounts/login/">Sign in</a>
+    <span class="account"><a class="btn btn-sm btn-primary" href="/accounts/login/">Sign in</a></span>
   {/if}
 </nav>
 
 <style>
   .account {
     display: flex;
-    padding-left: 12px;
-    border-left: 1px solid var(--border);
-    margin-left: 8px;
+    padding-left: 16px;
   }
   .face { display: block; border-radius: 30%; }
   .avatar {

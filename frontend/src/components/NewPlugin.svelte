@@ -4,7 +4,11 @@
   import { toBody, type Draft } from '../lib/schema';
   import { TEMPLATES, type Template } from '../lib/presets';
   import KeyCard from './KeyCard.svelte';
-  import PluginEditor from './PluginEditor.svelte';
+  import type Editor from './PluginEditor.svelte';
+
+  // The editor (with re2js) is most of this page's code; the templates show while it loads.
+  let PluginEditor = $state<typeof Editor>();
+  import('./PluginEditor.svelte').then((m) => (PluginEditor = m.default));
 
   let draft = $state<Draft | null>(null);
   let created = $state<(Plugin & { key: string }) | null>(null);
@@ -33,7 +37,7 @@
       <a class="btn btn-primary" href={`/plugins/detail?id=${created.id}`}>Open plugin</a>
     </div>
   </div>
-{:else if draft}
+{:else if draft && PluginEditor}
   <div class="screen" in:fade={{ duration: 200 }}>
     <PluginEditor bind:draft submit="Create plugin" onsubmit={create}>
       {#snippet head()}
