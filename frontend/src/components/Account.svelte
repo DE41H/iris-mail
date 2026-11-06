@@ -48,10 +48,9 @@
   const top = $derived(!!$session && $session.tiers.some((t) => t.quota > $session!.quota)); // a higher tier exists
   const level = $derived(share >= 1 ? 'full' : share >= 0.8 ? 'high' : '');
 
-  // Chart.js draws on canvas, so it gets the theme as resolved colours and redraws when the scheme flips.
+  // Chart.js draws on canvas, so it gets the theme as resolved colours and redraws when the theme flips.
   function graph(canvas: HTMLCanvasElement, days: Day[]) {
     const css = (name: string) => getComputedStyle(canvas).getPropertyValue(name).trim();
-    const scheme = matchMedia('(prefers-color-scheme: dark)');
     let chart: Chart<'bar'> | undefined;
     let gone = false;
 
@@ -107,11 +106,12 @@
 
     let current = days;
     const flip = () => draw(current);
-    scheme.addEventListener('change', flip);
+    const theme = new MutationObserver(flip);
+    theme.observe(document.documentElement, { attributeFilter: ['data-theme'] });
     draw(days);
     return {
       update: (next: Day[]) => draw((current = next)),
-      destroy: () => (scheme.removeEventListener('change', flip), (gone = true), chart?.destroy()),
+      destroy: () => (theme.disconnect(), (gone = true), chart?.destroy()),
     };
   }
 </script>
