@@ -132,8 +132,8 @@
     transition: opacity 0.4s;
   }
   .plugin:hover::before { opacity: 1; }
-  .plugin:hover { color: var(--text); border-color: color-mix(in oklab, var(--tint) 45%, var(--border)); translate: 0 -4px; box-shadow: var(--shadow-lift); }
-  .plugin:active { translate: 0 -1px; transition-duration: 0.1s; }
+  .plugin:hover { color: var(--text); border-color: color-mix(in oklab, var(--tint) 45%, var(--border)); translate: 0 -4px; box-shadow: var(--sheen), var(--shadow-lift), 0 18px 40px -22px var(--tint); }
+  .plugin:active { translate: 0 -1px; box-shadow: var(--sheen), var(--shadow); transition-duration: 0.1s; }
 
   .top { display: flex; align-items: center; gap: 12px; }
   .name { flex: 1; min-width: 0; font-size: 17px; font-weight: 660; font-stretch: 110%; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -165,7 +165,7 @@
     font-weight: 560;
     transition: color 0.25s, border-color 0.25s, background 0.25s;
   }
-  .add:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .add:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); box-shadow: var(--well); }
   .plus {
     position: relative;
     width: 44px;
@@ -176,7 +176,7 @@
   }
   .plus::before, .plus::after { content: ''; position: absolute; inset: 50% 12px auto; height: 2px; margin-top: -1px; border-radius: 2px; background: currentColor; }
   .plus::after { rotate: 90deg; }
-  .add:hover .plus { rotate: 90deg; background: var(--surface); }
+  .add:hover .plus { rotate: 90deg; background: var(--surface); box-shadow: var(--sheen), var(--raise); }
 
   .sk { display: flex; flex-direction: column; gap: 14px; padding: 18px; height: 230px; }
   .sk-row { display: flex; align-items: center; gap: 10px; }

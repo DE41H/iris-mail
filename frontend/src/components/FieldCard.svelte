@@ -133,8 +133,8 @@
 
 <style>
   .field { display: grid; grid-template-columns: minmax(0, 1fr); border: 1px solid transparent; border-radius: 12px; transition: border-color 0.25s, box-shadow 0.35s var(--ease), background 0.25s; }
-  .field:not(.open):hover { background: var(--surface-2); }
-  .field.open { padding-bottom: 14px; background: var(--surface); border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); box-shadow: var(--shadow-lift); }
+  .field:not(.open):hover { background: var(--surface); border-color: var(--border); box-shadow: var(--sheen), var(--raise); }
+  .field.open { padding-bottom: 14px; background: var(--surface); border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); box-shadow: var(--sheen), var(--shadow-lift); }
   .field.bad { border-color: color-mix(in oklab, var(--danger) 40%, transparent); }
   .head { display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 10px; min-height: 48px; }
   .open .head { padding-top: 10px; }
@@ -159,12 +159,12 @@
   .del:hover:not(:disabled) { background: var(--danger-soft); color: var(--danger); }
   .rows { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 4px 16px 0 60px; }
 
-  .seg { justify-self: start; display: inline-flex; padding: 2px; gap: 2px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); }
+  .seg { justify-self: start; display: inline-flex; padding: 2px; gap: 2px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); box-shadow: var(--well); }
   .seg label { position: relative; }
   .seg input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
   .seg span { display: block; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 540; color: var(--muted); transition: background 0.25s, color 0.2s; white-space: nowrap; }
   .seg i { font-style: normal; margin-right: 5px; }
-  .seg input:checked + span { background: var(--accent-soft); color: var(--accent); }
+  .seg input:checked + span { background: var(--surface); color: var(--accent); box-shadow: var(--sheen), var(--raise); }
   .seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 0; }
   @media (max-width: 380px) { .seg i { display: none; } }
 

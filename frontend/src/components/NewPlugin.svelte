@@ -84,7 +84,7 @@
     cursor: pointer;
     transition: border-color 0.25s, translate 0.35s var(--ease), box-shadow 0.35s var(--ease);
   }
-  .tpl:hover, .tpl:focus-visible { border-color: color-mix(in oklab, var(--accent) 45%, var(--border)); translate: 0 -3px; box-shadow: var(--shadow-lift); }
+  .tpl:hover, .tpl:focus-visible { border-color: color-mix(in oklab, var(--accent) 45%, var(--border)); translate: 0 -3px; box-shadow: var(--sheen), var(--shadow-lift); }
   .tpl:active { translate: 0 -1px; }
   .title { font-size: 17px; font-weight: 640; font-stretch: 110%; }
   .kinds { display: flex; flex-wrap: wrap; gap: 4px; }

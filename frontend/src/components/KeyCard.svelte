@@ -39,7 +39,7 @@
 </section>
 
 <style>
-  .key { border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); box-shadow: var(--shadow-lift); animation: rise 0.5s var(--ease) both; }
+  .key { border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); box-shadow: var(--sheen), var(--shadow-lift); animation: rise 0.5s var(--ease) both; }
   h2 { color: var(--text); }
   .once { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--signal-soft); color: var(--signal-text); font-weight: 560; }
   .row { display: flex; align-items: center; gap: 8px; }
@@ -50,6 +50,7 @@
     background: var(--surface-2);
     border: 1px dashed var(--border-strong);
     border-radius: var(--radius-sm);
+    box-shadow: var(--well);
     color: var(--accent);
     font-size: 14px;
     word-break: break-all;

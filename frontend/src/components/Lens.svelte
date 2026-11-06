@@ -144,7 +144,7 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    box-shadow: var(--shadow);
+    box-shadow: var(--sheen), var(--shadow);
     font-size: 14px;
     transition: opacity 0.8s var(--ease), translate 0.8s var(--ease), filter 0.8s;
   }
@@ -216,7 +216,7 @@
     background: var(--surface);
     border: 1px solid color-mix(in oklab, var(--accent) 25%, var(--border));
     border-radius: var(--radius);
-    box-shadow: var(--shadow-lift);
+    box-shadow: var(--sheen), var(--shadow-lift);
   }
   .label { font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
   pre { margin: 0; font-size: 13px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--faint); }
@@ -237,10 +237,10 @@
     color: var(--muted);
     font: 500 13px var(--font);
     cursor: pointer;
-    transition: color 0.2s, background 0.2s, border-color 0.2s;
+    transition: color 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.25s;
   }
-  .picker button:hover { color: var(--text); border-color: var(--border-strong); }
-  .picker button[aria-pressed='true'] { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
+  .picker button:hover { color: var(--text); border-color: var(--border-strong); background: var(--surface); box-shadow: var(--sheen), var(--raise); }
+  .picker button[aria-pressed='true'] { color: var(--accent); background: var(--accent-soft); border-color: transparent; box-shadow: var(--well); }
 
   @media (max-width: 760px) {
     .stage { grid-template-columns: minmax(0, 1fr); justify-items: stretch; gap: 0; }
