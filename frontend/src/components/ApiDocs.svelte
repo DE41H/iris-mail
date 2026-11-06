@@ -1,20 +1,25 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import Json from './Json.svelte';
+  import VersionPicker from './VersionPicker.svelte';
 
   type Schema = Record<string, any>;
   interface Op { method: string; path: string; tag: string; op: Schema }
 
   let spec = $state<Schema | null>(null);
   let error = $state('');
+  // shortcut: opens on v1, the picker lists the rest from the schema's x-versions; open on the newest once v2 ships.
+  let version = $state('v1');
+  const versions = $derived<string[]>(spec?.info['x-versions'] ?? [version]);
 
   // Plain fetch: the docs are public, and api() would redirect a signed-out visitor to sign in.
-  onMount(() =>
-    fetch('/api/v1/schema/?format=json')
+  $effect(() => {
+    const v = version;
+    error = '';
+    fetch(`/api/${v}/schema/?format=json`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`Schema request failed (${r.status}).`))))
-      .then((s) => (spec = s))
-      .catch((err) => (error = err.message)),
-  );
+      .then((s) => v === version && (spec = s))
+      .catch((err) => v === version && (error = err.message));
+  });
 
   const ref = (s: Schema): Schema => (s?.$ref ? spec!.components.schemas[s.$ref.split('/').pop()] : s);
 
@@ -53,11 +58,15 @@
     (op.security ?? []).flatMap((s: Schema) => Object.keys(s)).map((k: string) => (k === 'PluginKey' ? 'API key' : 'session'));
 </script>
 
+<div class="page-head reveal">
+  <div><h1>The Iris API</h1></div>
+  <VersionPicker {versions} bind:value={version} />
+</div>
+
 {#if error}
   <div class="alert alert-danger" role="alert">{error}</div>
 {:else if spec}
   <section class="card reveal docs">
-    <div class="card-head"><span>{spec.info.title} {spec.info.version}</span></div>
     <div class="grow scroll">
       <p class="card-body muted intro">Plugin endpoints take <code>Authorization: Bearer &lt;api key&gt;</code>.</p>
       {#each tags as tag}
@@ -107,7 +116,6 @@
   </section>
 {:else}
   <section class="card docs skel" role="status" aria-label="Loading docs">
-    <div class="card-head"><span class="bone sk-w" style:--w="110px"></span></div>
     <div class="card-body"><span class="bone sk-w" style:--w="55%"></span></div>
     {#each [2, 4] as n}
       <span class="bone sk-h"></span>
@@ -121,6 +129,8 @@
 <style>
   .docs { display: flex; flex-direction: column; min-height: 0; }
   .intro { margin: 0; }
+  /* The card below is its own stacking context; keep the open picker on top of it. */
+  .page-head { position: relative; z-index: 3; }
   h2 { padding: 20px 18px 6px; margin: 0; text-transform: capitalize; }
   .sk-w { width: var(--w); }
   .sk-h { width: 90px; height: 16px; margin: 20px 18px 10px; }

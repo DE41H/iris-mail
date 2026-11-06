@@ -57,7 +57,7 @@ Backend
 - cacheops caches `CustomUser`, `Plugin`, `Subscription` for 5 min. On them use `.invalidated_update()` and
   `prefetch_related`, never `.update()` or `select_related`.
 - `/docs` shows API-key endpoints only. Mark dashboard views `@extend_schema(exclude=True)`.
-- API is versioned in the URL: `/api/<version>/` (DRF `URLPathVersioning`); `ALLOWED_VERSIONS` in settings is the only list (now `v1`). No unversioned routes. New version: add it there, branch on `request.version`. `@action` handlers take `**kwargs` (they receive `version`). Frontend calls `/api/v1/` explicitly.
+- API is versioned in the URL: `/api/<version>/` (DRF `URLPathVersioning`); `ALLOWED_VERSIONS` in settings is the only list (now `v1`). No unversioned routes. New version: add it there, branch on `request.version`. `@action` handlers take `**kwargs` (they receive `version`). Frontend calls `/api/v1/` explicitly; the `/docs` version picker lists `x-versions` from the schema (`EXTENSIONS_INFO`).
 
 Schema
 - Checks and `MAX_*` limits are in `plugins/validation.py` and `frontend/src/lib/schema.ts` (+ `rules.ts`, RE2 via
