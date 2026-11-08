@@ -5,7 +5,7 @@ subscribe. Gmail is polled every 3 min, deduped, answered by Laya. Only answers 
 ack them (`fetched`) via API.
 
 Stack: Django 6.1, DRF, drf-spectacular, Postgres 17, Procrastinate, Valkey, cacheops, allauth, django-otp, Laya,
-Granian, Astro 7, Svelte 5, Caddy, Docker, Python 3.13 (uv).
+Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
 
 ## Layout
 

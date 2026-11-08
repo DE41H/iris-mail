@@ -1,6 +1,6 @@
 *
 !package.json
-!package-lock.json
+!pnpm-lock.yaml
 !astro.config.mjs
 !svelte.config.js
 !tsconfig.json
