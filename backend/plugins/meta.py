@@ -1,9 +1,9 @@
 from jsonschema import Draft202012Validator
 
-MAX_FIELDS = 32  # questions per plugin
-MAX_OPTIONS = 32  # answers per choice question
-MAX_ANSWER_LENGTH = 100  # characters in a choice answer
-MAX_DESCRIPTION = 500  # characters in a question
+MAX_FIELDS = 16  # questions per plugin
+MAX_OPTIONS = 16  # answers per choice question
+MAX_ANSWER_LENGTH = 50  # characters in a choice answer
+MAX_DESCRIPTION = 200  # characters in a question
 MAX_RULES = 16  # rules per plugin
 MAX_PATTERN = 512  # characters in a rule pattern
 MAX_NAME_LENGTH = 64  # characters in a question key or rule name
