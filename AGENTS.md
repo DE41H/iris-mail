@@ -10,7 +10,7 @@ Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
 ## Layout
 
 - `backend/cfg/`: settings (env via `getenv`), urls, `middleware.py` (CSP, headers)
-- `backend/plugins/`: `management/commands/` (`mk_admin`, `gen_schema`), models, views, serializers, `gmail`, `token` (encrypted OAuth), `validation`, `schema`, `signals`,
+- `backend/plugins/`: `management/commands/` (`mk_admin`, `gen_schema`), `admin` (OTP site; tier editable in the user list; `Usage`, `Result` read-only), models, views, serializers, `gmail`, `token` (encrypted OAuth), `validation`, `schema`, `signals`,
   `adapters` (Google OAuth; `prompt=select_account`, `SocialAdapter` retries with `?action=reauthenticate` (consent) when Iris has no refresh token), `authentication`/`throttling` (API keys, flat developer rate), `pagination` (uuid cursor)
 - Usage: `Usage` is one row per developer per day (`used` = emails × schema questions answered by the LLM, charged by
   `usage.consume` in `extract._guess` for each answered email). `/me` reads it at `/api/v1/usage/` (`{today, days}`: every stored day, newest first, unpaginated); `/api/v1/me/` also lists `tiers`. Daily quota per
