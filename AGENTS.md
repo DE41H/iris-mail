@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Iris: devs make a plugin (JSON schema questions + regex rules) and get an API key. Users sign in with Google and
-subscribe. Gmail is polled every 3 min, deduped, answered by an LLM (Gemini Flash, Claude Haiku fallback, via the LiteLLM library in `tasks/llm.py`). Only answers are stored (`Result`); devs list and
+subscribe. Gmail is polled every 3 min, deduped, answered by an LLM (Gemini Flash and Flash Lite models in `llm.MODELS` order, Claude Haiku last, via the LiteLLM library in `tasks/llm.py`). Only answers are stored (`Result`); devs list and
 ack them (`fetched`) via API.
 
 Stack: Django 6.1, DRF, drf-spectacular, Postgres 17, Procrastinate, Valkey, cacheops, allauth, django-otp, LiteLLM,

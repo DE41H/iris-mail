@@ -46,8 +46,7 @@ Your **Spending** plugin gets this, and the email is dropped:
 | **2. People switch you on** | They sign in with Google and opt in, one plugin at a time. |
 | **3. Fetch the answers** | New mail is read every 3 minutes. Pull results as JSON and acknowledge them. |
 
-Questions are answered by an LLM (Gemini Flash, with Claude Haiku as fallback). Rules pull exact text, like an amount or a tracking
-number, and land under `output.rules`.
+Questions are answered by an LLM (Gemini Flash models, with Claude Haiku as the last fallback). Rules pull exact text, like an amount or a tracking number, and land under `output.rules`.
 
 ## For developers
 
