@@ -7,7 +7,7 @@ import Layout from '../layouts/Layout.astro';
     <div class="page-head reveal">
       <div>
         <h1>Privacy policy</h1>
-        <p>Last updated 5 November 2026.</p>
+        <p>Last updated 9 November 2026.</p>
       </div>
     </div>
 
@@ -18,7 +18,7 @@ import Layout from '../layouts/Layout.astro';
         <li>Google access and refresh tokens for read-only Gmail access, encrypted at rest.</li>
         <li>Plugins you create, and which plugins are on your list and turned on.</li>
         <li>
-          Answers to plugin questions about your new emails, plus short matched text for plugins that use rules.
+          Answers to plugin questions about your new emails (such as yes/no, a category, an amount or a date), plus short matched text for plugins that use rules.
           Each match is at most 200 characters.
         </li>
         <li>Gmail message and history ids, so no email is answered twice.</li>
@@ -27,9 +27,10 @@ import Layout from '../layouts/Layout.astro';
       <h2>How we use your email</h2>
       <p>
         Iris checks for new mail every few minutes, only while at least one plugin is turned on. Each email is read
-        on our servers, answered by a model that runs there, and then dropped. We never store email headers or
-        whole bodies. Your email is not sent to third-party AI services, is not used to train models, and is not
-        read by people. Logs hold ids, never email content.
+        to answer the plugin's questions, and then dropped. Some data (the sender, subject and start of the body)
+        may pass through Anthropic's Claude or Google's Gemini via paid APIs, which don't train models on it
+        and keep it only briefly for abuse monitoring. We never store email headers or whole bodies, and your email is not read by people at
+        Iris. Logs hold ids, never email content.
       </p>
 
       <h2>Who sees your data</h2>

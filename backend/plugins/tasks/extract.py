@@ -2,14 +2,12 @@ import logging
 from contextlib import suppress
 from itertools import islice
 
-import laya
 import re2
 from bs4 import BeautifulSoup
 from django.db import IntegrityError
 from django.utils.timezone import localdate
 from google.auth.exceptions import RefreshError
 from googleapiclient.errors import HttpError
-from laya.structured import SchemaError
 from procrastinate.contrib.django import app
 
 from plugins.gmail import (
@@ -22,11 +20,11 @@ from plugins.gmail import (
     save_token,
 )
 from plugins.models import CustomUser, Result, Subscription, Usage
+from plugins.tasks import llm
 from plugins.validation import MAX_MATCH_LENGTH, MAX_MATCHES, RE2
 
 logger = logging.getLogger(__name__)
 
-ROUTER = laya.Router(max_loaded=1)
 CHUNK_SIZE = 100
 INVISIBLE = dict.fromkeys(map(ord, "\u200b\u200c\u200d\u2060\ufeff\u034f\u00ad"))
 
@@ -51,10 +49,6 @@ def _match(rules, content):
     return {name: [_first(m) for m in islice(r.finditer(content), MAX_MATCHES)] if r else [] for name, r in rules.items()}
 
 
-def _decide(plugin, states):
-    return laya.decide_batch(ROUTER, states, schema=plugin.schema, model="multilingual", batch_size=32)
-
-
 def _guess(user, plugin, msgs, states):
     if not msgs: return []
     if not plugin.schema.get("properties"): return [(m, {}) for m in msgs]
@@ -63,15 +57,11 @@ def _guess(user, plugin, msgs, states):
     if usage.used >= plugin.developer.quota:
         logger.info("Usage quota reached, batch skipped", extra={**extra, "developer_id": plugin.developer_id})
         return []
-    try:
-        pairs = list(zip(msgs, _decide(plugin, [states[m.id] for m in msgs]), strict=True))
-    except SchemaError as error:
-        logger.warning("Laya cannot answer plugin schema, skipped", extra={**extra, "error": str(error)})
-        return []
-    except Exception:
-        logger.exception("Laya failed, batch skipped for this plugin", extra=extra)
-        return []
-    usage.consume(len(msgs) * len(plugin.schema["properties"]))
+    answers = list(zip(msgs, llm.answer(plugin.schema, [states[m.id] for m in msgs]), strict=True))
+    pairs = [(m, a) for m, a in answers if not isinstance(a, Exception)]
+    if errors := [a for _, a in answers if isinstance(a, Exception)]:
+        logger.warning("LLM failed, mail skipped for this plugin", extra={**extra, "failed": len(errors), "error": type(errors[0]).__name__, "status": getattr(errors[0], "status_code", None)})
+    usage.consume(len(pairs) * len(plugin.schema["properties"]))
     return pairs
 
 
@@ -94,7 +84,7 @@ def _todo(sub, ids, added, done):
 
 def _extract(user, subs, msgs, added, done):
     bodies = {m.id: m.plain or _refine(m.html or "") for m in msgs}
-    states = {m.id: laya.email_state(m.subject, bodies[m.id], sender=m.sender) for m in msgs}
+    states = {m.id: llm.email(m.sender, m.subject, bodies[m.id]) for m in msgs}
     saved = 0
     for sub in subs:
         plugin = sub.plugin

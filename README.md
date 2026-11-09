@@ -46,7 +46,7 @@ Your **Spending** plugin gets this, and the email is dropped:
 | **2. People switch you on** | They sign in with Google and opt in, one plugin at a time. |
 | **3. Fetch the answers** | New mail is read every 3 minutes. Pull results as JSON and acknowledge them. |
 
-Questions are answered by [Laya](https://pypi.org/project/laya/). Rules pull exact text, like an amount or a tracking
+Questions are answered by an LLM (Gemini Flash, with Claude Haiku as fallback). Rules pull exact text, like an amount or a tracking
 number, and land under `output.rules`.
 
 ## For developers
@@ -111,9 +111,9 @@ Then open `https://localhost`. Deploys roll out with no downtime and need the
 
 Iris is in early development.
 
-- Laya can be wrong, for example on Hindi mail or number ranges. Rules are exact, so use a rule for numbers and
+- The LLM can be wrong. Rules are exact, so use a rule for numbers and
   bucket them yourself.
-- Mail Gmail can't parse is skipped, and if Laya fails on a batch those messages get no answers. Both are logged.
+- Mail Gmail can't parse is skipped, and if the LLM fails on an email it gets no answers. Both are logged.
 
 Contributors: start with [`AGENTS.md`](AGENTS.md) and [`TODO.md`](TODO.md).
 

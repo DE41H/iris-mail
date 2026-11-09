@@ -30,7 +30,7 @@
   const STEP = { arrive: 900, read: 1700, answer: 1500, drop: 2800 };
   const CAPTION = {
     arrive: 'A new email arrives.',
-    read: 'Laya reads it against your questions.',
+    read: 'An AI model reads it against your questions.',
     answer: 'Answers come out as JSON.',
     drop: 'The email is dropped. Only the answers stay.',
   };
@@ -185,7 +185,7 @@
   [data-phase='read'] .beam.in::after, [data-phase='answer'] .beam.out::after { opacity: 1; }
   @keyframes flow { from { background-position: -14px 0; } to { background-position: 0 0; } }
 
-  /* The aperture: six blades swing open on their rim pivots while Laya reads. */
+  /* The aperture: six blades swing open on their rim pivots while the model reads. */
   .iris { width: 100%; overflow: visible; align-self: center; }
   .s0 { stop-color: var(--signal); }
   .s1 { stop-color: color-mix(in oklab, var(--signal) 70%, var(--accent)); }

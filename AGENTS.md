@@ -1,10 +1,10 @@
 # AGENTS.md
 
 Iris: devs make a plugin (JSON schema questions + regex rules) and get an API key. Users sign in with Google and
-subscribe. Gmail is polled every 3 min, deduped, answered by Laya. Only answers are stored (`Result`); devs list and
+subscribe. Gmail is polled every 3 min, deduped, answered by an LLM (Gemini Flash, Claude Haiku fallback, via the LiteLLM library in `tasks/llm.py`). Only answers are stored (`Result`); devs list and
 ack them (`fetched`) via API.
 
-Stack: Django 6.1, DRF, drf-spectacular, Postgres 17, Procrastinate, Valkey, cacheops, allauth, django-otp, Laya,
+Stack: Django 6.1, DRF, drf-spectacular, Postgres 17, Procrastinate, Valkey, cacheops, allauth, django-otp, LiteLLM,
 Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
 
 ## Layout
@@ -12,11 +12,11 @@ Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
 - `backend/cfg/`: settings (env via `getenv`), urls, `middleware.py` (CSP, headers)
 - `backend/plugins/`: `management/commands/` (`mk_admin`, `gen_schema`), models, views, serializers, `gmail`, `token` (encrypted OAuth), `validation`, `schema`, `signals`,
   `adapters` (Google OAuth; `prompt=select_account`, `SocialAdapter` retries with `?action=reauthenticate` (consent) when Iris has no refresh token), `authentication`/`throttling` (API keys, flat developer rate), `pagination` (uuid cursor)
-- Usage: `Usage` is one row per developer per day (`used` = emails × schema questions sent to Laya, charged by
-  `usage.consume` in `extract._guess` after Laya succeeds). `/me` reads it at `/api/v1/usage/` (`{today, days}`: every stored day, newest first, unpaginated); `/api/v1/me/` also lists `tiers`. Daily quota per
-  tier is `QUOTAS` in `models.py` (`CustomUser.quota`), checked in `_guess` before each Laya batch;
+- Usage: `Usage` is one row per developer per day (`used` = emails × schema questions answered by the LLM, charged by
+  `usage.consume` in `extract._guess` for each answered email). `/me` reads it at `/api/v1/usage/` (`{today, days}`: every stored day, newest first, unpaginated); `/api/v1/me/` also lists `tiers`. Daily quota per
+  tier is `QUOTAS` in `models.py` (`CustomUser.quota`), checked in `_guess` before each batch;
   `/api/v1/me/` returns it as `quota`.
-- `backend/plugins/tasks/`: `poll` (`poll_hist` every 3 min, `init_hist`), `extract` (`process`), `cleanup`
+- `backend/plugins/tasks/`: `poll` (`poll_hist` every 3 min, `init_hist`), `extract` (`process`: mail fetching, rules, results), `llm` (router, provider schema, answer checks), `cleanup`
   (`cleanup` 03:00 daily: jobs >7d, results >100d, or >30d if fetched/unsubscribed, usage >100d; `revive` every 5 min: retry stalled jobs)
 - `backend/static/iris.css` (dashboard, auth pages), `theme.js` (blocking, sets `data-theme` before paint from
   `localStorage.theme` or the system; the toggle is in `Nav`), `backend/templates/` (allauth)
@@ -77,13 +77,14 @@ Frontend
 - Never store email headers or bodies. Only rule matches, cut to `MAX_MATCH_LENGTH`.
 - API keys: SHA-256 only, shown once.
 - OAuth tokens encrypted (`plugins/token.py`, key = `DJANGO_SECRET_KEY` + `DJANGO_SALT_KEY`; changing one logs out all users).
-- Extract only for active subscriptions. Never call Laya twice for the same user, message and plugin.
-- Secrets come from env.
+- Extract only for active subscriptions. Never call the LLM twice for the same user, message and plugin.
+- Secrets come from env. LLM keys: `GEMINI_KEYS`, `ANTHROPIC_KEYS` (comma lists), paid tier only (Gmail Limited Use).
+- Only the sender, subject and first `llm.MAX_BODY` characters of an email go to the LLM.
 
 ## Known issues (accepted, don't fix)
 
-- Laya can be wrong (Hindi mail, number ranges). Rules are reliable.
-- Mail simplegmail can't parse is skipped (`gmail.get`). A Laya failure skips that plugin's batch (`_guess`).
+- The LLM can be wrong, and email text can try to steer it (prompt injection). Rules are reliable.
+- Mail simplegmail can't parse is skipped (`gmail.get`). An LLM failure skips that email for that plugin (`_guess`).
   `hist_id` moves on, so no retry. Both logged.
 - Dashboard plugin counts can be 5 min stale.
 - Usage quotas overshoot: the check runs before a whole batch, and two workers on one developer can both pass it.
