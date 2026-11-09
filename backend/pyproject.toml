@@ -22,6 +22,7 @@ dependencies = [
     "google-re2==1.1.20251105",
     "segno>=1.6.6",
     "litellm==1.108.3",
+    "jsonschema==4.26.0",
 ]
 
 [dependency-groups]

@@ -1,60 +1,34 @@
 import re2
 from django.core.exceptions import ValidationError
 from django.utils.deconstruct import deconstructible
-from laya.structured import SchemaError, plan_from_json_schema
+from jsonschema.exceptions import best_match
 
-KEY = re2.compile(r"[a-z][a-z0-9_]*")
-MAX_OPTIONS = 32  # answers per choice question
-MAX_RULES = 16  # rules per plugin
-MAX_MATCHES = 20  # matches kept per rule per email
-MAX_MATCH_LENGTH = 200  # characters kept per match
-MAX_PATTERN = 512  # characters in a rule pattern
-MAX_NAME_LENGTH = 64  # characters in a question key or rule name
+from plugins.meta import RULES, SCHEMA
+
 EMPTY_SCHEMA = {"type": "object", "properties": {}}
 RE2 = re2.Options()
 RE2.log_errors = False
+MAX_LEVELS = 10  # steps on a scale question (max - min + 1)
 
 
-def _problem(prop):
-    match prop:
-        case dict() if not isinstance(prop.get("description", ""), str):
-            return "description must be a string"
-        case {"enum": [bool(), bool()] as values} if set(values) == {True, False}:
-            return None
-        case {"enum": list(values)}:
-            answers = {v.strip() for v in values if isinstance(v, str)}
-            if not set(map(type, values)) <= {str}: return "enum values must be strings"
-            if not 2 <= len(values) <= MAX_OPTIONS: return f"needs 2 to {MAX_OPTIONS} answers"
-            if "" in answers: return "answers must not be blank"
-            if len(answers) != len(values): return "answers must be unique"
-            return None
-        case {"type": "boolean"}:
-            return None
-        case {"type": "integer", "minimum": int(lo), "maximum": int(hi)} if bool not in {type(lo), type(hi)}:
-            return None
-        case dict():
-            return "must be an enum, a boolean or an integer with minimum and maximum"
-        case _:
-            return "must be an object"
+def _check(validator, value, code):
+    errors = list(validator.iter_errors(value))
+    if err := best_match([e for e in errors if e.validator != "unevaluatedProperties"] or errors):
+        message = err.message if len(err.message) <= 200 else f"must meet {err.validator}: {err.validator_value}"
+        raise ValidationError(f"{err.json_path[2:] or 'top level'}: {message}", code=code)
 
 
 @deconstructible
 class SchemaValidator:
     def __call__(self, value):
         if value == EMPTY_SCHEMA: return
-        try:
-            plan_from_json_schema(value)
-        except SchemaError as err:
-            raise ValidationError(str(err), code="invalid_schema") from err
+        _check(SCHEMA, value, "invalid_schema")
         for key, prop in value["properties"].items():
-            if not KEY.fullmatch(key):
-                raise ValidationError(f"properties.{key}: key must match ^[a-z][a-z0-9_]*$", code="invalid_schema")
-            if len(key) > MAX_NAME_LENGTH:
-                raise ValidationError(f"properties.{key}: key must be at most {MAX_NAME_LENGTH} characters", code="invalid_schema")
-            if key == "rules":
-                raise ValidationError("properties.rules: key is reserved for rule matches", code="invalid_schema")
-            if problem := _problem(prop):
-                raise ValidationError(f"properties.{key}: {problem}", code="invalid_schema")
+            if prop.get("type") != "integer": continue
+            if prop["maximum"] < prop["minimum"]:
+                raise ValidationError(f"properties.{key}: maximum must be at least minimum", code="invalid_schema")
+            if prop["maximum"] - prop["minimum"] + 1 > MAX_LEVELS:
+                raise ValidationError(f"properties.{key}: at most {MAX_LEVELS} levels", code="invalid_schema")
 
     def __eq__(self, other):
         return isinstance(other, SchemaValidator)
@@ -63,15 +37,8 @@ class SchemaValidator:
 @deconstructible
 class RuleValidator:
     def __call__(self, value):
-        if not isinstance(value, dict): raise ValidationError("Rules must be an object of name: pattern.", code="invalid_rules")
-        if len(value) > MAX_RULES: raise ValidationError(f"Use at most {MAX_RULES} rules.", code="invalid_rules")
+        _check(RULES, value, "invalid_rules")
         for name, pattern in value.items():
-            if not KEY.fullmatch(name):
-                raise ValidationError(f"{name}: name must match ^[a-z][a-z0-9_]*$", code="invalid_rules")
-            if len(name) > MAX_NAME_LENGTH:
-                raise ValidationError(f"{name}: name must be at most {MAX_NAME_LENGTH} characters", code="invalid_rules")
-            if not isinstance(pattern, str) or not 0 < len(pattern) <= MAX_PATTERN:
-                raise ValidationError(f"{name}: pattern must be 1 to {MAX_PATTERN} characters", code="invalid_rules")
             try:
                 re2.compile(pattern, RE2)
             except re2.error as err:
