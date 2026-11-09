@@ -1,13 +1,5 @@
 import type { Field, Rule } from './schema';
-
-export const KINDS = [
-  { kind: 'choice', label: 'Choice', icon: '◉', note: 'Pick one answer from a list' },
-  { kind: 'multi', label: 'Multi', icon: '☰', note: 'Pick every answer that applies' },
-  { kind: 'boolean', label: 'Yes / No', icon: '◐', note: 'A true or false answer' },
-  { kind: 'scale', label: 'Scale', icon: '▮', note: 'A whole number in a range' },
-  { kind: 'number', label: 'Number', icon: '#', note: 'Any number, like an amount' },
-  { kind: 'date', label: 'Date', icon: '◷', note: 'A date, as YYYY-MM-DD' },
-] as const;
+export { KINDS } from './schema';
 
 export const blank = (kind: Field['kind'], name = '', question = ''): Field =>
   kind === 'choice' || kind === 'multi'

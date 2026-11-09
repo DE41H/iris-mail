@@ -105,8 +105,8 @@
               <dt>Version</dt>
               <dd>{plugin!.version}{#if bumps && !locked}<span class="next" title="Saving changed questions or rules starts a new version">→ {next}</span>{/if}</dd>
             </div>
-            <div><dt>Users</dt><dd>{plugin!.subscriber_count ?? 0}</dd></div>
-            <div><dt>Results</dt><dd>{plugin!.result_count ?? 0}</dd></div>
+            <div><dt>People</dt><dd>{(plugin!.subscriber_count ?? 0).toLocaleString()}</dd></div>
+            <div><dt>Answers</dt><dd>{(plugin!.result_count ?? 0).toLocaleString()}</dd></div>
           </dl>
         </section>
       {/snippet}

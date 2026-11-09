@@ -1,15 +1,8 @@
 <script lang="ts">
-  import type { Chart } from 'chart.js';
   import { onMount } from 'svelte';
   import { api, message } from '../lib/api';
   import { loadSession, session } from '../lib/session';
   import DeleteAccount from './DeleteAccount.svelte';
-
-  // Chart.js is most of this page's code, so it loads beside the API calls instead of before the first paint.
-  const charts = import('chart.js').then(({ BarController, BarElement, CategoryScale, Chart, LinearScale, Tooltip }) => {
-    Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip);
-    return Chart;
-  });
 
   type Day = { date: string; used: number };
   const EMPTY_DAYS = 30; // span of the empty graph before any usage exists
@@ -45,75 +38,17 @@
   const today = $derived(usage?.days.find((d) => d.date === usage!.today)?.used ?? 0);
   const quota = $derived($session?.quota ?? 0);
   const share = $derived(quota ? Math.min(today / quota, 1) : 0);
-  const top = $derived(!!$session && $session.tiers.some((t) => t.quota > $session!.quota)); // a higher tier exists
+  const upgradable = $derived(!!$session && $session.tiers.some((t) => t.quota > $session!.quota)); // a higher tier exists
   const level = $derived(share >= 1 ? 'full' : share >= 0.8 ? 'high' : '');
 
-  // Chart.js draws on canvas, so it gets the theme as resolved colours and redraws when the theme flips.
-  function graph(canvas: HTMLCanvasElement, days: Day[]) {
-    const css = (name: string) => getComputedStyle(canvas).getPropertyValue(name).trim();
-    let chart: Chart<'bar'> | undefined;
-    let gone = false;
-
-    const draw = (days: Day[]) => charts.then((C) => !gone && paint(C, days));
-
-    function paint(C: typeof Chart, days: Day[]) {
-      chart?.destroy();
-      const [accent, faint, border, text, surface] = ['--accent', '--faint', '--border', '--text', '--surface'].map(css);
-      const font = { family: css('--font'), size: 11.5 };
-      chart = new C(canvas, {
-        type: 'bar',
-        data: {
-          labels: days.map((d) => d.date),
-          datasets: [{ data: days.map((d) => d.used), backgroundColor: `${accent}b3`, hoverBackgroundColor: accent, borderRadius: 4, borderSkipped: 'bottom', maxBarThickness: 28 }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 500 },
-          interaction: { mode: 'index', intersect: false },
-          scales: {
-            x: {
-              grid: { display: false },
-              border: { color: border },
-              ticks: { color: faint, font, maxRotation: 0, autoSkip: true, maxTicksLimit: canvas.clientWidth < 500 ? 4 : 6, callback: (_, i) => fmt(days[i].date, { month: 'short', day: 'numeric' }) },
-            },
-            y: {
-              beginAtZero: true,
-              suggestedMax: 10,
-              grid: { color: border },
-              border: { display: false },
-              ticks: { color: faint, font, maxTicksLimit: 4, precision: 0, callback: (v) => num(+v) },
-            },
-          },
-          plugins: {
-            tooltip: {
-              backgroundColor: surface,
-              borderColor: border,
-              borderWidth: 1,
-              titleColor: faint,
-              bodyColor: text,
-              titleFont: { ...font, weight: 'normal' },
-              bodyFont: { family: font.family, size: 14, weight: 'bold' },
-              padding: 10,
-              cornerRadius: 10,
-              displayColors: false,
-              callbacks: { title: (items) => fmt(days[items[0].dataIndex].date, { weekday: 'short', month: 'short', day: 'numeric' }), label: (item) => num(item.parsed.y ?? 0) },
-            },
-          },
-        },
-      });
-    }
-
-    let current = days;
-    const flip = () => draw(current);
-    const theme = new MutationObserver(flip);
-    theme.observe(document.documentElement, { attributeFilter: ['data-theme'] });
-    draw(days);
-    return {
-      update: (next: Day[]) => draw((current = next)),
-      destroy: () => (theme.disconnect(), (gone = true), chart?.destroy()),
-    };
-  }
+  // The y axis tops out at a round number: 1, 2 or 5 times a power of ten.
+  const top = $derived.by(() => {
+    const peak = Math.max(10, ...series.map((d) => d.used));
+    const p = 10 ** Math.floor(Math.log10(peak));
+    return [1, 2, 5, 10].map((m) => m * p).find((v) => v >= peak)!;
+  });
+  const step = $derived(Math.ceil(series.length / 6)); // a date label every `step` days
+  const day = (iso: string) => fmt(iso, { month: 'short', day: 'numeric' });
 </script>
 
 {#if error}
@@ -136,7 +71,7 @@
       <div class="row">
         <h2>Today</h2>
         <!-- Billing isn't wired up yet, so this does nothing for now. -->
-        {#if top}<button type="button" class="btn btn-sm btn-primary">Upgrade</button>{/if}
+        {#if upgradable}<button type="button" class="btn btn-sm btn-primary">Upgrade</button>{/if}
       </div>
       <p class="figure"><b>{num(today)}</b> <span>of {num(quota)} questions answered</span></p>
       <div class="meter" role="meter" aria-label="Today's quota used" aria-valuemin={0} aria-valuemax={quota} aria-valuenow={Math.min(today, quota)}>
@@ -146,9 +81,13 @@
     </section>
 
     <section class="card reveal d2">
-      <div class="card-head"><span>Usage Graph</span></div>
-      <div class="plot">
-        <canvas use:graph={series} role="img" aria-label="Questions answered per day"></canvas>
+      <div class="card-head"><span>Questions per day</span></div>
+      <div class="plot" style:--n={series.length} aria-hidden="true">
+        <div class="y"><span>{num(top)}</span><span>{num(top / 2)}</span><span>0</span></div>
+        <div class="bars">
+          {#each series as d}<span class="bar" style:--h={d.used / top}></span>{/each}
+        </div>
+        <div class="x">{#each series as d, i}{#if i % step === 0}<span style:grid-column="{i + 1} / span {step}">{day(d.date)}</span>{/if}{/each}</div>
       </div>
       <!-- Tables ignore overflow, so the wrapper does the hiding. -->
       <div class="sr-only">
@@ -229,7 +168,29 @@
   @keyframes fill { from { clip-path: inset(0 100% 0 0 round 999px); } to { clip-path: inset(0 0 0 0 round 999px); } }
   .note { margin: 0; font-size: 13px; color: var(--danger); }
 
-  .plot { position: relative; height: 240px; padding: 18px 18px 12px; }
+  /* CSS bars instead of a chart library: theme colours apply as is, nothing extra loads. */
+  .plot { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 200px auto; column-gap: 10px; padding: 18px 18px 12px; font-size: 11.5px; color: var(--faint); }
+  .y { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; margin: -0.6em 0; }
+  .bars, .x { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
+  .bars {
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(var(--border) 0 0) top / 100% 1px no-repeat, linear-gradient(var(--border) 0 0) center / 100% 1px no-repeat;
+  }
+  .bar { display: flex; align-items: flex-end; justify-content: center; }
+  .bar::before {
+    content: '';
+    width: 72%;
+    max-width: 28px;
+    height: calc(var(--h) * 100%);
+    border-radius: 4px 4px 0 0;
+    background: color-mix(in oklab, var(--accent) 70%, transparent);
+    transform-origin: bottom;
+    transition: background 0.15s;
+    animation: grow 0.6s 0.2s var(--ease) both;
+  }
+  .bar:hover::before { background: var(--accent); }
+  @keyframes grow { from { scale: 1 0; } }
+  .x { grid-column: 2; padding-top: 6px; white-space: nowrap; }
 
   .leave { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 
@@ -239,12 +200,13 @@
   .sk-h2 { width: 60px; height: 14px; }
   .sk-figure { width: 220px; height: 34px; border-radius: 8px; }
   .sk-w { width: 90px; }
-  .sk-bars { display: flex; align-items: flex-end; gap: 1.5%; }
+  .sk-bars { display: flex; align-items: flex-end; gap: 1.5%; height: 253px; }
   .sk-bars .bone { flex: 1; height: calc(var(--h) * 100%); border-radius: 4px 4px 0 0; }
 
   @media (max-width: 640px) {
     .who .avatar, .sk-avatar { width: 52px; height: 52px; font-size: 22px; }
     .figure b { font-size: 32px; }
-    .plot { padding: 14px 10px 8px; height: 220px; }
+    .plot { padding: 14px 10px 8px; grid-template-rows: 180px auto; }
+    .sk-bars { height: 225px; }
   }
 </style>

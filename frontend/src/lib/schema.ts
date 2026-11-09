@@ -3,11 +3,11 @@
 // enum (multi), a boolean (yes/no), a number, a date, or an integer range of at most MAX_LEVELS (scale).
 // `nullable: true` lets the answer be null when the email does not say. Nothing else is accepted.
 
-export const MAX_FIELDS = 32; // questions per plugin
+export const MAX_FIELDS = 16; // questions per plugin
 export const MAX_LEVELS = 10; // steps on a scale question (max - min + 1)
-export const MAX_OPTIONS = 32; // answers per choice question
-export const MAX_ANSWER_LENGTH = 100; // characters in a choice answer
-export const MAX_DESCRIPTION = 500; // characters in a question, sent to the LLM with every email
+export const MAX_OPTIONS = 16; // answers per choice question
+export const MAX_ANSWER_LENGTH = 50; // characters in a choice answer
+export const MAX_DESCRIPTION = 200; // characters in a question, sent to the LLM with every email
 export const MAX_RULES = 16; // rules per plugin
 export const MAX_PATTERN = 512; // characters in a rule pattern
 export const MAX_NAME_LENGTH = 64; // characters in a question key or rule name
@@ -35,6 +35,15 @@ export interface Rule {
   name: string;
   pattern: string;
 }
+
+export const KINDS = [
+  { kind: 'choice', label: 'Choice', icon: '◉', note: 'Pick one answer from a list' },
+  { kind: 'multi', label: 'Multi', icon: '☰', note: 'Pick every answer that applies' },
+  { kind: 'boolean', label: 'Yes / No', icon: '◐', note: 'A true or false answer' },
+  { kind: 'scale', label: 'Scale', icon: '▮', note: 'A whole number in a range' },
+  { kind: 'number', label: 'Number', icon: '#', note: 'Any number, like an amount' },
+  { kind: 'date', label: 'Date', icon: '◷', note: 'A date, as YYYY-MM-DD' },
+] as const;
 
 export const KEY = /^[a-z][a-z0-9_]*$/; // question keys and rule names
 // Lengths in code points, as the backend counts them (an emoji is one, not two).

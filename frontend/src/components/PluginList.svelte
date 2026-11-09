@@ -1,8 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { listAll, message, type Plugin } from '../lib/api';
-  import { fromSchema } from '../lib/schema';
-  import { KINDS } from '../lib/presets';
+  import { fromSchema, KINDS } from '../lib/schema';
   import Count from './Count.svelte';
   import Iris from './Iris.svelte';
 

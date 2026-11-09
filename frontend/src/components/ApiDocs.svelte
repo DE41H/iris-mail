@@ -145,7 +145,7 @@
   .sk-h { width: 90px; height: 16px; margin: 20px 18px 10px; }
   .sk-op { display: flex; align-items: center; gap: 12px; padding: 13px 18px; border-top: 1px solid var(--border); }
   .sk-method { width: 60px; height: 18px; }
-  .tag-desc { margin: 0; padding: 0 16px 10px; font-size: 13px; }
+  .tag-desc { margin: 0; padding: 0 18px 10px; font-size: 13px; }
   details { border-top: 1px solid var(--border); }
   summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 11px 18px; cursor: pointer; list-style: none; transition: background 0.2s; }
   details[open] summary { background: var(--surface-2); }
