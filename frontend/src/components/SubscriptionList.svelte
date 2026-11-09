@@ -12,7 +12,7 @@
 </script>
 
 {#if $session && !$session.google}
-  <div class="alert alert-danger" role="alert">Google access was revoked, so sharing is off. <a href="/accounts/google/login/?next=/subscriptions/">Reconnect Google</a></div>
+  <div class="alert alert-danger" role="alert">Google access was revoked, so sharing is off. <a href="/accounts/google/login/?action=reauthenticate&next=/subscriptions/">Reconnect Google</a></div>
 {/if}
 {#if error}
   <div class="alert alert-danger" role="alert">{error}</div>

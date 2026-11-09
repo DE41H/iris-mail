@@ -158,6 +158,7 @@ ACCOUNT_SIGNUP_FIELDS = ['email*']
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 SOCIALACCOUNT_ONLY = True
 SOCIALACCOUNT_STORE_TOKENS = True
+SOCIALACCOUNT_ADAPTER = 'plugins.adapters.SocialAdapter'
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {
@@ -171,7 +172,7 @@ SOCIALACCOUNT_PROVIDERS = {
         ],
         'AUTH_PARAMS': {
             'access_type': 'offline',
-            'prompt': 'consent',
+            'prompt': 'select_account',
         },
     },
 }
