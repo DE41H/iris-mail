@@ -22,7 +22,7 @@
 <div class="rule-list">
   {#if rules.length}
     <div class="rows" bind:this={rows}>
-      <div class="row head" aria-hidden="true"><span>Saved as</span><span>Pattern</span></div>
+      <div class="row head" aria-hidden="true"><span>Name</span><span>Pattern</span></div>
       {#each rules as r, i}
         {@const issues = ruleProblems(r, rules)}
         {@const shown = touched.includes(r) && issues.length}
@@ -48,13 +48,13 @@
 
   {#if testing && rules.length}
     <label class="sample" transition:slide={{ duration: 200 }}>
-      <span class="label">Sample email text</span>
+      <span class="label">Sample tester</span>
       <textarea rows="3" bind:value={sample} placeholder="Thanks for your order #48213. Total: $42.50"></textarea>
     </label>
   {/if}
   <div class="add">
-    <button type="button" class="add-pill" disabled={full} onclick={() => add({ name: '', pattern: '' })}><i aria-hidden="true">+</i>Add a rule</button>
-    {#if rules.length}<button type="button" class="text-btn" aria-expanded={testing} onclick={() => (testing = !testing)}>{testing ? 'Hide tester' : 'Test on sample text'}</button>{/if}
+    <button type="button" class="add-pill" disabled={full} onclick={() => add({ name: '', pattern: '' })}><i aria-hidden="true">+</i>Add</button>
+    {#if rules.length}<button type="button" class="text-btn" aria-expanded={testing} onclick={() => (testing = !testing)}>{testing ? 'Hide tester' : 'Test'}</button>{/if}
   </div>
 
 </div>

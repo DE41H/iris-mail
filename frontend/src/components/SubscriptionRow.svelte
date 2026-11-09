@@ -51,11 +51,11 @@
     <span class="track" aria-hidden="true"></span>
     <span class="state">{sub.active ? 'On' : 'Off'}</span>
   </label>
-  <ConfirmButton label="Remove" confirm="Remove it?" danger onconfirm={remove} />
+  <ConfirmButton label="Remove" confirm="Are you sure?" danger onconfirm={remove} />
 
   {#if asking}
     <div class="consent" transition:slide={{ duration: 220 }}>
-      <p><strong>{sub.plugin_name}</strong>'s creator will receive answers and short matched snippets from your new emails. Never whole emails.</p>
+      <p><strong>{sub.plugin_name}</strong>'s creator will receive answers and short matched snippets from your new emails.</p>
       <div class="actions">
         <button type="button" class="btn btn-sm" onclick={() => (asking = false)}>Cancel</button>
         <!-- svelte-ignore a11y_autofocus -->

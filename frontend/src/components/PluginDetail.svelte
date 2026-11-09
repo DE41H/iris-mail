@@ -79,13 +79,13 @@
 <div class="screen">
   {#if error}<div class="alert alert-danger" role="alert">{error}</div>{/if}
   {#if plugin && PluginEditor}
-    <PluginEditor bind:draft submit="Save changes" onsubmit={save} {dirty} {locked} steps={false}>
+    <PluginEditor bind:draft submit="Save" onsubmit={save} {dirty} {locked} steps={false}>
       {#snippet head()}
         <div class="eyebrow"><a href="/plugins">Plugins</a> <span aria-hidden="true">/</span> {plugin!.name}</div>
         <h1>{plugin!.name}</h1>
       {/snippet}
       {#snippet tools()}
-        <ConfirmButton label="Delete plugin" confirm="Delete for good?" danger onconfirm={remove} />
+        <ConfirmButton label="Delete plugin" confirm="Are you sure?" danger onconfirm={remove} />
       {/snippet}
       {#snippet aside()}
         <section class="card meta">
@@ -98,7 +98,7 @@
                 <span class="muted">No key yet</span>
               {/if}
             </div>
-            <ConfirmButton label={plugin!.prefix ? 'Rotate' : 'Create key'} confirm={plugin!.prefix ? 'Old key stops. Sure?' : 'Create?'} onconfirm={rotate} />
+            <ConfirmButton label={plugin!.prefix ? 'Rotate' : 'Create key'} confirm="Are you sure?" onconfirm={rotate} />
           </div>
           <dl class="stats">
             <div>
@@ -108,7 +108,6 @@
             <div><dt>Users</dt><dd>{plugin!.subscriber_count ?? 0}</dd></div>
             <div><dt>Results</dt><dd>{plugin!.result_count ?? 0}</dd></div>
           </dl>
-          {#if bumps && !locked}<p class="help bump">Saving starts version {next}.</p>{/if}
         </section>
       {/snippet}
       {#if dirty}<button type="button" class="btn btn-ghost" onclick={() => fill(plugin!)}>Discard</button>{/if}
@@ -165,11 +164,9 @@
   .key h2 { font-size: 15px; color: var(--text); }
   .prefix { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; color: var(--accent); }
   .prefix span { color: var(--faint); letter-spacing: 0.05em; }
-  .help { margin: 0; font-size: 12.5px; line-height: 1.45; }
   .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; padding-top: 12px; border-top: 1px solid var(--border); }
   .stats div + div { padding-left: 12px; border-left: 1px solid var(--border); }
   .stats dt { font-size: 12.5px; color: var(--muted); }
   .stats dd { display: flex; align-items: baseline; gap: 6px; margin: 2px 0 0; font-size: 20px; font-weight: 640; font-stretch: 110%; font-variant-numeric: tabular-nums; }
   .next { font-size: 13px; font-weight: 600; color: var(--signal-text); animation: pop 0.35s var(--spring); }
-  .bump { color: var(--signal-text); }
 </style>

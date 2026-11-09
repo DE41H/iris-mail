@@ -5,14 +5,14 @@
 
   let { fields, rules }: { fields: Field[]; rules: Rule[] } = $props();
 
-  const TABS = { result: 'Example result', schema: 'JSON schema' } as const;
-  let tab = $state<keyof typeof TABS>('result');
+  const TABS = { schema: 'Schema', result: 'Result' } as const;
+  let tab = $state<keyof typeof TABS>('schema');
 
   const EXAMPLES = { boolean: true, number: 42.5, date: '2026-03-14' };
   const example = (f: Field) =>
     f.kind === 'scale' ? f.min : f.kind === 'choice' ? (f.options[0] ?? null) : f.kind === 'multi' ? f.options.slice(0, 2) : EXAMPLES[f.kind];
   const value = $derived(
-    tab === 'schema' ? toSchema(fields) : { output: { ...Object.fromEntries(fields.map((f) => [f.name, example(f)])), ...(rules.length ? { rules: Object.fromEntries(rules.map((r) => [r.name, ['…']])) } : {}) } },
+    tab === 'schema' ? toSchema(fields) : { output: { ...Object.fromEntries(fields.map((f) => [f.name, example(f)])), ...(rules.length ? { rules: Object.fromEntries(rules.map((r) => [r.name, ['matched text']])) } : {}) } },
   );
 </script>
 
@@ -30,8 +30,9 @@
 
 <style>
   .preview { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-  .tabs { display: flex; gap: 2px; padding: 10px 14px 0; border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .tabs { display: flex; gap: 2px; padding: 10px 14px 0; border-bottom: 1px solid var(--border); }
   .tabs button {
+    flex: 1;
     position: relative;
     padding: 8px 8px 10px;
     white-space: nowrap;

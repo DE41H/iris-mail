@@ -2,7 +2,6 @@
   import { flip } from 'svelte/animate';
   import { scale } from 'svelte/transition';
   import { MAX_OPTIONS } from '../lib/schema';
-  import { OPTION_SETS } from '../lib/presets';
 
   let { options = $bindable(), label }: { options: string[]; label: string } = $props();
   let draft = $state('');
@@ -30,12 +29,6 @@
       add(draft + text);
     }
   }
-
-  function useSet(e: Event) {
-    const select = e.currentTarget as HTMLSelectElement;
-    if (select.value) options = [...OPTION_SETS[select.value]];
-    select.value = '';
-  }
 </script>
 
 <div class="wrap">
@@ -59,16 +52,9 @@
       spellcheck="false"
     />
   </div>
-  <select onchange={useSet} aria-label="Fill answers from a common set">
-    <option value="">Use a set…</option>
-    {#each Object.entries(OPTION_SETS) as [name, values]}
-      <option value={name}>{name} · {values.length}</option>
-    {/each}
-  </select>
 </div>
 
 <style>
-  .wrap { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; }
   .box {
     display: flex;
     flex-wrap: wrap;
@@ -94,6 +80,4 @@
   }
   .tag button { border: 0; background: none; color: inherit; cursor: pointer; padding: 0 6px; border-radius: 999px; font-size: 14px; line-height: 1; }
   .tag button:hover { background: var(--accent); color: var(--on-accent); }
-  select { width: auto; }
-  @media (max-width: 640px) { .wrap { grid-template-columns: 1fr; } }
 </style>

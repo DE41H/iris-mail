@@ -74,7 +74,7 @@
           <i aria-hidden="true">{k.icon}</i>{k.label}
         </button>
       {/each}
-      <button type="button" class="text-btn" aria-expanded={importing} onclick={() => (importing = !importing)}>Paste JSON schema</button>
+      <button type="button" class="text-btn paste" aria-expanded={importing} title="Paste JSON schema" aria-label="Paste JSON schema" onclick={() => (importing = !importing)}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 10h6M9 14h6" /></svg></button>
     </div>
 
 
@@ -84,7 +84,6 @@
         <textarea class="mono" rows="6" bind:value={pasted} placeholder={'{ "type": "object", "properties": { … } }'} aria-label="JSON schema to import"></textarea>
         {#if importError}<div class="error">{importError}</div>{/if}
         <div class="actions">
-          <span class="help">This replaces every question above.</span>
           <button type="button" class="btn btn-sm btn-primary" disabled={!pasted.trim()} onclick={load}>Import</button>
         </div>
       </div>
@@ -104,6 +103,7 @@
   .warn { color: var(--signal-text); margin: 0; }
   .import { display: grid; gap: 8px; }
   .import textarea { min-height: 140px; }
-  .import .actions { justify-content: space-between; }
-  @media (max-width: 640px) { .text-btn { margin-left: 0; flex-basis: 100%; text-align: left; } }
+  .import .actions { justify-content: flex-end; }
+  .paste { display: grid; place-items: center; padding: 4px; }
+  .paste svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 </style>

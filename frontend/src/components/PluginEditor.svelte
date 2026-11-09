@@ -63,6 +63,27 @@
   }
 </script>
 
+{#snippet status()}
+  {#if locked}
+    <span class="state">Read only</span>
+  {:else if issues.length && !tried}
+    <span class="state">Not ready yet</span>
+  {:else if issues.length}
+    <button type="button" class="state warn" onclick={() => (open = !open)} aria-expanded={open}>{issues.length} to fix <span class="caret" class:up={open}>▾</span></button>
+  {:else if dirty}
+    <span class="state ok">Unsaved changes</span>
+  {/if}
+  <div class="actions">
+    {@render children?.()}
+    <button class="btn btn-primary" type="submit" disabled={busy || !dirty || !!locked}>{busy ? 'Saving…' : submit}</button>
+  </div>
+  {#if open && issues.length}
+    <ul class="card issues" role="status" transition:fly={{ y: 6, duration: 150 }}>
+      {#each issues as issue}<li>{issue}</li>{/each}
+    </ul>
+  {/if}
+{/snippet}
+
 {#snippet title(n: number, text: string, ok: boolean, count?: string)}
   <header class="sec-head">
     {#if steps}<span class="n" class:ok aria-hidden="true">{#if ok}<svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" /></svg>{:else}{n}{/if}</span>{/if}
@@ -73,7 +94,12 @@
 <form class="editor grow" class:plain={!steps} onsubmit={save} novalidate>
   <div class="page-head reveal">
     <div>{@render head()}</div>
-    {#if tools}<div class="actions">{@render tools()}</div>{/if}
+    {#if tools || !steps}
+      <div class="actions top">
+        {#if !steps}{@render status()}{/if}
+        {@render tools?.()}
+      </div>
+    {/if}
   </div>
 
   <div class="cols grow">
@@ -123,28 +149,7 @@
     </section>
   </div>
 
-  <div class="bar">
-    {#if locked}
-      <span class="state">Read only</span>
-    {:else if issues.length && !tried}
-      <span class="state">Not ready yet</span>
-    {:else if issues.length}
-      <button type="button" class="state warn" onclick={() => (open = !open)} aria-expanded={open}>{issues.length} to fix <span class="caret" class:up={open}>▾</span></button>
-    {:else if dirty}
-      <span class="state ok">Unsaved changes</span>
-    {:else}
-      <span class="state">All saved</span>
-    {/if}
-    <div class="actions">
-      {@render children?.()}
-      <button class="btn btn-primary" type="submit" disabled={busy || !dirty || !!locked}>{busy ? 'Saving…' : submit}</button>
-    </div>
-    {#if open && issues.length}
-      <ul class="card issues" role="status" transition:fly={{ y: 6, duration: 150 }}>
-        {#each issues as issue}<li>{issue}</li>{/each}
-      </ul>
-    {/if}
-  </div>
+  {#if steps}<div class="bar">{@render status()}</div>{/if}
 </form>
 
 <style>
@@ -205,6 +210,10 @@
     border-top: 1px solid var(--border);
   }
   .bar .actions { margin-left: auto; }
+  /* Editing an existing plugin: status and save sit in the page head instead of a bottom bar. */
+  .top { position: relative; }
+  .top .actions { display: contents; }
+  .top .issues { left: auto; right: 0; bottom: auto; top: calc(100% + 10px); z-index: 5; }
   .state { display: inline-flex; align-items: center; gap: 7px; font: 540 13px var(--font); color: var(--muted); background: none; border: 0; padding: 0; }
   .state.ok, .state.warn { animation: pop 0.35s var(--spring); }
   .state.ok::before, .state.warn::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }

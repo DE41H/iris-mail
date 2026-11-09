@@ -2,7 +2,7 @@
   import { tick } from 'svelte';
   import { slide } from 'svelte/transition';
   import { fieldProblems, MAX_LEVELS, MAX_NAME_LENGTH, slug, type Field } from '../lib/schema';
-  import { KINDS, retype, SCALES } from '../lib/presets';
+  import { KINDS, retype } from '../lib/presets';
   import OptionsInput from './OptionsInput.svelte';
 
   interface Props {
@@ -58,13 +58,6 @@
     auto = !field.name;
   }
 
-  function scalePreset(e: Event) {
-    const select = e.currentTarget as HTMLSelectElement;
-    const preset = SCALES[Number(select.value)];
-    if (preset && field.kind === 'scale') [, field.min, field.max] = preset;
-    select.value = '';
-  }
-
   const num = (e: Event) => {
     const v = (e.currentTarget as HTMLInputElement).value;
     return v === '' ? NaN : Number(v);
@@ -110,29 +103,18 @@
           <input class="mono" type="number" step="1" value={field.min} oninput={(e) => field.kind === 'scale' && (field.min = num(e))} aria-label={`Question ${n} lowest value`} />
           <span class="muted">to</span>
           <input class="mono" type="number" step="1" value={field.max} oninput={(e) => field.kind === 'scale' && (field.max = num(e))} aria-label={`Question ${n} highest value`} />
-          <select onchange={scalePreset} aria-label="Pick a common range">
-            <option value="">Common ranges…</option>
-            {#each SCALES as [label], i}<option value={i}>{label}</option>{/each}
-          </select>
           {#if levels && levels <= MAX_LEVELS}
             <div class="ticks" aria-hidden="true">
               {#each { length: levels } as _, i}<span style:--i={i}>{field.min + i}</span>{/each}
             </div>
           {/if}
         </div>
-      {:else if field.kind === 'number'}
-        <p class="bool">Answered with a number like <span class="chip">42.5</span></p>
-      {:else if field.kind === 'date'}
-        <p class="bool">Answered with a date like <span class="chip">2026-03-14</span></p>
-      {:else}
-        <p class="bool">Answered with <span class="chip on">true</span> or <span class="chip">false</span></p>
       {/if}
-      {#if field.kind === 'multi'}<p class="bool">Answered with a list of every answer that applies, maybe empty</p>{/if}
 
       {#if field.kind !== 'multi'}
         <label class="null">
           <input type="checkbox" bind:checked={field.nullable} />
-          <span>Can be unknown: <span class="chip">null</span> when the email doesn't say</span>
+          <span>Nullable?</span>
         </label>
       {/if}
 
@@ -190,7 +172,6 @@
 
   .range { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .range input { width: 68px; padding-top: 6px; padding-bottom: 6px; }
-  .range select { width: auto; max-width: 100%; padding-top: 6px; padding-bottom: 6px; font-size: 13.5px; }
   .ticks { display: flex; gap: 3px; flex: 1 1 100%; }
   .ticks span {
     flex: 1;
@@ -204,7 +185,6 @@
     animation: rise 0.35s var(--ease) both;
     animation-delay: calc(var(--i) * 30ms);
   }
-  .bool { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13.5px; color: var(--muted); }
   .null { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--muted); cursor: pointer; }
   .null input { width: auto; margin: 0; }
   .key { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--faint); }

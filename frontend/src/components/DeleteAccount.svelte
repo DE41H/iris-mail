@@ -17,7 +17,7 @@
 </script>
 
 <div class="leave">
-  <ConfirmButton label="Delete account" confirm="Delete everything?" danger onconfirm={leave} />
+  <ConfirmButton label="Delete account" confirm="Are you sure?" danger onconfirm={leave} />
   {#if error}<div class="alert alert-danger" role="alert">{error}</div>{/if}
 </div>
 

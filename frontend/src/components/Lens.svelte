@@ -9,7 +9,7 @@
       from: 'receipts@northwind.example',
       subject: 'Your receipt from Northwind',
       body: ['Pro plan, billed monthly.', 'Renews on the 5th.', 'Total charged: $12.00'],
-      out: { receipt: true, spend_category: 'software', subscription: true, total: 12, rules: { amount: ['$12.00'] } },
+      out: { receipt: true, spend_category: 'software', total: 12, rules: { amount: ['$12.00'] } },
     },
     {
       title: 'Inbox priority',

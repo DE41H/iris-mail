@@ -27,14 +27,6 @@ export const OPTION_SETS: Record<string, string[]> = {
   'Order status': ['ordered', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'],
 };
 
-export const SCALES: [string, number, number][] = [
-  ['1 – 5 (rating)', 1, 5],
-  ['0 – 4 (none → max)', 0, 4],
-  ['1 – 10 (fine)', 1, 10],
-  ['0 – 2 (low · mid · high)', 0, 2],
-  ['1 – 3 (small)', 1, 3],
-];
-
 export interface Template {
   title: string;
   blurb: string;
