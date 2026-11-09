@@ -29,7 +29,7 @@ services:
     env_file: .env
     command: >
       granian --interface wsgi --host 0.0.0.0 --workers 2 --backpressure 16
-      --respawn-failed-workers --workers-max-rss 512 cfg.wsgi:application
+      --respawn-failed-workers --workers-max-rss 256 cfg.wsgi:application
     sysctls:
       net.ipv4.tcp_migrate_req: 1
     volumes:
@@ -60,7 +60,7 @@ services:
       LAYA_REVISION: reviewed
       OMP_NUM_THREADS: 2
       MALLOC_ARENA_MAX: 2
-    mem_limit: 4g
+    mem_limit: 256m
     volumes:
       - models:/models
     logging: *logging

@@ -27,7 +27,7 @@ from plugins.validation import MAX_MATCH_LENGTH, MAX_MATCHES, RE2
 logger = logging.getLogger(__name__)
 
 ROUTER = laya.Router(max_loaded=1)
-CHUNK_SIZE = 250
+CHUNK_SIZE = 100
 INVISIBLE = dict.fromkeys(map(ord, "\u200b\u200c\u200d\u2060\ufeff\u034f\u00ad"))
 
 
