@@ -61,9 +61,15 @@ Backend
 - API is versioned in the URL: `/api/<version>/` (DRF `URLPathVersioning`); `ALLOWED_VERSIONS` in settings is the only list (now `v1`). No unversioned routes. New version: add it there, branch on `request.version`. `@action` handlers take `**kwargs` (they receive `version`). Frontend calls `/api/v1/` explicitly. No schema endpoint: `deploy.sh` runs `gen_schema` after collectstatic, writing `/static/schema/<version>.json` per allowed version plus `versions.json`; `/docs` fetches them.
 
 Schema
-- Checks and `MAX_*` limits are in `plugins/validation.py` and `frontend/src/lib/schema.ts` (+ `rules.ts`, RE2 via
+- Checks and `MAX_*` limits are in `plugins/meta.py` (metaschemas), `plugins/validation.py` and `frontend/src/lib/schema.ts` (+ `rules.ts`, RE2 via
   re2js). Change both together.
 - `rules` is a reserved key; rule matches go to `output.rules`.
+- Field types: string enum (choice), array of a string enum (multi), boolean, integer range (scale), number, date
+  (`format: date`); `nullable: true` allows null. `validation.py` checks plugin schemas and rules against the JSON Schema
+  metaschemas in `meta.py` (`jsonschema`, Draft 2020-12; `type` is required, no extra keys). `llm._wire` maps each field to the provider schema;
+  LiteLLM validates each reply against it (`enable_json_schema_validation`, a failure skips that email) and `llm._clean`
+  covers what JSON Schema can't (dates, NaN, duplicate picks). Only types both Gemini and Claude strict output accept.
+  No free text: it would store email content.
 
 Frontend
 - One screen per page, `client:only="svelte"` islands, short copy.

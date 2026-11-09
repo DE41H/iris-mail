@@ -42,7 +42,7 @@ Your **Spending** plugin gets this, and the email is dropped:
 
 | | |
 | :-- | :-- |
-| **1. Write your questions** | Yes/no, a choice, or a scale, plus optional regex rules. You get an API key. |
+| **1. Write your questions** | Yes/no, a choice (one or several), a scale, a number or a date, any of which can be unknown, plus optional regex rules. You get an API key. |
 | **2. People switch you on** | They sign in with Google and opt in, one plugin at a time. |
 | **3. Fetch the answers** | New mail is read every 3 minutes. Pull results as JSON and acknowledge them. |
 
@@ -80,7 +80,7 @@ Adding by email always returns `202`, so accounts can't be probed. The full refe
 | | |
 | :-- | :-- |
 | Questions per plugin | 32 |
-| Answers per choice | 32 |
+| Answers per choice or multi-select | 32 |
 | Steps on a scale | 10 |
 | Rules per plugin | 16, RE2 syntax, first capture group kept |
 | API rate | 500 to 5,000 requests per hour, by tier |
