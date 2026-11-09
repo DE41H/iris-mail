@@ -33,6 +33,8 @@ def _clean(prop, value):
             return list(dict.fromkeys(value))
         case {"type": "number"}, float() if not math.isfinite(value):  # NaN can't be stored in jsonb
             return None
+        case {"type": "integer"}, float():  # JSON Schema counts 2.0 as an integer
+            return int(value)
         case {"format": "date"}, str():
             try:
                 return value if date.fromisoformat(value).isoformat() == value else None

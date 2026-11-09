@@ -9,21 +9,21 @@
       from: 'receipts@northwind.example',
       subject: 'Your receipt from Northwind',
       body: ['Pro plan, billed monthly.', 'Renews on the 5th.', 'Total charged: $12.00'],
-      out: { receipt: true, spend_category: 'software', subscription: true, rules: { amount: ['$12.00'] } },
+      out: { receipt: true, spend_category: 'software', subscription: true, total: 12, rules: { amount: ['$12.00'] } },
     },
     {
       title: 'Inbox priority',
       from: 'sam@team.example',
       subject: 'Contract needs your signature',
-      body: ['The client signed their part.', 'Can you sign and send it back', 'before Friday noon?'],
-      out: { importance: 5, needs_reply: true, has_deadline: true, next_action: 'reply' },
+      body: ['The client signed their part.', 'Can you sign and send it back', 'by Friday 12 March 2027?'],
+      out: { importance: 5, needs_reply: true, deadline: '2027-03-12', next_action: 'reply' },
     },
     {
       title: 'Security alerts',
       from: 'no-reply@accounts.example',
       subject: 'New sign-in to your account',
       body: ['Chrome on Windows, near Lisbon.', 'IP address 203.0.113.42', 'Not you? Reset your password.'],
-      out: { alert: 'new_sign_in', risk: 3, rules: { ip_address: ['203.0.113.42'] } },
+      out: { alert: 'new_sign_in', risk: 3, to_do: ['review_sign_in', 'change_password'], rules: { ip_address: ['203.0.113.42'] } },
     },
   ];
   const PHASES = ['arrive', 'read', 'answer', 'drop'] as const;

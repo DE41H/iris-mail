@@ -1,9 +1,9 @@
 // Rule checks, apart from schema.ts so only the editor loads re2js (the plugin list only reads schemas).
 import { RE2JS } from 're2js';
-import { fieldProblems, KEY, MAX_FIELDS, MAX_NAME_LENGTH, MAX_PATTERN, MAX_RULES, type Field, type Rule } from './schema';
+import { chars, fieldProblems, KEY, MAX_FIELDS, MAX_NAME_LENGTH, MAX_PATTERN, MAX_RULES, type Field, type Rule } from './schema';
 
-const MAX_MATCHES = 20; // matches kept per rule per email, as in validation.py
-const MAX_MATCH_LENGTH = 200; // characters kept per match, as in validation.py
+const MAX_MATCHES = 20; // matches kept per rule per email, as in meta.py
+const MAX_MATCH_LENGTH = 200; // characters kept per match, as in meta.py
 
 export function problems(fields: Field[], rules: Rule[]): string[] {
   const out: string[] = [];
@@ -39,7 +39,7 @@ export function ruleProblems(r: Rule, rules: Rule[]): string[] {
   else if (r.name.length > MAX_NAME_LENGTH) out.push(`Name: at most ${MAX_NAME_LENGTH} characters.`);
   else if (rules.some((g) => g !== r && g.name === r.name)) out.push('Name is already used by another rule.');
   if (!r.pattern) out.push('Pattern is required.');
-  else if (r.pattern.length > MAX_PATTERN) out.push(`Pattern: at most ${MAX_PATTERN} characters.`);
+  else if (chars(r.pattern) > MAX_PATTERN) out.push(`Pattern: at most ${MAX_PATTERN} characters.`);
   else {
     const re = compile(r.pattern);
     if (typeof re === 'string') out.push(`Pattern: ${re}.`);

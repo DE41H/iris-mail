@@ -28,10 +28,18 @@
   const issues = $derived(fieldProblems(field, fields));
   const laya = $derived(KINDS.find((k) => k.kind === field.kind)!);
   const levels = $derived(field.kind === 'scale' && field.max >= field.min ? field.max - field.min + 1 : 0);
+  const PLACEHOLDERS = {
+    choice: 'What is this email about?',
+    multi: 'Which topics does this email cover?',
+    boolean: 'Is this email a receipt?',
+    scale: 'How urgent is this email?',
+    number: 'How much was charged?',
+    date: 'When is the payment due?',
+  };
   const summary = $derived(
-    field.kind === 'choice'
+    (field.kind === 'choice' || field.kind === 'multi'
       ? field.options.length ? field.options.slice(0, 3).join(', ') + (field.options.length > 3 ? ` +${field.options.length - 3}` : '') : 'no answers yet'
-      : field.kind === 'scale' ? `${field.min} to ${field.max}` : 'yes or no',
+      : field.kind === 'scale' ? `${field.min} to ${field.max}` : field.kind === 'boolean' ? 'yes or no' : `a ${field.kind}`) + (field.nullable ? ' or unknown' : ''),
   );
 
   async function expand() {
@@ -67,7 +75,7 @@
   <div class="head">
     <span class="num" title={laya.label}><i aria-hidden="true">{laya.icon}</i>{n}</span>
     {#if open}
-      <input bind:this={input} class="q" type="text" value={field.question} oninput={question} aria-label={`Question ${n}`} placeholder={laya.kind === 'boolean' ? 'Is this email a receipt?' : laya.kind === 'scale' ? 'How urgent is this email?' : 'What is this email about?'} />
+      <input bind:this={input} class="q" type="text" value={field.question} oninput={question} aria-label={`Question ${n}`} placeholder={PLACEHOLDERS[field.kind]} />
     {:else}
       <button type="button" class="row" onclick={expand} aria-label={`Edit question ${n}: ${field.question || 'untitled'}`}>
         <span class="text" class:empty={!field.question}>{field.question || 'Untitled question'}</span>
@@ -95,7 +103,7 @@
         {/each}
       </div>
 
-      {#if field.kind === 'choice'}
+      {#if field.kind === 'choice' || field.kind === 'multi'}
         <OptionsInput bind:options={field.options} label={`Question ${n} answers`} />
       {:else if field.kind === 'scale'}
         <div class="range">
@@ -112,8 +120,20 @@
             </div>
           {/if}
         </div>
+      {:else if field.kind === 'number'}
+        <p class="bool">Answered with a number like <span class="chip">42.5</span></p>
+      {:else if field.kind === 'date'}
+        <p class="bool">Answered with a date like <span class="chip">2026-03-14</span></p>
       {:else}
         <p class="bool">Answered with <span class="chip on">true</span> or <span class="chip">false</span></p>
+      {/if}
+      {#if field.kind === 'multi'}<p class="bool">Answered with a list of every answer that applies, maybe empty</p>{/if}
+
+      {#if field.kind !== 'multi'}
+        <label class="null">
+          <input type="checkbox" bind:checked={field.nullable} />
+          <span>Can be unknown: <span class="chip">null</span> when the email doesn't say</span>
+        </label>
       {/if}
 
       <div class="key">
@@ -159,7 +179,7 @@
   .del:hover:not(:disabled) { background: var(--danger-soft); color: var(--danger); }
   .rows { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 4px 16px 0 60px; }
 
-  .seg { justify-self: start; display: inline-flex; padding: 2px; gap: 2px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); }
+  .seg { justify-self: start; display: inline-flex; flex-wrap: wrap; padding: 2px; gap: 2px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border); }
   .seg label { position: relative; }
   .seg input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
   .seg span { display: block; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 540; color: var(--muted); transition: background 0.25s, color 0.2s; white-space: nowrap; }
@@ -185,6 +205,8 @@
     animation-delay: calc(var(--i) * 30ms);
   }
   .bool { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13.5px; color: var(--muted); }
+  .null { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--muted); cursor: pointer; }
+  .null input { width: auto; margin: 0; }
   .key { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--faint); }
   .key input { width: 200px; max-width: 100%; padding: 4px 8px; font-size: 12.5px; background: transparent; }
   .key .chip { font-size: 11.5px; }

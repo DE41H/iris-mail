@@ -1,16 +1,18 @@
 <script lang="ts">
-  import { toQuestions, toSchema, type Field, type Rule } from '../lib/schema';
+  import { toSchema, type Field, type Rule } from '../lib/schema';
   import CopyButton from './CopyButton.svelte';
   import Json from './Json.svelte';
 
   let { fields, rules }: { fields: Field[]; rules: Rule[] } = $props();
 
-  const TABS = { result: 'Example result', schema: 'JSON schema', laya: 'Laya questions' } as const;
+  const TABS = { result: 'Example result', schema: 'JSON schema' } as const;
   let tab = $state<keyof typeof TABS>('result');
 
-  const example = (f: Field) => (f.kind === 'boolean' ? true : f.kind === 'scale' ? f.min : (f.options[0] ?? null));
+  const EXAMPLES = { boolean: true, number: 42.5, date: '2026-03-14' };
+  const example = (f: Field) =>
+    f.kind === 'scale' ? f.min : f.kind === 'choice' ? (f.options[0] ?? null) : f.kind === 'multi' ? f.options.slice(0, 2) : EXAMPLES[f.kind];
   const value = $derived(
-    tab === 'schema' ? toSchema(fields) : tab === 'laya' ? toQuestions(fields) : { output: { ...Object.fromEntries(fields.map((f) => [f.name, example(f)])), ...(rules.length ? { rules: Object.fromEntries(rules.map((r) => [r.name, ['…']])) } : {}) } },
+    tab === 'schema' ? toSchema(fields) : { output: { ...Object.fromEntries(fields.map((f) => [f.name, example(f)])), ...(rules.length ? { rules: Object.fromEntries(rules.map((r) => [r.name, ['…']])) } : {}) } },
   );
 </script>
 
