@@ -20,7 +20,7 @@ ANSWERS = {
     "type": "array",
     "items": {
         "type": "string",
-        "pattern": r"^\S(.*\S)?\Z",
+        "pattern": r"^\S([\s\S]*\S)?\Z",
         "maxLength": MAX_ANSWER_LENGTH,
     },
     "minItems": 2,
@@ -68,6 +68,7 @@ SCHEMA = Draft202012Validator({
         },
     },
     "required": ["properties"],
+    "additionalProperties": False,
 })
 RULES = Draft202012Validator({
     "type": "object",
