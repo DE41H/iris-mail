@@ -9,7 +9,8 @@ EMPTY_SCHEMA = {"type": "object", "properties": {}}
 RE2 = re2.Options()
 RE2.log_errors = False
 MAX_LEVELS = 10  # steps on a scale question (max - min + 1)
-
+MAX_MATCHES = 20  # matches kept per rule per email
+MAX_MATCH_LENGTH = 200  # characters kept per match
 
 def _check(validator, value, code):
     errors = list(validator.iter_errors(value))
@@ -39,8 +40,7 @@ class RuleValidator:
     def __call__(self, value):
         _check(RULES, value, "invalid_rules")
         for name, pattern in value.items():
-            try:
-                re2.compile(pattern, RE2)
+            try: re2.compile(pattern, RE2)
             except re2.error as err:
                 raise ValidationError(f"{name}: {err.args[0].decode()}", code="invalid_rules") from err
 

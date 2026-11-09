@@ -5,8 +5,6 @@ MAX_OPTIONS = 32  # answers per choice question
 MAX_ANSWER_LENGTH = 100  # characters in a choice answer
 MAX_DESCRIPTION = 500  # characters in a question
 MAX_RULES = 16  # rules per plugin
-MAX_MATCHES = 20  # matches kept per rule per email
-MAX_MATCH_LENGTH = 200  # characters kept per match
 MAX_PATTERN = 512  # characters in a rule pattern
 MAX_NAME_LENGTH = 64  # characters in a question key or rule name
 
