@@ -3,6 +3,7 @@
   import { slide } from 'svelte/transition';
   import { fieldProblems, MAX_LEVELS, MAX_NAME_LENGTH, slug, type Field } from '../lib/schema';
   import { KINDS, retype } from '../lib/presets';
+  import KindPicker from './KindPicker.svelte';
   import OptionsInput from './OptionsInput.svelte';
 
   interface Props {
@@ -19,7 +20,6 @@
   let { field = $bindable(), fields, index, open, onopen, onmove, onduplicate, onremove }: Props = $props();
 
   const n = $derived(index + 1);
-  const id = $props.id();
   let input = $state<HTMLInputElement>();
   // A new question's key follows its text until the user types their own. A key that already
   // exists never changes on its own: saved plugins have API clients reading it.
@@ -35,11 +35,22 @@
     scale: 'How urgent is this email?',
     number: 'How much was charged?',
     date: 'When is the payment due?',
+    range: 'What fraction of the order shipped?',
+    count: 'How many items were ordered?',
+    text: 'What is the tracking number?',
+    datetime: 'When does the meeting start?',
+    time: 'What time does the store open?',
+    email: 'Who should I reply to?',
+    uri: 'What is the unsubscribe link?',
+    hostname: 'Which domain sent the login alert?',
+    ipv4: 'Which IPv4 address signed in?',
+    ipv6: 'Which IPv6 address signed in?',
+    uuid: 'What is the order UUID?',
   };
   const summary = $derived(
     (field.kind === 'choice' || field.kind === 'multi'
       ? field.options.length ? field.options.slice(0, 3).join(', ') + (field.options.length > 3 ? ` +${field.options.length - 3}` : '') : 'no answers yet'
-      : field.kind === 'scale' ? `${field.min} to ${field.max}` : field.kind === 'boolean' ? 'yes or no' : `a ${field.kind}`) + (field.nullable ? ' or unknown' : ''),
+      : field.kind === 'scale' || field.kind === 'range' ? `${field.min} to ${field.max}` : field.kind === 'boolean' ? 'yes or no' : laya.label.toLowerCase()) + (field.nullable ? ' or unknown' : ''),
   );
 
   async function expand() {
@@ -87,22 +98,16 @@
 
   {#if open}
     <div class="rows" transition:slide={{ duration: 200 }}>
-      <div class="seg" role="radiogroup" aria-label={`Question ${n} answer type`}>
-        {#each KINDS as k}
-          <label title={k.note}>
-            <input type="radio" name={`kind-${id}`} checked={field.kind === k.kind} onchange={() => retype(field, k.kind)} aria-label={k.label} />
-            <span><i>{k.icon}</i>{k.label}</span>
-          </label>
-        {/each}
-      </div>
+      <KindPicker value={field.kind} label={`Question ${n} answer type`} onchange={(kind) => retype(field, kind)} />
 
       {#if field.kind === 'choice' || field.kind === 'multi'}
         <OptionsInput bind:options={field.options} label={`Question ${n} answers`} />
-      {:else if field.kind === 'scale'}
+      {:else if field.kind === 'scale' || field.kind === 'range'}
+        {@const step = field.kind === 'scale' ? '1' : 'any'}
         <div class="range">
-          <input class="mono" type="number" step="1" value={field.min} oninput={(e) => field.kind === 'scale' && (field.min = num(e))} aria-label={`Question ${n} lowest value`} />
+          <input class="mono" type="number" {step} value={field.min} oninput={(e) => 'min' in field && (field.min = num(e))} aria-label={`Question ${n} lowest value`} />
           <span class="muted">to</span>
-          <input class="mono" type="number" step="1" value={field.max} oninput={(e) => field.kind === 'scale' && (field.max = num(e))} aria-label={`Question ${n} highest value`} />
+          <input class="mono" type="number" {step} value={field.max} oninput={(e) => 'max' in field && (field.max = num(e))} aria-label={`Question ${n} highest value`} />
           {#if levels && levels <= MAX_LEVELS}
             <div class="ticks" aria-hidden="true">
               {#each { length: levels } as _, i}<span style:--i={i}>{field.min + i}</span>{/each}
@@ -113,8 +118,8 @@
 
       {#if field.kind !== 'multi'}
         <label class="null">
-          <input type="checkbox" bind:checked={field.nullable} />
-          <span>Nullable?</span>
+          <input type="checkbox" role="switch" bind:checked={field.nullable} />
+          <span>Allow unknown</span>
         </label>
       {/if}
 
@@ -161,14 +166,6 @@
   .del:hover:not(:disabled) { background: var(--danger-soft); color: var(--danger); }
   .rows { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 4px 16px 0 60px; }
 
-  .seg { justify-self: start; display: inline-flex; flex-wrap: wrap; padding: 2px; gap: 2px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border); }
-  .seg label { position: relative; }
-  .seg input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
-  .seg span { display: block; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 540; color: var(--muted); transition: background 0.25s, color 0.2s; white-space: nowrap; }
-  .seg i { font-style: normal; margin-right: 5px; }
-  .seg input:checked + span { background: var(--accent-soft); color: var(--accent); }
-  .seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 0; }
-  @media (max-width: 380px) { .seg i { display: none; } }
 
   .range { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .range input { width: 68px; padding-top: 6px; padding-bottom: 6px; }
@@ -185,8 +182,42 @@
     animation: rise 0.35s var(--ease) both;
     animation-delay: calc(var(--i) * 30ms);
   }
-  .null { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--muted); cursor: pointer; }
-  .null input { width: auto; margin: 0; }
+  .null { justify-self: start; display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--text); cursor: pointer; }
+  .null input {
+    appearance: none;
+    position: relative;
+    flex-shrink: 0;
+    width: 34px;
+    height: 20px;
+    margin: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--border-strong);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .null input::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+    transition: translate 0.3s var(--spring);
+  }
+  .null:hover input:not(:checked) { background: color-mix(in oklab, var(--accent) 30%, var(--border-strong)); }
+  .null input:checked { background: var(--accent); }
+  .null input:checked::before { translate: 14px 0; }
+  .null input:focus { box-shadow: none; }
+  .null input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (forced-colors: active) {
+    .null input { border: 1px solid CanvasText; }
+    .null input::before { background: CanvasText; }
+    .null input:checked { background: Highlight; }
+  }
   .key { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--faint); }
   .key input { width: 200px; max-width: 100%; padding: 4px 8px; font-size: 12.5px; background: transparent; }
   .key .chip { font-size: 11.5px; }

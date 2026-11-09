@@ -3,7 +3,7 @@
   import { flip } from 'svelte/animate';
   import { fly, slide } from 'svelte/transition';
   import { fromSchema, MAX_FIELDS, type Field } from '../lib/schema';
-  import { blank, KINDS } from '../lib/presets';
+  import { blank } from '../lib/presets';
   import FieldCard from './FieldCard.svelte';
 
   let { fields = $bindable() }: { fields: Field[] } = $props();
@@ -67,13 +67,8 @@
   </div>
 
   <div class="add" class:first={!fields.length}>
-    <div class="kinds" role="group" aria-label="Add a question">
-      <span class="label">{fields.length ? 'Add' : 'Add your first question'}</span>
-      {#each KINDS as k}
-        <button type="button" class="add-pill" disabled={full} title={k.note} onclick={() => add(blank(k.kind))}>
-          <i aria-hidden="true">{k.icon}</i>{k.label}
-        </button>
-      {/each}
+    <div class="kinds">
+      <button type="button" class="add-pill" disabled={full} onclick={() => add(blank('choice'))}><i aria-hidden="true">+</i>Add</button>
       <button type="button" class="text-btn paste" aria-expanded={importing} title="Paste JSON schema" aria-label="Paste JSON schema" onclick={() => (importing = !importing)}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 10h6M9 14h6" /></svg></button>
     </div>
 
@@ -96,7 +91,6 @@
   .list { container-type: inline-size; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; margin: 0 -10px; }
   .list:empty { display: none; }
   .add { display: grid; gap: 10px; }
-  .label { margin: 0 4px 0 0; font-size: 13px; }
   .kinds { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .first .add-pill { padding: 9px 18px; }
   .text-btn { margin-left: auto; }

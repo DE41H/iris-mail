@@ -27,6 +27,8 @@ ANSWERS = {
 }
 
 INT = {"type": "integer"}
+NUM = {"type": "number"}
+FORMATS = ["date", "date-time", "time", "email", "uri", "hostname", "ipv4", "ipv6", "uuid"]
 
 def _when(kind, then):
     return {"if": {"properties": {"type": {"const": kind}}, "required": ["type"]}, "then": then}
@@ -46,9 +48,10 @@ FIELD = {
     "required": ["type"],
     "allOf": [
         _when("boolean", {"properties": {"enum": {"enum": [[True, False], [False, True]]}}}),
-        _when("string", {"properties": {"enum": ANSWERS, "format": {"const": "date"}}, "oneOf": [{"required": ["enum"]}, {"required": ["format"]}]}),
+        _when("string", {"properties": {"enum": ANSWERS, "format": {"enum": FORMATS}}, "not": {"required": ["enum", "format"]}}),
         _when("array", {"properties": {"items": {"type": "object", "properties": {"type": {"const": "string"}, "enum": ANSWERS}, "required": ["enum"], "additionalProperties": False}}, "required": ["items"]}),
-        _when("integer", {"properties": {"minimum": INT, "maximum": INT}, "required": ["minimum", "maximum"]}),
+        _when("number", {"properties": {"minimum": NUM, "maximum": NUM}, "dependentRequired": {"minimum": ["maximum"], "maximum": ["minimum"]}}),
+        _when("integer", {"properties": {"minimum": INT, "maximum": INT}, "required": ["minimum"]}),
     ],
     "unevaluatedProperties": False,
 }

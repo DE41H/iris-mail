@@ -1,6 +1,7 @@
 // Same rules and limits as the metaschemas in backend/plugins/meta.py (FIELD, SCHEMA, RULES).
 // A flat JSON Schema: one property per question. Each property is an enum (choice), an array of an
-// enum (multi), a boolean (yes/no), a number, a date, or an integer range of at most MAX_LEVELS (scale).
+// enum (multi), a boolean (yes/no), a number (optionally bounded: range), a whole number from 0 (count),
+// an integer range of at most MAX_LEVELS (scale), short free text, or a string with a FORMATS format.
 // `nullable: true` lets the answer be null when the email does not say. Nothing else is accepted.
 
 export const MAX_FIELDS = 16; // questions per plugin
@@ -18,10 +19,22 @@ export type Field = Base &
     | { kind: 'choice'; options: string[] }
     | { kind: 'multi'; options: string[] }
     | { kind: 'boolean' }
-    | { kind: 'number' }
-    | { kind: 'date' }
-    | { kind: 'scale'; min: number; max: number }
+    | { kind: 'number' | 'count' | 'text' | keyof typeof FORMATS }
+    | { kind: 'scale' | 'range'; min: number; max: number }
   );
+
+// Kind -> JSON Schema `format`, as in FORMATS in backend/plugins/meta.py.
+export const FORMATS = {
+  date: 'date',
+  datetime: 'date-time',
+  time: 'time',
+  email: 'email',
+  uri: 'uri',
+  hostname: 'hostname',
+  ipv4: 'ipv4',
+  ipv6: 'ipv6',
+  uuid: 'uuid',
+} as const;
 
 export interface Draft {
   name: string;
@@ -37,12 +50,23 @@ export interface Rule {
 }
 
 export const KINDS = [
-  { kind: 'choice', label: 'Choice', icon: '◉', note: 'Pick one answer from a list' },
-  { kind: 'multi', label: 'Multi', icon: '☰', note: 'Pick every answer that applies' },
-  { kind: 'boolean', label: 'Yes / No', icon: '◐', note: 'A true or false answer' },
-  { kind: 'scale', label: 'Scale', icon: '▮', note: 'A whole number in a range' },
-  { kind: 'number', label: 'Number', icon: '#', note: 'Any number, like an amount' },
-  { kind: 'date', label: 'Date', icon: '◷', note: 'A date, as YYYY-MM-DD' },
+  { kind: 'choice', label: 'Choice', icon: '◉', note: 'Pick one answer from a list', group: 'Pick' },
+  { kind: 'multi', label: 'Multi', icon: '☰', note: 'Pick every answer that applies', group: 'Pick' },
+  { kind: 'boolean', label: 'Yes / No', icon: '◐', note: 'A true or false answer', group: 'Pick' },
+  { kind: 'number', label: 'Number', icon: '#', note: 'Any number, like an amount', group: 'Numbers' },
+  { kind: 'range', label: 'Range', icon: '↔', note: 'A number between a min and max', group: 'Numbers' },
+  { kind: 'count', label: 'Count', icon: '№', note: 'A whole number from 0, like how many', group: 'Numbers' },
+  { kind: 'scale', label: 'Scale', icon: '▮', note: 'A whole number in a range', group: 'Numbers' },
+  { kind: 'date', label: 'Date', icon: '◷', note: 'A date, as YYYY-MM-DD', group: 'Dates' },
+  { kind: 'datetime', label: 'Date & time', icon: '◴', note: 'A moment, as ISO 8601', group: 'Dates' },
+  { kind: 'time', label: 'Time', icon: '◔', note: 'A time of day, as HH:MM:SS', group: 'Dates' },
+  { kind: 'text', label: 'Text', icon: 'T', note: 'A short snippet, up to 200 characters', group: 'Text & IDs' },
+  { kind: 'email', label: 'Email', icon: '@', note: 'An email address', group: 'Text & IDs' },
+  { kind: 'uri', label: 'URI', icon: '↗', note: 'A link, with its scheme', group: 'Text & IDs' },
+  { kind: 'hostname', label: 'Hostname', icon: '⌂', note: 'A domain, like mail.example.com', group: 'Text & IDs' },
+  { kind: 'ipv4', label: 'IPv4', icon: '⋯', note: 'An IPv4 address', group: 'Text & IDs' },
+  { kind: 'ipv6', label: 'IPv6', icon: '∷', note: 'An IPv6 address', group: 'Text & IDs' },
+  { kind: 'uuid', label: 'UUID', icon: '⚿', note: 'A UUID', group: 'Text & IDs' },
 ] as const;
 
 export const KEY = /^[a-z][a-z0-9_]*$/; // question keys and rule names
@@ -52,8 +76,11 @@ export const chars = (s: string) => [...s].length;
 const shape = (f: Field) => {
   if (f.kind === 'boolean') return { type: 'boolean' };
   if (f.kind === 'number') return { type: 'number' };
-  if (f.kind === 'date') return { type: 'string', format: 'date' };
+  if (f.kind === 'count') return { type: 'integer', minimum: 0 };
+  if (f.kind === 'text') return { type: 'string' };
   if (f.kind === 'scale') return { type: 'integer', minimum: f.min, maximum: f.max };
+  if (f.kind === 'range') return { type: 'number', minimum: f.min, maximum: f.max };
+  if (f.kind !== 'choice' && f.kind !== 'multi') return { type: 'string', format: FORMATS[f.kind] };
   const values = { type: 'string', enum: f.options.map((option) => option.trim()) };
   return f.kind === 'multi' ? { type: 'array', items: values } : values;
 };
@@ -84,6 +111,10 @@ export function fieldProblems(f: Field, fields: Field[]): string[] {
     if (!Number.isInteger(f.min) || !Number.isInteger(f.max)) out.push('Min and max must be whole numbers.');
     else if (f.max < f.min) out.push('Max must be at least min.');
     else if (f.max - f.min + 1 > MAX_LEVELS) out.push(`At most ${MAX_LEVELS} levels.`);
+  }
+  if (f.kind === 'range') {
+    if (!Number.isFinite(f.min) || !Number.isFinite(f.max)) out.push('Fill in min and max.');
+    else if (f.max < f.min) out.push('Max must be at least min.');
   }
   return out;
 }
@@ -139,10 +170,15 @@ function toField(name: string, prop: unknown): Field | string {
     return typeof o === 'string' ? o : { kind: 'multi', ...base, options: o };
   }
   if (type === 'boolean') return { kind: 'boolean', ...base };
-  if (type === 'number') return { kind: 'number', ...base };
-  if (type === 'string' && format === 'date') return { kind: 'date', ...base };
+  const bounded = typeof min === 'number' && typeof max === 'number';
+  if (type === 'number' && bounded) return { kind: 'range', ...base, min, max };
+  if (type === 'number' && min === undefined && max === undefined) return { kind: 'number', ...base };
+  const kind = Object.entries(FORMATS).find(([, f]) => f === format)?.[0] as keyof typeof FORMATS | undefined;
+  if (type === 'string' && kind) return { kind, ...base };
+  if (type === 'string' && format === undefined) return { kind: 'text', ...base };
   if (type === 'integer' && Number.isInteger(min) && Number.isInteger(max)) return { kind: 'scale', ...base, min: min as number, max: max as number };
-  return 'must be an enum, an array of an enum, a boolean, a number, a date or an integer with minimum and maximum';
+  if (type === 'integer' && min === 0 && max === undefined) return { kind: 'count', ...base };
+  return 'must be an enum, an array of an enum, a boolean, a number, a string with a supported format, or an integer with minimum';
 }
 
 // Reads a saved schema back into fields. Shapes the builder cannot express come back as an error,

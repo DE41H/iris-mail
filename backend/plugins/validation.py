@@ -25,10 +25,10 @@ class SchemaValidator:
         if value == EMPTY_SCHEMA: return
         _check(SCHEMA, value, "invalid_schema")
         for key, prop in value["properties"].items():
-            if prop.get("type") != "integer": continue
+            if "maximum" not in prop: continue
             if prop["maximum"] < prop["minimum"]:
                 raise ValidationError(f"properties.{key}: maximum must be at least minimum", code="invalid_schema")
-            if prop["maximum"] - prop["minimum"] + 1 > MAX_LEVELS:
+            if prop["type"] == "integer" and prop["maximum"] - prop["minimum"] + 1 > MAX_LEVELS:
                 raise ValidationError(f"properties.{key}: at most {MAX_LEVELS} levels", code="invalid_schema")
 
     def __eq__(self, other):

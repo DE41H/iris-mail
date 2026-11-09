@@ -8,9 +8,23 @@
   const TABS = { schema: 'Schema', result: 'Result' } as const;
   let tab = $state<keyof typeof TABS>('schema');
 
-  const EXAMPLES = { boolean: true, number: 42.5, date: '2026-03-14' };
+  const EXAMPLES = {
+    boolean: true,
+    number: 42.5,
+    count: 3,
+    text: 'snippet from the email',
+    date: '2026-03-14',
+    datetime: '2026-03-14T09:30:00+00:00',
+    time: '09:30:00',
+    email: 'someone@example.com',
+    uri: 'https://example.com/page',
+    hostname: 'mail.example.com',
+    ipv4: '203.0.113.7',
+    ipv6: '2001:db8::7',
+    uuid: '0190a2b1-7c3e-7000-8000-4f2a9b6c1d3e',
+  };
   const example = (f: Field) =>
-    f.kind === 'scale' ? f.min : f.kind === 'choice' ? (f.options[0] ?? null) : f.kind === 'multi' ? f.options.slice(0, 2) : EXAMPLES[f.kind];
+    f.kind === 'scale' || f.kind === 'range' ? f.min : f.kind === 'choice' ? (f.options[0] ?? null) : f.kind === 'multi' ? f.options.slice(0, 2) : EXAMPLES[f.kind];
   const value = $derived(
     tab === 'schema' ? toSchema(fields) : { output: { ...Object.fromEntries(fields.map((f) => [f.name, example(f)])), ...(rules.length ? { rules: Object.fromEntries(rules.map((r) => [r.name, ['matched text']])) } : {}) } },
   );

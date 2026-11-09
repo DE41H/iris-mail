@@ -64,12 +64,14 @@ Schema
 - Checks and `MAX_*` limits are in `plugins/meta.py` (metaschemas), `plugins/validation.py` and `frontend/src/lib/schema.ts` (+ `rules.ts`, RE2 via
   re2js). Change both together.
 - `rules` is a reserved key; rule matches go to `output.rules`.
-- Field types: string enum (choice), array of a string enum (multi), boolean, integer range (scale), number, date
-  (`format: date`); `nullable: true` allows null. `validation.py` checks plugin schemas and rules against the JSON Schema
+- Field types: string enum (choice), array of a string enum (multi), boolean, integer range (scale), integer from a
+  minimum (count), number with optional min/max (range), short text (plain `string`, cut to `MAX_MATCH_LENGTH`), and
+  strings with a `format` from `meta.FORMATS` (date, date-time, time, email, uri, hostname, ipv4, ipv6, uuid);
+  `nullable: true` allows null. `validation.py` checks plugin schemas and rules against the JSON Schema
   metaschemas in `meta.py` (`jsonschema`, Draft 2020-12; `type` is required, no extra keys). `llm._wire` maps each field to the provider schema;
   LiteLLM validates each reply against it (`enable_json_schema_validation`, a failure skips that email) and `llm._clean`
-  covers what JSON Schema can't (dates, NaN, duplicate picks). Only types both Gemini and Claude strict output accept.
-  No free text: it would store email content.
+  covers what JSON Schema can't (formats, NaN, duplicate picks, text length; a bad format becomes null). Only `date`
+  and `date-time` go to the provider as `format`; the rest are a description hint plus `llm.CHECKS`.
 
 Frontend
 - One screen per page, `client:only="svelte"` islands, short copy.
@@ -82,7 +84,7 @@ Frontend
 
 ## Invariants
 
-- Never store email headers or bodies. Only rule matches, cut to `MAX_MATCH_LENGTH`.
+- Never store email headers or bodies. Only rule matches and LLM answers; text and match snippets are cut to `MAX_MATCH_LENGTH`.
 - API keys: SHA-256 only, shown once.
 - OAuth tokens encrypted (`plugins/token.py`, key = `DJANGO_SECRET_KEY` + `DJANGO_SALT_KEY`; changing one logs out all users).
 - Extract only for active subscriptions. Never call the LLM twice for the same user, message and plugin.

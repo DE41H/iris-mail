@@ -4,8 +4,8 @@ export { KINDS } from './schema';
 export const blank = (kind: Field['kind'], name = '', question = ''): Field =>
   kind === 'choice' || kind === 'multi'
     ? { kind, name, question, options: [] }
-    : kind === 'scale'
-      ? { kind, name, question, min: 1, max: 5 }
+    : kind === 'scale' || kind === 'range'
+      ? { kind, name, question, min: kind === 'scale' ? 1 : 0, max: kind === 'scale' ? 5 : 100 }
       : { kind, name, question };
 
 export const OPTION_SETS: Record<string, string[]> = {
