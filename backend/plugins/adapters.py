@@ -19,10 +19,9 @@ logger = logging.getLogger(__name__)
 
 class SocialAdapter(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):
-        token, retried = sociallogin.token, request.session.pop("google_consent", False)
-        if not token or token.token_secret or retried: return
+        token = sociallogin.token
+        if not token or token.token_secret: return
         if token.pk: token.delete()
-        request.session["google_consent"] = True
         logger.info("Google sign-in without refresh token, asking for consent", extra={"user_id": sociallogin.user.pk})  # pyright: ignore[reportOptionalMemberAccess]
         query = urlencode({"action": "reauthenticate", "next": sociallogin.state.get("next") or ""})
         raise ImmediateHttpResponse(HttpResponseRedirect(f"{reverse('google_login')}?{query}"))
