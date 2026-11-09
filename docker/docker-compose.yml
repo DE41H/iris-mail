@@ -53,16 +53,10 @@ services:
       context: ../backend
       dockerfile: ../docker/backend.dockerfile
     env_file: .env
-    command: >
-      sh -c "python -c 'import laya; laya.Router().preload([\"multilingual\"])' &&
-      python manage.py procrastinate worker --concurrency 2"
+    command: python manage.py procrastinate worker --concurrency 2
     environment:
-      LAYA_REVISION: reviewed
-      OMP_NUM_THREADS: 2
-      MALLOC_ARENA_MAX: 2
+      LITELLM_LOCAL_MODEL_COST_MAP: "True"
     mem_limit: 256m
-    volumes:
-      - models:/models
     logging: *logging
     restart: unless-stopped
     cap_drop: [ALL]
@@ -109,6 +103,5 @@ volumes:
   valkey:
   site:
   static:
-  models:
   caddy_data:
   caddy_config:
