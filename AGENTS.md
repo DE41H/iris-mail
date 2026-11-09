@@ -75,7 +75,9 @@ Frontend
 - One screen per page, `client:only="svelte"` islands, short copy.
 - CSP: no inline `<script>` or `style="…"` in `.astro`, no markdown pages.
 - Destructive actions: inline `ConfirmButton`, never `confirm()`.
-- Heavy code loads with `import()` beside the API calls: Chart.js in `Account`, `PluginEditor` (re2js) in `NewPlugin` and `PluginDetail`.
+- Heavy code loads with `import()` beside the API calls: `PluginEditor` (re2js) in `NewPlugin` and `PluginDetail`.
+- No chart library: the usage graph in `Account` is CSS bars. Keep new dependencies out unless they replace more code than they add.
+- Caching (Caddy): `/_astro/*` immutable, `/static/fonts/*` one year, everything else 10 minutes (`max-age=600`, so a deploy reaches everyone within 10 minutes).
 - Loading: content-shaped `.skel` wrapper with `.bone` placeholders (iris.css); it stays hidden for 150ms.
 
 ## Invariants

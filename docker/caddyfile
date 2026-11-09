@@ -14,7 +14,7 @@
 	handle_path /static/* {
 		root * /srv/static
 		import site_headers
-		header ?Cache-Control no-cache
+		header ?Cache-Control "public, max-age=600"
 		header /fonts/* Cache-Control "public, max-age=31536000"
 		encode zstd gzip
 		file_server
@@ -38,7 +38,7 @@
 	handle {
 		root * /srv/site
 		import site_headers
-		header ?Cache-Control no-cache
+		header ?Cache-Control "public, max-age=600"
 		header /_astro/* Cache-Control "public, max-age=31536000, immutable"
 		encode zstd gzip
 		file_server
