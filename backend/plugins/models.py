@@ -19,10 +19,10 @@ class UserTier(models.IntegerChoices):
 
 
 QUOTAS = {
-    UserTier.BASE: 2_000,
-    UserTier.CORE: 10_000,
-    UserTier.PRIME: 50_000,
-    UserTier.ULTRA: 250_000,
+    UserTier.BASE: 200,
+    UserTier.CORE: 1_000,
+    UserTier.PRIME: 5_000,
+    UserTier.ULTRA: 25_000,
 }
 
 
