@@ -58,7 +58,18 @@ def _router():
     live = [ model for model, keys in POOLS.items() if keys ]
     if not live: raise RuntimeError("Set GEMINI_KEYS or ANTHROPIC_KEYS")
     models = [ {"model_name": model, "litellm_params": {"model": model, "api_key": k}} for model, keys in POOLS.items() for k in keys ]
-    return Router(model_list=models, fallbacks=[{live[0]: live[1:]}] if live[1:] else []), live[0]
+    valkey = urlsplit(getenv("VALKEY_URL", "redis://127.0.0.1:6379"))
+    return Router(
+        model_list=models,
+        fallbacks=[{live[0]: live[1:]}] if live[1:] else [],
+        timeout=30,
+        num_retries=3,
+        cooldown_time=60,
+        allowed_fails=1,
+        redis_host=valkey.hostname,
+        redis_port=valkey.port or 6379,
+        redis_db=0,
+    ), live[0]
 
 
 def _clean(prop, value):
