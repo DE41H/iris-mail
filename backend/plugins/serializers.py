@@ -1,5 +1,8 @@
+from uuid import UUID
+
 from allauth.socialaccount.models import SocialAccount, SocialToken
 from django.core.validators import URLValidator
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from plugins.models import (
@@ -21,13 +24,12 @@ class CustomUserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ("id", "username", "email", "tier")
         read_only_fields = fields
-        extra_kwargs = {"username": {"help_text": "Display name."}, "tier": {"help_text": "Account tier."}}  # noqa: RUF012
 
 
 class MeSerializer(CustomUserSerializer):
     google = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()
-    tier = serializers.CharField(source="get_tier_display", read_only=True, help_text="Account tier name.")
+    tier = serializers.CharField(source="get_tier_display", read_only=True)
     quota = serializers.IntegerField(read_only=True)
     tiers = serializers.SerializerMethodField()
 
@@ -38,8 +40,8 @@ class MeSerializer(CustomUserSerializer):
     def get_google(self, user) -> bool:
         return SocialToken.objects.filter(account__user=user, account__provider="google").exists()
 
-    def get_tiers(self, user) -> list[dict]:
-        return [{"tier": t.value, "name": t.label, "quota": QUOTAS[t]} for t in UserTier]
+    def get_tiers(self, user) -> list[dict[str, int | str]]:
+        return [{"tier": t.value, "name": str(t.label), "quota": QUOTAS[t]} for t in UserTier]
 
     def get_avatar(self, user) -> str | None:
         account = SocialAccount.objects.filter(user=user, provider="google").first()
@@ -78,18 +80,14 @@ class PluginSerializer(serializers.ModelSerializer):
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     plugin_name = serializers.CharField(source="plugin.name", read_only=True)
-    plugin_desc = serializers.CharField(source="plugin.desc", read_only=True, help_text="Plugin description.")
-    email = serializers.EmailField(write_only=True, required=False, help_text="User's email address. Send this or `user`.")
+    plugin_desc = serializers.CharField(source="plugin.desc", read_only=True)
+    email = serializers.EmailField(write_only=True, required=False)
 
     class Meta:
         model = Subscription
         fields = ("id", "user", "email", "plugin", "plugin_name", "plugin_desc", "active", "time")
         read_only_fields = ("id", "plugin", "plugin_name", "plugin_desc", "active", "time")
-        extra_kwargs = {  # noqa: RUF012
-            "user": {"required": False, "help_text": "User id. Send this or `email`."},
-            "active": {"help_text": "Whether the user has the plugin turned on."},
-            "time": {"help_text": "When the subscription was created."},
-        }
+        extra_kwargs = {"user": {"required": False}}  # noqa: RUF012
 
     def validate(self, attrs):
         email = attrs.pop("email", None)
@@ -101,17 +99,12 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
 
 class ResultSerializer(serializers.ModelSerializer):
+    output = serializers.DictField(read_only=True)
+
     class Meta:
         model = Result
         fields = ("id", "user", "plugin", "version", "output", "fetched", "time")
         read_only_fields = fields
-        extra_kwargs = {  # noqa: RUF012
-            "user": {"help_text": "User the mail belongs to."},
-            "version": {"help_text": "Plugin version that produced the result."},
-            "output": {"help_text": "Answers matching the plugin schema; rule matches are under `rules`."},
-            "fetched": {"help_text": "Whether the result was acknowledged."},
-            "time": {"help_text": "When the result was created."},
-        }
 
 
 class UsageSerializer(serializers.ModelSerializer):
@@ -122,20 +115,21 @@ class UsageSerializer(serializers.ModelSerializer):
 
 
 class CodeSerializer(serializers.ModelSerializer):
-    status = serializers.SerializerMethodField(help_text="`pending`, `accepted`, `denied` or `expired`.")
-    user = serializers.SerializerMethodField(help_text="User id, once accepted.")
-    email = serializers.SerializerMethodField(help_text="User's email address, once accepted.")
+    status = serializers.SerializerMethodField()
+    user = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
 
     class Meta:
         model = Code
         fields = ("status", "user", "email")
         read_only_fields = fields
 
+    @extend_schema_field(serializers.ChoiceField(choices=["pending", "accepted", "denied", "expired"]))
     def get_status(self, code) -> str:
         return "expired" if code.expired else CodeStatus(code.status).name.lower()
 
-    def get_user(self, code) -> str | None:
-        return str(code.user_id) if code.status == CodeStatus.ACCEPTED else None
+    def get_user(self, code) -> UUID | None:
+        return code.user_id if code.status == CodeStatus.ACCEPTED else None
 
     def get_email(self, code) -> str | None:
         return code.user.email if code.status == CodeStatus.ACCEPTED else None
