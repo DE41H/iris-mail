@@ -1,11 +1,12 @@
 from uuid import UUID
 
-from allauth.socialaccount.models import SocialAccount, SocialToken
+from allauth.socialaccount.models import SocialAccount
 from django.core.validators import URLValidator
 from django.db.models import F
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from plugins.gmail import google_token
 from plugins.models import (
     QUOTAS,
     Code,
@@ -41,7 +42,7 @@ class MeSerializer(CustomUserSerializer):
         read_only_fields = fields
 
     def get_google(self, user) -> bool:
-        return SocialToken.objects.filter(account__user=user, account__provider="google").exists()
+        return google_token(user).exists()
 
     def get_tiers(self, user) -> list[dict[str, int | str]]:
         return [{"tier": t.value, "name": str(t.label), "quota": QUOTAS[t]} for t in UserTier]
