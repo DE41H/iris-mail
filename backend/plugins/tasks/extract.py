@@ -41,7 +41,7 @@ def _regex(pattern):
 def _rules(plugin):
     rules = {name: _regex(pattern) for name, pattern in plugin.rules.items()}
     for name in (n for n, r in rules.items() if r is None):
-        logger.warning("Rule does not compile, skipped", extra={"plugin_id": plugin.id, "rule": name})
+        logger.warning("bad rule", extra={"plugin": plugin.id, "rule": name})
     return rules
 
 
@@ -66,15 +66,15 @@ def _guess(user, plugin, msgs, state):
     if not msgs: return []
     props = plugin.schema.get("properties")
     if not props: return [(m, {}) for m in msgs]
-    extra = {"plugin_id": plugin.id, "user_id": user.pk}
+    extra = {"plugin": plugin.id, "user": user.pk}
     usage, _ = Usage.objects.get_or_create(user_id=plugin.developer_id, date=localdate())
     if usage.used >= plugin.developer.quota:
-        logger.info("Usage quota reached, batch skipped", extra={**extra, "developer_id": plugin.developer_id})
+        logger.info("quota reached", extra={**extra, "dev": plugin.developer_id})
         return []
     answers = llm.answer(plugin.schema, [state(m) for m in msgs])
     pairs = [(m, a) for m, a in zip(msgs, answers, strict=True) if not isinstance(a, Exception)]
     if errors := [a for a in answers if isinstance(a, Exception)]:
-        logger.warning("LLM failed, mail skipped for this plugin", extra={**extra, "failed": len(errors), "error": type(errors[0]).__name__, "status": getattr(errors[0], "status_code", None)})
+        logger.warning("llm failed", extra={**extra, "failed": len(errors), "error": type(errors[0]).__name__, "status": getattr(errors[0], "status_code", None)})
     if pairs: usage.consume(len(pairs) * len(props))
     return pairs
 
@@ -140,4 +140,4 @@ def process(user_id):
     if latest != user.hist_id:
         CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=latest)  # pyright: ignore[reportAttributeAccessIssue]
     if added:
-        logger.info("Mail processed", extra={"user_id": user.pk, "seen": len(added), "fetched": fetched, "results": saved})
+        logger.info("processed", extra={"user": user.pk, "seen": len(added), "fetched": fetched, "results": saved})

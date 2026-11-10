@@ -27,7 +27,7 @@ class PluginKeyAuthentication(BaseAuthentication):
         if plugin is None:
             cache.add(ident, 0, 60*60)
             if cache.incr(ident) == MAX_FAILS:
-                logger.warning("IP blocked after too many invalid API keys", extra={"ip": ident.removeprefix("badkey:")})
+                logger.warning("ip blocked", extra={"ip": ident.removeprefix("badkey:")})
             raise AuthenticationFailed("Invalid API key.")
         return plugin.developer, plugin
 

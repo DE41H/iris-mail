@@ -10,7 +10,6 @@ from django.utils.timezone import localdate
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter,
-    OpenApiResponse,
     extend_schema,
     extend_schema_view,
     inline_serializer,
@@ -69,18 +68,18 @@ class PluginViewSet(
         serializer.is_valid(raise_exception=True)
         plugin = serializer.save(developer=request.user)
         key = plugin.rot_key()
-        logger.info("Plugin created", extra={"plugin_id": plugin.pk, "user_id": request.user.pk})
+        logger.info("plugin created", extra={"plugin": plugin.pk, "user": request.user.pk})
         return Response({**serializer.data, "key": key}, status=201)
 
     def perform_destroy(self, instance):
-        logger.info("Plugin deleted", extra={"plugin_id": instance.pk, "user_id": instance.developer_id})
+        logger.info("plugin deleted", extra={"plugin": instance.pk, "user": instance.developer_id})
         instance.delete()
 
     @action(detail=True, methods=["post"])
     def rotate_key(self, request, pk=None, **kwargs):
         plugin = self.get_object()
         key = plugin.rot_key()
-        logger.info("API key rotated", extra={"plugin_id": plugin.pk, "user_id": request.user.pk})
+        logger.info("key rotated", extra={"plugin": plugin.pk, "user": request.user.pk})
         return Response({"key": key})
 
 
@@ -89,11 +88,10 @@ class PluginViewSet(
     destroy=extend_schema(exclude=True),
     set_active=extend_schema(exclude=True),
     remove=extend_schema(
-        summary="Remove a user by id or email",
-        description="Send either `user` or `email`. Ends the user's subscription to this plugin. Always 204, "
-        "whether or not the user was subscribed. The user's results are deleted after 30 days.",
+        summary="Remove a user",
+        description="Send `user` or `email`. Always 204. Their results are deleted after 30 days.",
         request=SubscriptionSerializer,
-        responses={204: OpenApiResponse(description="Removed, if subscribed.")},
+        responses={204: None},
     ),
 )
 class SubscriptionViewSet(mixins.ListModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
@@ -110,7 +108,7 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.DestroyModelMixin, views
 
     def perform_destroy(self, instance):
         by = "developer" if isinstance(self.request.auth, Plugin) else "user"  # pyright: ignore[reportAttributeAccessIssue]
-        logger.info("Subscription removed", extra={"plugin_id": instance.plugin_id, "user_id": instance.user_id, "by": by})
+        logger.info("sub removed", extra={"plugin": instance.plugin_id, "user": instance.user_id, "by": by})
         instance.delete()
 
     @action(detail=False, methods=["post"])
@@ -135,17 +133,18 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.DestroyModelMixin, views
             subscription.set_active(True, hist_from=get_hist_id(request.user))
         else:
             subscription.set_active(active)
-        logger.info("Plugin turned on" if subscription.active else "Plugin turned off", extra={"plugin_id": subscription.plugin_id, "user_id": subscription.user_id})
+        logger.info("sub on" if subscription.active else "sub off", extra={"plugin": subscription.plugin_id, "user": subscription.user_id})
         return Response(self.get_serializer(subscription).data)
 
 
 @extend_schema_view(list=extend_schema(
     summary="List results",
-    description="Newest first. Acknowledged results are deleted after 30 days; all results are deleted after 100 days.",
+    description="One per inbox email (Spam skipped). `output`: answers to your schema, plus `rules: {name: [match]}`. "
+    "Deleted 30 days after ack, else after 100.",
     parameters=[
-        OpenApiParameter("user", OpenApiTypes.UUID, description="Only results for this user."),
-        OpenApiParameter("version", int, description="Only results from this plugin version."),
-        OpenApiParameter("fetched", bool, description="`true` for acknowledged results, `false` for new ones."),
+        OpenApiParameter("user", OpenApiTypes.UUID),
+        OpenApiParameter("version", int, description="Plugin version."),
+        OpenApiParameter("fetched", bool, description="`false` = new, `true` = acked."),
     ],
 ))
 class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -167,11 +166,10 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         return queryset.filter(fetched=fetched.lower() == "true")
 
     @extend_schema(
-        summary="Acknowledge results",
-        description="Marks results as fetched. Unknown ids are ignored.",
-        request=inline_serializer("Ack", {"ids": serializers.ListField(
-            child=serializers.UUIDField(), min_length=1, max_length=500, help_text="Result ids, 1 to 500.")}),
-        responses=inline_serializer("Acknowledged", {"acknowledged": serializers.IntegerField(help_text="Results newly marked as fetched; already acknowledged ones are not counted.")}),
+        summary="Ack results",
+        description="Marks 1–500 results fetched. Unknown ids are ignored. Returns how many were newly acked.",
+        request=inline_serializer("Ack", {"ids": serializers.ListField(child=serializers.UUIDField(), min_length=1, max_length=500)}),
+        responses=inline_serializer("Acknowledged", {"acknowledged": serializers.IntegerField()}),
     )
     @action(detail=False, methods=["post"])
     def ack(self, request, **kwargs):
@@ -191,7 +189,7 @@ class MeViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin, viewsets.Ge
         return self.request.user
 
     def perform_destroy(self, instance):
-        logger.info("Account deleted", extra={"user_id": instance.pk})
+        logger.info("account deleted", extra={"user": instance.pk})
         revoke(instance)
         logout(self.request)
         instance.delete()
@@ -199,7 +197,7 @@ class MeViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin, viewsets.Ge
 
 @extend_schema_view(list=extend_schema(
     summary="List users",
-    description="Users who have this plugin turned on.",
+    description="Users with your plugin on.",
 ))
 class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = CustomUserSerializer
@@ -227,20 +225,16 @@ class UsageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 @extend_schema_view(
     create=extend_schema(
         summary="Create a connect link",
-        description="Send the user to `url` within 3 minutes. They see the plugin's questions and accept or deny, then "
-        "go to the plugin's redirect URL with `code` and `status` (`accepted` or `denied`) added. Each link works once. "
-        "Check the outcome with `GET /codes/{code}/`; codes are deleted after a day.",
+        description="Send the user to `url` within 3 min (one use). They accept or deny, then land on your redirect "
+        "URL with `?code=…&status=accepted|denied`. `code` is shown once.",
         request=None,
-        responses={201: inline_serializer("ConnectLink", {
-            "code": serializers.CharField(help_text="Shown once. Keep it to check the outcome."),
-            "url": serializers.URLField(help_text="Link to send the user to."),
-        })},
+        responses={201: inline_serializer("ConnectLink", {"code": serializers.CharField(), "url": serializers.URLField()})},
     ),
     retrieve=extend_schema(
         summary="Check a connect link",
-        description="`user` and `email` are set only when the user accepted.",
-        parameters=[OpenApiParameter("code", str, OpenApiParameter.PATH, description="Code from `POST /codes/`.")],
-        responses={200: CodeSerializer, 404: OpenApiResponse(description="No such code for this plugin.")},
+        description="`user` and `email` are set once accepted. 404 if unknown; codes are deleted after a day.",
+        parameters=[OpenApiParameter("code", str, OpenApiParameter.PATH)],
+        responses=CodeSerializer,
     ),
 )
 class CodeViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -257,7 +251,7 @@ class CodeViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     def create(self, request, *args, **kwargs):
         code = token_urlsafe(32)
         Code.objects.create(plugin=request.auth, hash=Plugin.gen_hash(code))
-        logger.info("Connect code created", extra={"plugin_id": request.auth.pk})
+        logger.info("code created", extra={"plugin": request.auth.pk})
         return Response({"code": code, "url": request.build_absolute_uri(f"/connect#{code}")}, status=201)
 
 
@@ -276,7 +270,7 @@ class ConnectViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         return Response(self.get_serializer(self.get_object().plugin).data)
 
     def _done(self, code, status):
-        logger.info("Connect code used", extra={"plugin_id": code.plugin_id, "user_id": self.request.user.pk, "status": status})
+        logger.info(f"code {status}", extra={"plugin": code.plugin_id, "user": self.request.user.pk})
         url = urlsplit(code.plugin.redirect)
         query = urlencode([*parse_qsl(url.query), ("code", self.kwargs["code"]), ("status", status)])
         return Response({"redirect": urlunsplit(url._replace(query=query))})

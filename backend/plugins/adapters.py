@@ -22,7 +22,7 @@ class SocialAdapter(DefaultSocialAccountAdapter):
         token = sociallogin.token
         if not token or token.token_secret: return
         if token.pk: token.delete()
-        logger.info("Google sign-in without refresh token, asking for consent", extra={"user_id": sociallogin.user.pk})  # pyright: ignore[reportOptionalMemberAccess]
+        logger.info("consent needed", extra={"user": sociallogin.user.pk})  # pyright: ignore[reportOptionalMemberAccess]
         query = urlencode({"action": "reauthenticate", "next": sociallogin.state.get("next") or ""})
         raise ImmediateHttpResponse(HttpResponseRedirect(f"{reverse('google_login')}?{query}"))
 
@@ -31,6 +31,6 @@ class GmailGoogleOAuth2Adapter(GoogleOAuth2Adapter):
     def complete_login(self, request, app, token, **kwargs):
         scopes = set(kwargs["response"].get("scope", "").split())
         if not REQUIRED_GOOGLE_SCOPES.issubset(scopes):
-            logger.info("Google sign-in missing scopes", extra={"missing": sorted(REQUIRED_GOOGLE_SCOPES - scopes)})
+            logger.info("scopes missing", extra={"missing": sorted(REQUIRED_GOOGLE_SCOPES - scopes)})
             raise OAuth2Error("Allow Iris to see your profile, email and read-only Gmail.")
         return super().complete_login(request, app, token, **kwargs)

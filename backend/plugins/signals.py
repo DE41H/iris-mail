@@ -15,5 +15,5 @@ logger = logging.getLogger(__name__)
 def init_poll(sender, request=None, sociallogin=None, user=None, **kwargs):
     user = user or (sociallogin and sociallogin.user)
     if user and SocialAccount.objects.filter(user=user, provider="google").exists():
-        logger.info("Google account connected", extra={"user_id": user.pk})
+        logger.info("google connected", extra={"user": user.pk})
         transaction.on_commit(lambda: init_hist.defer(user_id=str(user.pk)))
