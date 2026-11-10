@@ -92,7 +92,7 @@ def _extract(user, todo, msgs):
     @cache
     def state(m): return llm.email(m.sender, m.subject, body(m))
 
-    saved = 0
+    answered = 0
     for sub, want in todo:
         plugin = sub.plugin
         with bound_contextvars(plugin=plugin.id):
@@ -103,8 +103,9 @@ def _extract(user, todo, msgs):
             if rules: output["rules"] = _match(rules, f"{m.subject or ''}\n{body(m)}")  # pyright: ignore[reportIndexIssue]
             results.append(Result(user=user, plugin=plugin, version=plugin.version, output=output, message=bytes.fromhex(m.id)))
         with suppress(IntegrityError):
-            saved += len(Result.objects.bulk_create(results, ignore_conflicts=True))
-    return saved
+            Result.objects.bulk_create(results, ignore_conflicts=True)
+        answered += len(results)
+    return answered
 
 
 @app.task(name="plugins.tasks.process")
@@ -128,7 +129,7 @@ def process(user_id):
     subs = list(active.filter(hist_from__isnull=False).prefetch_related("plugin__developer"))
     low = min((s.hist_from for s in subs), default=latest)
     ids = sorted((i for i, h in added.items() if h > low), key=added.__getitem__)
-    fetched = saved = 0
+    fetched = answered = 0
     for n in range(0, len(ids), CHUNK_SIZE):
         chunk = ids[n:n + CHUNK_SIZE]
         live = set(active.nocache().values_list("pk", flat=True))  # pyright: ignore[reportAttributeAccessIssue]
@@ -141,10 +142,10 @@ def process(user_id):
             if revoked(error): return disconnect(user, gmail)
             raise
         fetched += len(msgs)
-        saved += _extract(user, todo, msgs)
+        answered += _extract(user, todo, msgs)
         if n + CHUNK_SIZE < len(ids):
             CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=added[ids[n + CHUNK_SIZE]] - 1)  # pyright: ignore[reportAttributeAccessIssue]
     if latest != user.hist_id:
         CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=latest)  # pyright: ignore[reportAttributeAccessIssue]
     if added:
-        logger.info("processed", seen=len(added), fetched=fetched, results=saved)
+        logger.info("processed", seen=len(added), fetched=fetched, answered=answered)
