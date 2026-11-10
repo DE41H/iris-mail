@@ -1,5 +1,4 @@
-import logging
-
+import structlog
 from django.core.cache import cache
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
 from rest_framework.exceptions import AuthenticationFailed, Throttled
@@ -7,7 +6,7 @@ from rest_framework.throttling import BaseThrottle
 
 from plugins.models import Plugin
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 MAX_FAILS = 10
 
@@ -27,7 +26,7 @@ class PluginKeyAuthentication(BaseAuthentication):
         if plugin is None:
             cache.add(ident, 0, 60*60)
             if cache.incr(ident) == MAX_FAILS:
-                logger.warning("ip blocked", extra={"ip": ident.removeprefix("badkey:")})
+                logger.warning("ip blocked", ip=ident.removeprefix("badkey:"))
             raise AuthenticationFailed("Invalid API key.")
         return plugin.developer, plugin
 

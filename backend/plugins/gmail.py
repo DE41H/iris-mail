@@ -1,9 +1,9 @@
-import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+import structlog
 from allauth.socialaccount.models import SocialToken
 from django.conf import settings
 from django.db.transaction import atomic
@@ -15,7 +15,7 @@ from simplegmail import Gmail
 
 from plugins.models import CustomUser, Subscription
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 TOKEN_URI = "https://oauth2.googleapis.com/token"
 REVOKE_URI = "https://oauth2.googleapis.com/revoke"
@@ -54,7 +54,7 @@ def get_hist_id(user: CustomUser) -> int | None:
     try:
         return _read_hist_id(user)
     except Exception:
-        logger.warning("history id failed", extra={"user": user.pk}, exc_info=True)
+        logger.warning("history id failed", user=user.pk, exc_info=True)
         return None
 
 def revoked(error):
@@ -68,7 +68,7 @@ def reset_hist(user, reason):
     except (RefreshError, HttpError) as error:
         if not revoked(error): raise
         return disconnect(user)
-    logger.warning("history reset", extra={"user": user.pk, "reason": reason})
+    logger.warning("history reset", user=user.pk, reason=reason)
     CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=hist_id)  # pyright: ignore[reportAttributeAccessIssue]
 
 def get_hist(gmail: Gmail, start):
@@ -90,7 +90,7 @@ def get(gmail: Gmail, id):
     except HttpError as error:
         if error.resp.status != 404: raise
     except Exception:
-        logger.warning("mail unreadable", extra={"mail": id}, exc_info=True)
+        logger.warning("mail unreadable", mail=id, exc_info=True)
 
 def fetch(gmail: Gmail, ids):
     size = -(-len(ids) // THREADS)
@@ -108,10 +108,10 @@ def revoke(user: CustomUser):
     try:
         urlopen(Request(REVOKE_URI, data=urlencode({"token": token.token_secret or token.token}).encode()), timeout=10)
     except OSError:
-        logger.warning("revoke failed", extra={"user": user.pk}, exc_info=True)
+        logger.warning("revoke failed", user=user.pk, exc_info=True)
 
 def disconnect(user):
-    logger.warning("google revoked", extra={"user": user.pk})
+    logger.warning("google revoked", user=user.pk)
     with atomic():
         SocialToken.objects.filter(account__user=user, account__provider="google").delete()
         Subscription.objects.filter(user=user, active=True).invalidated_update(active=False)  # pyright: ignore[reportAttributeAccessIssue]

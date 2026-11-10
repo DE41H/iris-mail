@@ -1,7 +1,7 @@
-import logging
 from secrets import token_urlsafe
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+import structlog
 from allauth.socialaccount.models import SocialToken
 from django.contrib.auth import logout
 from django.db.models import Count, OuterRef, Subquery
@@ -35,7 +35,7 @@ from plugins.serializers import (
     UsageSerializer,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def _param(name, field, value):
@@ -68,18 +68,18 @@ class PluginViewSet(
         serializer.is_valid(raise_exception=True)
         plugin = serializer.save(developer=request.user)
         key = plugin.rot_key()
-        logger.info("plugin created", extra={"plugin": plugin.pk, "user": request.user.pk})
+        logger.info("plugin created", plugin=plugin.pk, user=request.user.pk)
         return Response({**serializer.data, "key": key}, status=201)
 
     def perform_destroy(self, instance):
-        logger.info("plugin deleted", extra={"plugin": instance.pk, "user": instance.developer_id})
+        logger.info("plugin deleted", plugin=instance.pk, user=instance.developer_id)
         instance.delete()
 
     @action(detail=True, methods=["post"])
     def rotate_key(self, request, pk=None, **kwargs):
         plugin = self.get_object()
         key = plugin.rot_key()
-        logger.info("key rotated", extra={"plugin": plugin.pk, "user": request.user.pk})
+        logger.info("key rotated", plugin=plugin.pk, user=request.user.pk)
         return Response({"key": key})
 
 
@@ -108,7 +108,7 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.DestroyModelMixin, views
 
     def perform_destroy(self, instance):
         by = "developer" if isinstance(self.request.auth, Plugin) else "user"  # pyright: ignore[reportAttributeAccessIssue]
-        logger.info("sub removed", extra={"plugin": instance.plugin_id, "user": instance.user_id, "by": by})
+        logger.info("sub removed", plugin=instance.plugin_id, user=instance.user_id, by=by)
         instance.delete()
 
     @action(detail=False, methods=["post"])
@@ -133,7 +133,7 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.DestroyModelMixin, views
             subscription.set_active(True, hist_from=get_hist_id(request.user))
         else:
             subscription.set_active(active)
-        logger.info("sub on" if subscription.active else "sub off", extra={"plugin": subscription.plugin_id, "user": subscription.user_id})
+        logger.info("sub on" if subscription.active else "sub off", plugin=subscription.plugin_id, user=subscription.user_id)
         return Response(self.get_serializer(subscription).data)
 
 
@@ -189,7 +189,7 @@ class MeViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin, viewsets.Ge
         return self.request.user
 
     def perform_destroy(self, instance):
-        logger.info("account deleted", extra={"user": instance.pk})
+        logger.info("account deleted", user=instance.pk)
         revoke(instance)
         logout(self.request)
         instance.delete()
@@ -251,7 +251,7 @@ class CodeViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     def create(self, request, *args, **kwargs):
         code = token_urlsafe(32)
         Code.objects.create(plugin=request.auth, hash=Plugin.gen_hash(code))
-        logger.info("code created", extra={"plugin": request.auth.pk})
+        logger.info("code created", plugin=request.auth.pk)
         return Response({"code": code, "url": request.build_absolute_uri(f"/connect#{code}")}, status=201)
 
 
@@ -270,7 +270,7 @@ class ConnectViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         return Response(self.get_serializer(self.get_object().plugin).data)
 
     def _done(self, code, status):
-        logger.info(f"code {status}", extra={"plugin": code.plugin_id, "user": self.request.user.pk})
+        logger.info(f"code {status}", plugin=code.plugin_id, user=self.request.user.pk)
         url = urlsplit(code.plugin.redirect)
         query = urlencode([*parse_qsl(url.query), ("code", self.kwargs["code"]), ("status", status)])
         return Response({"redirect": urlunsplit(url._replace(query=query))})

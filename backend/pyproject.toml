@@ -16,13 +16,13 @@ dependencies = [
     "pyjwt[crypto]>=2.0",
     "drf-spectacular>=0.30.0",
     "django-cacheops>=7.2",
-    "python-json-logger>=4.2.0",
     "django-otp>=1.7.5",
     "django-fernet-encrypted-fields>=0.4.0",
     "google-re2==1.1.20251105",
     "segno>=1.6.6",
     "litellm==1.108.3",
     "jsonschema==4.26.0",
+    "structlog>=26.1.0",
 ]
 
 [dependency-groups]

@@ -1,6 +1,7 @@
 from os import getenv
 from pathlib import Path
 
+import structlog
 from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -108,12 +109,12 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 
 CACHEOPS_REDIS = getenv('CACHEOPS_URL', 'redis://127.0.0.1:6379/2')
 CACHEOPS_DEGRADE_ON_FAILURE = True
-CACHEOPS_DEFAULTS = {'timeout': 60 * 5}
+CACHEOPS_INSIDEOUT = True
+CACHEOPS_DEFAULTS = {'timeout': 60 * 15}
 CACHEOPS = {
     'plugins.customuser': {'ops': 'all'},
     'plugins.plugin': {'ops': 'all'},
     'plugins.subscription': {'ops': 'all'},
-    'plugins.result': {'ops': ()},
 }
 
 
@@ -207,17 +208,12 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Iris API',
-    'DESCRIPTION': 'Read answers extracted from your users\' mail. Authenticate every request with '
-                   '`Authorization: Bearer <api key>`. Lists are cursor-paginated, 50 items per page.',
+    'DESCRIPTION': 'Base `/api/v1`. Auth `Authorization: Bearer <key>`. Lists: 50 per page, newest first, follow `next`. '
+                   'Errors: 400 `{field: [msg]}`, 401 bad key, 429 over 1000 req/h per developer (or 10 bad keys/h per IP).',
     'VERSION': '1.0.0',
     'SCHEMA_PATH_PREFIX': r'/api/v[0-9]+',
     'PARSER_WHITELIST': ['rest_framework.parsers.JSONParser'],
     'ENUM_NAME_OVERRIDES': {'Tier': 'plugins.models.UserTier'},
-    'TAGS': [
-        {'name': 'users', 'description': 'Users sharing their mail with your plugin.'},
-        {'name': 'subscriptions', 'description': 'Remove users from your plugin.'},
-        {'name': 'results', 'description': 'Answers extracted from new inbox mail. Mail that lands in Spam is skipped, even if moved to the inbox later.'},
-    ],
     'AUTHENTICATION_WHITELIST': ['plugins.authentication.PluginKeyAuthentication'],
 }
 
@@ -226,18 +222,23 @@ SPECTACULAR_SETTINGS = {
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'formatters': {'json': {
-        '()': 'pythonjsonlogger.json.JsonFormatter',
-        'fmt': ['levelname', 'name', 'message'],
-        'rename_fields': {'levelname': 'level', 'name': 'logger', 'exc_info': 'exception'},
-        'timestamp': 'time',
+    'formatters': {'console': {
+        '()': structlog.stdlib.ProcessorFormatter,
+        'foreign_pre_chain': [structlog.contextvars.merge_contextvars, structlog.stdlib.add_log_level, structlog.stdlib.add_logger_name],
+        'processors': [structlog.stdlib.ProcessorFormatter.remove_processors_meta, structlog.dev.ConsoleRenderer()],
     }},
-    'handlers': {'json': {'class': 'logging.StreamHandler', 'formatter': 'json'}},
-    'root': {'handlers': ['json'], 'level': 'INFO'},
+    'handlers': {'out': {'class': 'logging.StreamHandler', 'formatter': 'console'}},
+    'root': {'handlers': ['out'], 'level': 'INFO'},
     'loggers': {
         **{name: {'handlers': [], 'propagate': True} for name in ('django', 'django.server')},
-        # procrastinate logs every job start and success; keep only failures
         'procrastinate': {'level': 'WARNING'},
         'googleapiclient.discovery_cache': {'level': 'ERROR'},
     },
 }
+structlog.configure(
+    processors=[structlog.contextvars.merge_contextvars, structlog.stdlib.add_log_level, structlog.stdlib.add_logger_name,
+                structlog.stdlib.ProcessorFormatter.wrap_for_formatter],
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    cache_logger_on_first_use=True,
+)

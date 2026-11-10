@@ -8,7 +8,7 @@ Stack: Django 6.1, DRF, drf-spectacular, Postgres 17, Procrastinate, Valkey, cac
 Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
 
 ## Layout
-- `backend/cfg/`: settings (`getenv`), urls, `middleware` (CSP, headers), `logs` (formatter)
+- `backend/cfg/`: settings (`getenv`), urls, `middleware` (CSP, headers), `LOGGING` (structlog console)
 - `backend/plugins/`: models, views, serializers, `gmail`, `token` (encrypted OAuth), `validation`, `meta`, `schema`,
   `signals`, `pagination` (uuid cursor), `authentication`+`throttling` (API keys, flat per-dev rate), `admin` (OTP;
   tier editable; `Usage`, `Result` read-only), commands `mk_admin` `gen_schema`, `adapters` (Google,
@@ -45,11 +45,12 @@ Dev = prod. After every change: `docker/deploy.sh` (needs `docker/.env` from `.e
 
 Backend
 - Gmail: `simplegmail` (`Gmail`, `Message`); `gmail.service` only for history, profile.
-- Logs: `getLogger(__name__)`, short lowercase msg, ids in `extra=` (`user`, `plugin`), never email content. Prints
-  `LEVEL module: msg k=v`.
+- Logs: `structlog.get_logger(__name__)`, short lowercase msg, ids as kwargs (`user=`, `plugin=`), never email
+  content. `process` binds `user` (and `plugin` per sub) via `structlog.contextvars`. Prints `[level] msg [logger] k=v`.
 - `uuid7` PKs, index every new query, constraints in `Meta.constraints`.
 - Migrations run under the live old release: add only nullable/defaulted columns; drop/rename a release later.
-- cacheops caches `CustomUser`, `Plugin`, `Subscription` 5 min: `.invalidated_update()` + `prefetch_related`, never
+- cacheops (insideout, survives Valkey eviction) caches `CustomUser`, `Plugin`, `Subscription` 5 min; never list
+  `Result` (its signals kill fast-delete in cleanup/cascades): `.invalidated_update()` + `prefetch_related`, never
   `.update()`/`select_related`.
 - `/docs` = API-key endpoints only; dashboard views `@extend_schema(exclude=True)`. Terse: API-wide facts in
   `SPECTACULAR_SETTINGS['DESCRIPTION']`, 1–2 lines/endpoint, `help_text` only if the name doesn't say it.

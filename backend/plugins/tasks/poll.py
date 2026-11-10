@@ -16,7 +16,7 @@ def init_hist(user_id):
 @app.periodic(cron="*/3 * * * *")
 @app.task(name="plugins.tasks.poll_hist")
 def poll_hist(timestamp):
-    user_ids = CustomUser.objects.filter(subscriptions__active=True, socialaccount__provider="google").values_list("pk", flat=True).distinct()
+    user_ids = CustomUser.objects.nocache().filter(subscriptions__active=True, socialaccount__provider="google").values_list("pk", flat=True).distinct()  # pyright: ignore[reportAttributeAccessIssue]
     for user_id in user_ids:
         with suppress(AlreadyEnqueued):
             process.configure(lock=str(user_id), queueing_lock=str(user_id)).defer(user_id=str(user_id))

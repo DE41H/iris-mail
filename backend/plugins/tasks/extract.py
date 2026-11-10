@@ -1,9 +1,9 @@
-import logging
 from contextlib import suppress
 from functools import cache, lru_cache
 from itertools import islice
 
 import re2
+import structlog
 from bs4 import BeautifulSoup
 from django.db import IntegrityError
 from django.db.models import Min
@@ -11,6 +11,7 @@ from django.utils.timezone import localdate
 from google.auth.exceptions import RefreshError
 from googleapiclient.errors import HttpError
 from procrastinate.contrib.django import app
+from structlog.contextvars import bind_contextvars, bound_contextvars, clear_contextvars
 
 from plugins.gmail import (
     client,
@@ -25,7 +26,7 @@ from plugins.models import CustomUser, Result, Subscription, Usage
 from plugins.tasks import llm
 from plugins.validation import MAX_MATCH_LENGTH, MAX_MATCHES, RE2
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 CHUNK_SIZE = 100
 INVISIBLE = dict.fromkeys(map(ord, "\u200b\u200c\u200d\u2060\ufeff\u034f\u00ad"))
@@ -41,7 +42,7 @@ def _regex(pattern):
 def _rules(plugin):
     rules = {name: _regex(pattern) for name, pattern in plugin.rules.items()}
     for name in (n for n, r in rules.items() if r is None):
-        logger.warning("bad rule", extra={"plugin": plugin.id, "rule": name})
+        logger.warning("bad rule", rule=name)
     return rules
 
 
@@ -62,19 +63,18 @@ def _refine(html):
     return "\n".join(line for line in (" ".join(raw.split()) for raw in text.splitlines()) if line)
 
 
-def _guess(user, plugin, msgs, state):
+def _guess(plugin, msgs, state):
     if not msgs: return []
     props = plugin.schema.get("properties")
     if not props: return [(m, {}) for m in msgs]
-    extra = {"plugin": plugin.id, "user": user.pk}
     usage, _ = Usage.objects.get_or_create(user_id=plugin.developer_id, date=localdate())
     if usage.used >= plugin.developer.quota:
-        logger.info("quota reached", extra={**extra, "dev": plugin.developer_id})
+        logger.info("quota reached", dev=plugin.developer_id)
         return []
     answers = llm.answer(plugin.schema, [state(m) for m in msgs])
     pairs = [(m, a) for m, a in zip(msgs, answers, strict=True) if not isinstance(a, Exception)]
     if errors := [a for a in answers if isinstance(a, Exception)]:
-        logger.warning("llm failed", extra={**extra, "failed": len(errors), "error": type(errors[0]).__name__, "status": getattr(errors[0], "status_code", None)})
+        logger.warning("llm failed", failed=len(errors), error=type(errors[0]).__name__, status=getattr(errors[0], "status_code", None))
     if pairs: usage.consume(len(pairs) * len(props))
     return pairs
 
@@ -94,8 +94,9 @@ def _extract(user, todo, msgs):
     saved = 0
     for sub, want in todo:
         plugin = sub.plugin
-        pairs = _guess(user, plugin, [m for m in msgs if m.id in want], state)
-        rules = _rules(plugin) if pairs and plugin.rules else None
+        with bound_contextvars(plugin=plugin.id):
+            pairs = _guess(plugin, [m for m in msgs if m.id in want], state)
+            rules = _rules(plugin) if pairs and plugin.rules else None
         results = []
         for m, output in pairs:
             if rules: output["rules"] = _match(rules, f"{m.subject or ''}\n{body(m)}")  # pyright: ignore[reportIndexIssue]
@@ -107,6 +108,8 @@ def _extract(user, todo, msgs):
 
 @app.task(name="plugins.tasks.process")
 def process(user_id):
+    clear_contextvars()
+    bind_contextvars(user=user_id)
     user = CustomUser.objects.filter(pk=user_id).first()
     if user is None: return
     active = Subscription.objects.filter(user=user, active=True)
@@ -140,4 +143,4 @@ def process(user_id):
     if latest != user.hist_id:
         CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=latest)  # pyright: ignore[reportAttributeAccessIssue]
     if added:
-        logger.info("processed", extra={"user": user.pk, "seen": len(added), "fetched": fetched, "results": saved})
+        logger.info("processed", seen=len(added), fetched=fetched, results=saved)
