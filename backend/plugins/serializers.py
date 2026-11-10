@@ -25,7 +25,7 @@ NAME_TAKEN = "You already have a plugin with this name."
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ("id", "username", "email", "tier")
+        fields = ("id", "username", "email")
         read_only_fields = fields
 
 
@@ -37,7 +37,7 @@ class MeSerializer(CustomUserSerializer):
     tiers = serializers.SerializerMethodField()
 
     class Meta(CustomUserSerializer.Meta):
-        fields = (*CustomUserSerializer.Meta.fields, "google", "avatar", "quota", "tiers")
+        fields = (*CustomUserSerializer.Meta.fields, "tier", "google", "avatar", "quota", "tiers")
         read_only_fields = fields
 
     def get_google(self, user) -> bool:
@@ -61,12 +61,6 @@ class PluginSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "developer", "version", "prefix")
         extra_kwargs = {"desc": {"allow_blank": True}, "redirect": {"required": True, "validators": [URLValidator(schemes=["https"])]}}  # noqa: RUF012
 
-    def validate_name(self, value):
-        user = self.context["request"].user
-        if Plugin.objects.filter(developer=user, name=value).exclude(pk=getattr(self.instance, "pk", None)).exists():
-            raise serializers.ValidationError(NAME_TAKEN)
-        return value
-
     def validate(self, attrs):
         schema = attrs.get("schema", getattr(self.instance, "schema", None) or EMPTY_SCHEMA)
         rules = attrs.get("rules", getattr(self.instance, "rules", {}))
@@ -86,20 +80,20 @@ class PluginSerializer(serializers.ModelSerializer):
 class SubscriptionSerializer(serializers.ModelSerializer):
     plugin_name = serializers.CharField(source="plugin.name", read_only=True)
     plugin_desc = serializers.CharField(source="plugin.desc", read_only=True)
+    user = serializers.UUIDField(source="user_id", required=False)
     email = serializers.EmailField(write_only=True, required=False)
 
     class Meta:
         model = Subscription
         fields = ("id", "user", "email", "plugin", "plugin_name", "plugin_desc", "active", "time")
         read_only_fields = ("id", "plugin", "plugin_name", "plugin_desc", "active", "time")
-        extra_kwargs = {"user": {"required": False}}  # noqa: RUF012
 
     def validate(self, attrs):
         email = attrs.pop("email", None)
-        if ("user" in attrs) == (email is not None):
+        if ("user_id" in attrs) == (email is not None):
             raise serializers.ValidationError("Send `user` or `email`")
         if email is not None:
-            attrs["user"] = CustomUser.objects.filter(email__iexact=email).first()
+            attrs["user_id"] = CustomUser.objects.filter(email__iexact=email).values_list("pk", flat=True).first()
         return attrs
 
 

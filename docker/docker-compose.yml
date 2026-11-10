@@ -53,7 +53,7 @@ services:
       context: ../backend
       dockerfile: ../docker/backend.dockerfile
     env_file: .env
-    command: python manage.py procrastinate worker --concurrency 2
+    command: python manage.py procrastinate worker --concurrency 6
     environment:
       LITELLM_LOCAL_MODEL_COST_MAP: "True"
     mem_limit: 256m

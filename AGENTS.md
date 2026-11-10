@@ -1,8 +1,8 @@
 # AGENTS.md
 
 Iris: dev makes plugin (JSON schema questions + regex rules) → API key. User signs in with Google, subscribes. Gmail
-polled /3 min, deduped, answered by LiteLLM (`tasks/llm.py`, `llm.MODELS` order: Gemini Flash, Flash Lite, Claude
-Haiku). Only answers stored (`Result`); devs list + ack (`fetched`) via API.
+polled /3 min, deduped, answered by LiteLLM (`tasks/llm.py`, `llm.MODELS` order: Gemini models (Flash Lite first),
+then Claude Haiku as last fallback). Only answers stored (`Result`); devs list + ack (`fetched`) via API.
 
 Stack: Django 6.1, DRF, drf-spectacular, Postgres 17, Procrastinate, Valkey, cacheops, allauth, django-otp, LiteLLM,
 Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).

@@ -32,6 +32,10 @@ QUOTAS = {
 CODE_TTL = timedelta(minutes=3)
 
 
+def uuid_before(delta: timedelta) -> UUID:
+    return UUID(int=int((now() - delta).timestamp() * 1000) << 80)
+
+
 class CustomUser(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
     email = models.EmailField(unique=True)
@@ -135,17 +139,13 @@ class Code(models.Model):
             ),
         )
 
-    @staticmethod
-    def cutoff():
-        return UUID(int=int((now() - CODE_TTL).timestamp() * 1000) << 80)
-
     @property
     def expired(self) -> bool:
-        return self.status == CodeStatus.PENDING and self.id < self.cutoff()
+        return self.status == CodeStatus.PENDING and self.id < uuid_before(CODE_TTL)
 
     @classmethod
     def pending(cls):
-        return cls.objects.filter(status=CodeStatus.PENDING, id__gte=cls.cutoff())
+        return cls.objects.filter(status=CodeStatus.PENDING, id__gte=uuid_before(CODE_TTL))
 
     @atomic
     def accept(self, user_id, hist_from=None) -> bool:

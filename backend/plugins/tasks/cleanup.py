@@ -1,27 +1,22 @@
 from asyncio import gather
 from datetime import timedelta
-from uuid import UUID
 
 import structlog
 from django.db.models import Exists, OuterRef, Q
-from django.utils.timezone import now
 from procrastinate.contrib.django import app
 from procrastinate.exceptions import UniqueViolation
 from procrastinate.jobs import Status
 
-from plugins.models import Code, Result, Subscription, Usage
+from plugins.models import Code, Result, Subscription, Usage, uuid_before
 
 logger = structlog.get_logger(__name__)
 
 
 JOB_KEEP_FOR_HRS = 7 * 24
-RESULT_KEEP_FOR = 30
-RESULT_MAX_AGE = 100
-USAGE_KEEP_FOR = 100
-CODE_KEEP_FOR = 1
-
-def _before(days):
-    return UUID(int=int((now() - timedelta(days=days)).timestamp() * 1000) << 80)
+RESULT_KEEP_FOR = timedelta(days=30)
+RESULT_MAX_AGE = timedelta(days=100)
+USAGE_KEEP_FOR = timedelta(days=100)
+CODE_KEEP_FOR = timedelta(days=1)
 
 async def _retry(job):
     try: await app.job_manager.retry_job(job)
@@ -34,13 +29,13 @@ async def cleanup(timestamp):
         nb_hours=JOB_KEEP_FOR_HRS, include_failed=True, include_cancelled=True, include_aborted=True,
     )
     subscribed = Exists(Subscription.objects.filter(user=OuterRef("user"), plugin=OuterRef("plugin")))
-    cond_1 = Q(id__lt=_before(RESULT_MAX_AGE))
+    cond_1 = Q(id__lt=uuid_before(RESULT_MAX_AGE))
     cond_2 = (Q(fetched=True) | ~subscribed)
-    cond_3 = Q(id__lt=_before(RESULT_KEEP_FOR))
+    cond_3 = Q(id__lt=uuid_before(RESULT_KEEP_FOR))
     condition = (cond_1) | (cond_2 & cond_3)
     clean_results = Result.objects.filter(condition).adelete()
-    clean_usage = Usage.objects.filter(id__lt=_before(USAGE_KEEP_FOR)).adelete()
-    clean_codes = Code.objects.filter(id__lt=_before(CODE_KEEP_FOR)).adelete()
+    clean_usage = Usage.objects.filter(id__lt=uuid_before(USAGE_KEEP_FOR)).adelete()
+    clean_codes = Code.objects.filter(id__lt=uuid_before(CODE_KEEP_FOR)).adelete()
     (count, _), (usage, _), (codes, _), _ = await gather(clean_results, clean_usage, clean_codes, delete_jobs)
     logger.info("cleanup", results=count, usage=usage, codes=codes)
 
