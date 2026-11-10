@@ -4,6 +4,7 @@ from itertools import islice
 
 import re2
 import structlog
+from allauth.socialaccount.models import SocialToken
 from bs4 import BeautifulSoup
 from django.db import IntegrityError
 from django.db.models import Min
@@ -114,8 +115,10 @@ def process(user_id):
     if user is None: return
     active = Subscription.objects.filter(user=user, active=True)
     start = max(user.hist_id or 0, active.aggregate(m=Min("hist_from"))["m"] or 0)
-    if not start: return reset_hist(user, "no history id")
-    gmail = client(user)
+    try:
+        if not start: return reset_hist(user, "no history id")
+        gmail = client(user)
+    except SocialToken.DoesNotExist: return disconnect(user)
     try: added, latest = get_hist(gmail, start)
     except (RefreshError, HttpError) as error:
         if revoked(error): return disconnect(user)
