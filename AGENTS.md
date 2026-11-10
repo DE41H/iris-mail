@@ -95,3 +95,5 @@ Frontend
 - Dashboard plugin counts ≤5 min stale; tier changes ≤5 min (cacheops).
 - Quotas overshoot (checked per batch; parallel workers); over-quota mail skipped for good.
 - Sessions in Valkey (`volatile-lru`, 256 MB); eviction logs users out.
+- `revive` retries jobs whose worker stopped heartbeating; a frozen worker that resumes runs `process` twice for one
+  user (double LLM calls + usage, results dedupe). Rare; a slow task still heartbeats.
