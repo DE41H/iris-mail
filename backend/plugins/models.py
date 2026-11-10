@@ -135,10 +135,17 @@ class Code(models.Model):
             ),
         )
 
+    @staticmethod
+    def cutoff():
+        return UUID(int=int((now() - CODE_TTL).timestamp() * 1000) << 80)
+
+    @property
+    def expired(self) -> bool:
+        return self.status == CodeStatus.PENDING and self.id < self.cutoff()
+
     @classmethod
     def pending(cls):
-        cutoff = UUID(int=int((now() - CODE_TTL).timestamp() * 1000) << 80)
-        return cls.objects.filter(status=CodeStatus.PENDING, id__gte=cutoff)
+        return cls.objects.filter(status=CodeStatus.PENDING, id__gte=cls.cutoff())
 
     @atomic
     def accept(self, user_id, hist_from=None) -> bool:
