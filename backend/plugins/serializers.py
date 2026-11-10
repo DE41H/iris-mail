@@ -18,6 +18,8 @@ from plugins.models import (
 )
 from plugins.validation import EMPTY_SCHEMA
 
+NAME_TAKEN = "You already have a plugin with this name."
+
 
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -61,7 +63,7 @@ class PluginSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
         user = self.context["request"].user
         if Plugin.objects.filter(developer=user, name=value).exclude(pk=getattr(self.instance, "pk", None)).exists():
-            raise serializers.ValidationError("You already have a plugin with this name.")
+            raise serializers.ValidationError(NAME_TAKEN)
         return value
 
     def validate(self, attrs):

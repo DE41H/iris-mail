@@ -4,8 +4,10 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import structlog
 from allauth.socialaccount.models import SocialToken
 from django.contrib.auth import logout
+from django.db import IntegrityError
 from django.db.models import Count, OuterRef, Subquery
 from django.db.models.functions import Coalesce
+from django.db.transaction import atomic
 from django.utils.timezone import localdate
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -25,6 +27,7 @@ from plugins.gmail import get_hist_id, revoke
 from plugins.models import Code, CustomUser, Plugin, Result, Subscription, Usage
 from plugins.permissions import PluginKeyAuth, SessionPermission
 from plugins.serializers import (
+    NAME_TAKEN,
     CodeSerializer,
     ConnectSerializer,
     CustomUserSerializer,
@@ -66,10 +69,17 @@ class PluginViewSet(
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        plugin = serializer.save(developer=request.user)
-        key = plugin.rot_key()
+        try:
+            with atomic():
+                plugin = serializer.save(developer=request.user)
+                key = plugin.rot_key()
+        except IntegrityError as err: raise ValidationError({"name": NAME_TAKEN}) from err
         logger.info("plugin created", plugin=plugin.pk, user=request.user.pk)
         return Response({**serializer.data, "key": key}, status=201)
+
+    def perform_update(self, serializer):
+        try: serializer.save()
+        except IntegrityError as err: raise ValidationError({"name": NAME_TAKEN}) from err
 
     def perform_destroy(self, instance):
         logger.info("plugin deleted", plugin=instance.pk, user=instance.developer_id)
