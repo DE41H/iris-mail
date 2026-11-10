@@ -2,7 +2,6 @@ from secrets import token_urlsafe
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import structlog
-from allauth.socialaccount.models import SocialToken
 from django.contrib.auth import logout
 from django.db import IntegrityError
 from django.db.models import Count, OuterRef, Subquery
@@ -23,7 +22,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from plugins.authentication import PluginKeyAuthentication
-from plugins.gmail import get_hist_id, revoke
+from plugins.gmail import get_hist_id, google_token, revoke
 from plugins.models import Code, CustomUser, Plugin, Result, Subscription, Usage
 from plugins.permissions import PluginKeyAuth, SessionPermission
 from plugins.serializers import (
@@ -44,6 +43,10 @@ logger = structlog.get_logger(__name__)
 def _param(name, field, value):
     try: return field.run_validation(value)
     except ValidationError as err: raise ValidationError({name: err.detail}) from err
+
+
+def _need_google(user):
+    if not google_token(user).exists(): raise ValidationError({"google": "Reconnect Google first."})
 
 
 @extend_schema(exclude=True)
@@ -133,8 +136,7 @@ class SubscriptionViewSet(mixins.ListModelMixin, mixins.DestroyModelMixin, views
     def set_active(self, request, pk=None, **kwargs):
         subscription = self.get_object()
         active = _param("active", serializers.BooleanField(), request.data.get("active"))
-        if active and not SocialToken.objects.filter(account__user=request.user, account__provider="google").exists():
-            raise ValidationError({"google": "Reconnect Google first."})
+        if active: _need_google(request.user)
         if active and not subscription.active:
             subscription.set_active(True, hist_from=get_hist_id(request.user))
         else:
@@ -179,10 +181,7 @@ class ResultViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     )
     @action(detail=False, methods=["post"])
     def ack(self, request, **kwargs):
-        try:
-            ids = serializers.ListField(child=serializers.UUIDField(), allow_empty=False, max_length=500).run_validation(request.data.get("ids"))
-        except ValidationError as err:
-            raise ValidationError({"ids": err.detail}) from err
+        ids = _param("ids", serializers.ListField(child=serializers.UUIDField(), min_length=1, max_length=500), request.data.get("ids"))
         acked = Result.objects.filter(plugin=request.auth, pk__in=ids, fetched=False).update(fetched=True)
         return Response({"acknowledged": acked})
 
@@ -284,8 +283,7 @@ class ConnectViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     @action(detail=True, methods=["post"])
     def accept(self, request, code=None, **kwargs):
         obj = self.get_object()
-        if not SocialToken.objects.filter(account__user=request.user, account__provider="google").exists():
-            raise ValidationError({"google": "Reconnect Google first."})
+        _need_google(request.user)
         if not obj.accept(request.user.pk, get_hist_id(request.user)): raise NotFound("This link was already used.")
         return self._done(obj, "accepted")
 

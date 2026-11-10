@@ -10,7 +10,7 @@ Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
 ## Layout
 - `backend/cfg/`: settings (`getenv`), urls, `middleware` (CSP, headers), `LOGGING` (structlog console)
 - `backend/plugins/`: models, views, serializers, `gmail`, `token` (encrypted OAuth), `validation`, `meta`, `schema`,
-  `signals`, `pagination` (uuid cursor), `authentication`+`throttling` (API keys, flat per-dev rate), `admin` (OTP;
+  `signals`, `pagination` (uuid cursor), `authentication`+`throttling` (API keys: flat per-dev rate only; `UserThrottle` = dashboard), `admin` (OTP;
   tier editable; `Usage`, `Result` read-only), commands `mk_admin` `gen_schema`, `adapters` (Google,
   `prompt=select_account`; no refresh token → `?action=reauthenticate`)
 - `plugins/tasks/`: `poll` (`poll_hist` /3 min, `init_hist`), `extract` (`process`), `llm` (router, provider schema,
