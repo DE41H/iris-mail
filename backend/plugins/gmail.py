@@ -37,22 +37,28 @@ def client(user: CustomUser):
         )
     )
 
+def _lock_token(user):
+    return SocialToken.objects.select_for_update().filter(account__user=user, account__provider="google").first()
+
+def _ours(token, gmail):
+    return gmail is not None and token.token_secret == gmail.creds.refresh_token
+
 def save_token(user: CustomUser, gmail: Gmail):
     creds = gmail.creds
     if creds.token is None or creds.expiry is None: return
-    SocialToken.objects.filter(account__user=user, account__provider="google").update(
-        token=creds.token, expires_at=creds.expiry.replace(tzinfo=UTC)
-    )
+    with atomic():
+        token = _lock_token(user)
+        if token is None or not _ours(token, gmail): return
+        token.token, token.expires_at = creds.token, creds.expiry.replace(tzinfo=UTC)
+        token.save(update_fields=("token", "expires_at"))
 
-def _read_hist_id(user: CustomUser) -> int:
-    gmail = client(user)
+def _read_hist_id(user: CustomUser, gmail: Gmail) -> int:
     response = gmail.service.users().getProfile(userId="me").execute()  # type: ignore[attr-defined]
     save_token(user, gmail)
     return int(response["historyId"])
 
 def get_hist_id(user: CustomUser) -> int | None:
-    try:
-        return _read_hist_id(user)
+    try: return _read_hist_id(user, client(user))
     except Exception:
         logger.warning("history id failed", user=user.pk, exc_info=True)
         return None
@@ -62,12 +68,11 @@ def revoked(error):
     status = error.resp.status
     return status == 401 or (status == 403 and b"insufficientPermissions" in error.content)
 
-def reset_hist(user, reason):
-    try:
-        hist_id = _read_hist_id(user)
+def reset_hist(user, reason, gmail):
+    try: hist_id = _read_hist_id(user, gmail)
     except (RefreshError, HttpError) as error:
         if not revoked(error): raise
-        return disconnect(user)
+        return disconnect(user, gmail)
     logger.warning("history reset", user=user.pk, reason=reason)
     CustomUser.objects.filter(pk=user.pk).invalidated_update(hist_id=hist_id)  # pyright: ignore[reportAttributeAccessIssue]
 
@@ -110,8 +115,11 @@ def revoke(user: CustomUser):
     except OSError:
         logger.warning("revoke failed", user=user.pk, exc_info=True)
 
-def disconnect(user):
-    logger.warning("google revoked", user=user.pk)
+def disconnect(user, gmail=None):
     with atomic():
-        SocialToken.objects.filter(account__user=user, account__provider="google").delete()
+        token = _lock_token(user)
+        if token:
+            if not _ours(token, gmail): return
+            token.delete()
+        logger.warning("google revoked", user=user.pk)
         Subscription.objects.filter(user=user, active=True).invalidated_update(active=False)  # pyright: ignore[reportAttributeAccessIssue]

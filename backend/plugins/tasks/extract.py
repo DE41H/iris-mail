@@ -115,14 +115,13 @@ def process(user_id):
     if user is None: return
     active = Subscription.objects.filter(user=user, active=True)
     start = max(user.hist_id or 0, active.aggregate(m=Min("hist_from"))["m"] or 0)
-    try:
-        if not start: return reset_hist(user, "no history id")
-        gmail = client(user)
+    try: gmail = client(user)
     except SocialToken.DoesNotExist: return disconnect(user)
+    if not start: return reset_hist(user, "no history id", gmail)
     try: added, latest = get_hist(gmail, start)
     except (RefreshError, HttpError) as error:
-        if revoked(error): return disconnect(user)
-        if isinstance(error, HttpError) and error.resp.status == 404: return reset_hist(user, "history expired")
+        if revoked(error): return disconnect(user, gmail)
+        if isinstance(error, HttpError) and error.resp.status == 404: return reset_hist(user, "history expired", gmail)
         raise
     save_token(user, gmail)
     active.filter(hist_from=None).invalidated_update(hist_from=latest)  # pyright: ignore[reportAttributeAccessIssue]
@@ -139,7 +138,7 @@ def process(user_id):
         need = set().union(*(want for _, want in todo))
         try: msgs = fetch(gmail, [i for i in chunk if i in need]) if need else []
         except (RefreshError, HttpError) as error:
-            if revoked(error): return disconnect(user)
+            if revoked(error): return disconnect(user, gmail)
             raise
         fetched += len(msgs)
         saved += _extract(user, todo, msgs)

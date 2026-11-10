@@ -19,8 +19,6 @@ _None._
 
 ## P2: should do soon
 
-- **`disconnect` can delete a fresh token.** If the user signs in again between the failed Gmail call and
-  `disconnect`, the new token is deleted and all plugins turn off. Fix: delete only the token row `client` loaded (by pk).
 - **`revive` can run two `process` jobs for one user.** Retrying a stalled job frees its lock while a hung worker may
   still run it: double LLM calls and usage (results dedupe). Accept, or check `hist_id` before `_guess`.
 
