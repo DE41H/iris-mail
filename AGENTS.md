@@ -17,7 +17,7 @@ Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
   tier is `QUOTAS` in `models.py` (`CustomUser.quota`), checked in `_guess` before each batch;
   `/api/v1/me/` returns it as `quota`.
 - `backend/plugins/tasks/`: `poll` (`poll_hist` every 3 min, `init_hist`), `extract` (`process`: mail fetching, rules, results), `llm` (router, provider schema, answer checks), `cleanup`
-  (`cleanup` 03:00 daily: jobs >7d, results >100d, or >30d if fetched/unsubscribed, usage >100d; `revive` every 5 min: retry stalled jobs)
+  (`cleanup` 03:00 daily: jobs >7d, results >100d, or >30d if fetched/unsubscribed, usage >100d, connect codes >1d; `revive` every 5 min: retry stalled jobs)
 - `backend/static/iris.css` (dashboard, auth pages), `theme.js` (blocking, sets `data-theme` before paint from
   `localStorage.theme` or the system; the toggle is in `Nav`), `backend/templates/` (allauth)
 - `frontend/src/`: `pages/` (Astro; `me` = account, quota and usage), `components/` (Svelte), `lib/` (`api`, `session`,

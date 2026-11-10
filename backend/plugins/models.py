@@ -1,11 +1,15 @@
+from datetime import timedelta
 from hashlib import sha256
 from secrets import compare_digest, token_urlsafe
+from uuid import UUID
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import URLValidator
 from django.db import IntegrityError, models
 from django.db.models.functions import Upper
 from django.db.transaction import atomic
+from django.utils.timezone import now
 from uuid6 import uuid7
 
 from plugins.validation import RuleValidator, SchemaValidator
@@ -24,6 +28,8 @@ QUOTAS = {
     UserTier.PRIME: 5_000,
     UserTier.ULTRA: 25_000,
 }
+
+CODE_TTL = timedelta(minutes=3)
 
 
 class CustomUser(AbstractUser):
@@ -63,6 +69,7 @@ class Plugin(models.Model):
     version = models.PositiveSmallIntegerField(default=1, editable=False)
     key = models.BinaryField(max_length=32, blank=True, null=True)
     prefix = models.CharField(max_length=16, unique=True, blank=True, null=True)
+    redirect = models.URLField(max_length=256, validators=[URLValidator(schemes=["https"])])
 
     class Meta:
         constraints = (
@@ -105,6 +112,43 @@ class Plugin(models.Model):
                     return full if updated else None
             except IntegrityError:
                 pre, hash, full = self.__class__.gen_key()
+
+
+class CodeStatus(models.IntegerChoices):
+    PENDING = 0, "Pending"
+    ACCEPTED = 1, "Accepted"
+    DENIED = 2, "Denied"
+
+
+class Code(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
+    hash = models.BinaryField(max_length=32, unique=True)
+    plugin = models.ForeignKey(to=Plugin, on_delete=models.CASCADE, related_name="codes", db_index=False)
+    user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="codes", null=True, blank=True, db_index=False)
+    status = models.PositiveSmallIntegerField(choices=CodeStatus.choices, default=CodeStatus.PENDING)
+
+    class Meta:
+        constraints = (
+            models.CheckConstraint(
+                condition=models.Q(status=CodeStatus.PENDING, user__isnull=True) | (~models.Q(status=CodeStatus.PENDING) & models.Q(user__isnull=False)),
+                name="code_user_iff_used",
+            ),
+        )
+
+    @classmethod
+    def pending(cls):
+        cutoff = UUID(int=int((now() - CODE_TTL).timestamp() * 1000) << 80)
+        return cls.objects.filter(status=CodeStatus.PENDING, id__gte=cutoff)
+
+    @atomic
+    def accept(self, user_id, hist_from=None) -> bool:
+        if not self.__class__.pending().filter(pk=self.pk).update(user_id=user_id, status=CodeStatus.ACCEPTED): return False
+        sub, created = Subscription.objects.get_or_create(user_id=user_id, plugin_id=self.plugin_id, defaults={"active": True, "hist_from": hist_from})  # pyright: ignore[reportAttributeAccessIssue]
+        if not created and not sub.active: sub.set_active(True, hist_from=hist_from)
+        return True
+
+    def deny(self, user_id) -> bool:
+        return bool(self.__class__.pending().filter(pk=self.pk).update(user_id=user_id, status=CodeStatus.DENIED))
 
 
 class Subscription(models.Model):
