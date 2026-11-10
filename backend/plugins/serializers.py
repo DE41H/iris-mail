@@ -2,6 +2,7 @@ from uuid import UUID
 
 from allauth.socialaccount.models import SocialAccount, SocialToken
 from django.core.validators import URLValidator
+from django.db.models import F
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -76,8 +77,10 @@ class PluginSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if any(k in validated_data and validated_data[k] != getattr(instance, k) for k in ("schema", "rules")):
-            validated_data["version"] = instance.version % 32767 + 1
-        return super().update(instance, validated_data)
+            validated_data["version"] = F("version") % 32767 + 1
+        instance = super().update(instance, validated_data)
+        if "version" in validated_data: instance.refresh_from_db(fields=("version",))
+        return instance
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):

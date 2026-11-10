@@ -28,8 +28,7 @@ _None._
   `disconnect`, the new token is deleted and all plugins turn off. Fix: delete only the token row `client` loaded (by pk).
 - **`revive` can run two `process` jobs for one user.** Retrying a stalled job frees its lock while a hung worker may
   still run it: double LLM calls and usage (results dedupe). Accept, or check `hist_id` before `_guess`.
-- **Plugin version bump is read-modify-write** (`PluginSerializer.update`). Two edits at once get the same version
-  for different schemas. Fix: `F("version") % 32767 + 1`.
+
 ## P3: nice to have
 
 _None._
