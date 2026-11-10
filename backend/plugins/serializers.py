@@ -3,6 +3,8 @@ from rest_framework import serializers
 
 from plugins.models import (
     QUOTAS,
+    Code,
+    CodeStatus,
     CustomUser,
     Plugin,
     Result,
@@ -49,9 +51,9 @@ class PluginSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plugin
-        fields = ("id", "developer", "name", "desc", "schema", "rules", "version", "prefix", "subscriber_count", "result_count")
+        fields = ("id", "developer", "name", "desc", "schema", "rules", "redirect", "version", "prefix", "subscriber_count", "result_count")
         read_only_fields = ("id", "developer", "version", "prefix")
-        extra_kwargs = {"desc": {"allow_blank": True}}  # noqa: RUF012
+        extra_kwargs = {"desc": {"allow_blank": True}, "redirect": {"required": False, "allow_blank": True}}  # noqa: RUF012
 
     def validate_name(self, value):
         user = self.context["request"].user
@@ -119,4 +121,33 @@ class UsageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usage
         fields = ("date", "used")
+        read_only_fields = fields
+
+
+class CodeSerializer(serializers.ModelSerializer):
+    status = serializers.SerializerMethodField(help_text="`pending`, `accepted`, `denied` or `expired`.")
+    user = serializers.SerializerMethodField(help_text="User id, once accepted.")
+    email = serializers.SerializerMethodField(help_text="User's email address, once accepted.")
+
+    class Meta:
+        model = Code
+        fields = ("status", "user", "email")
+        read_only_fields = fields
+
+    def get_status(self, code) -> str:
+        return "expired" if code.expired else CodeStatus(code.status).name.lower()
+
+    def get_user(self, code) -> str | None:
+        return str(code.user_id) if code.status == CodeStatus.ACCEPTED else None
+
+    def get_email(self, code) -> str | None:
+        return code.user.email if code.status == CodeStatus.ACCEPTED else None
+
+
+class ConnectSerializer(serializers.ModelSerializer):
+    developer = serializers.CharField(source="developer.username", read_only=True)
+
+    class Meta:
+        model = Plugin
+        fields = ("id", "name", "desc", "developer", "schema", "rules")
         read_only_fields = fields
