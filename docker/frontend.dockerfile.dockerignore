@@ -5,3 +5,4 @@
 !svelte.config.js
 !tsconfig.json
 !src
+!public
