@@ -197,6 +197,10 @@
     .list:popover-open { opacity: 0; translate: 0 -4px; }
   }
   .list:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* Without anchor positioning, centre the list like a dialog instead of pinning it to the corner. */
+  @supports not (anchor-name: --a) {
+    .list { inset: 0; margin: auto; height: fit-content; }
+  }
 
   .group + .group { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--border); }
   .heading { padding: 6px 10px 4px; font-size: 12px; font-weight: 600; color: var(--faint); }

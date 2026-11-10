@@ -31,27 +31,25 @@
   }
 </script>
 
-<div class="wrap">
-  <div class="box">
-    {#each options as option, i (option)}
-      <span class="tag" animate:flip={{ duration: 200 }} transition:scale={{ duration: 150, start: 0.7 }}>
-        {option}
-        <button type="button" aria-label={`Remove answer ${option}`} onclick={() => (options = options.filter((_, j) => j !== i))}>×</button>
-      </span>
-    {/each}
-    <input
-      class="mono"
-      type="text"
-      bind:value={draft}
-      onkeydown={keydown}
-      onpaste={paste}
-      onblur={() => draft && add(draft)}
-      placeholder={options.length ? 'add…' : 'answers, comma separated'}
-      aria-label={label}
-      autocomplete="off"
-      spellcheck="false"
-    />
-  </div>
+<div class="box">
+  {#each options as option, i (option)}
+    <span class="tag" animate:flip={{ duration: 200 }} transition:scale={{ duration: 150, start: 0.7 }}>
+      {option}
+      <button type="button" aria-label={`Remove answer ${option}`} onclick={() => (options = options.filter((_, j) => j !== i))}>×</button>
+    </span>
+  {/each}
+  <input
+    class="mono"
+    type="text"
+    bind:value={draft}
+    onkeydown={keydown}
+    onpaste={paste}
+    onblur={() => draft && add(draft)}
+    placeholder={options.length ? 'add…' : 'answers, comma separated'}
+    aria-label={label}
+    autocomplete="off"
+    spellcheck="false"
+  />
 </div>
 
 <style>

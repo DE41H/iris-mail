@@ -25,8 +25,6 @@ export interface Plugin {
   result_count?: number;
 }
 
-export class ApiError extends Error {}
-
 // Each plugin gets its own iris colour, stable across visits.
 // FNV-1a: uuid7 ids share a time prefix, so a weak hash would give neighbours the same colour.
 export const hue = (id: string) => [...id].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261) % 160 + 180; // teal to magenta, around the brand violet
@@ -67,9 +65,9 @@ async function send<T>(path: string, init: RequestInit): Promise<T> {
   const detail = (data as { detail?: unknown } | null)?.detail;
   if (res.status === 401 || (res.status === 403 && detail === NOT_SIGNED_IN)) {
     location.href = `/accounts/login/?next=${encodeURIComponent(location.pathname)}`;
-    throw new ApiError('Sign in required.');
+    throw new Error('Sign in required.');
   }
-  if (!res.ok) throw new ApiError(describe(data));
+  if (!res.ok) throw new Error(describe(data));
   return data as T;
 }
 

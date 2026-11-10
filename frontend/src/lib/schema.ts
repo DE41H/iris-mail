@@ -135,8 +135,6 @@ export function slug(question: string) {
   return (kept.length ? kept : words).slice(0, 4).join('_').replace(/^[^a-z]+/, '').slice(0, 40);
 }
 
-// Mirrors the Plugin model: a slug name of at most 255 characters and desc of 1024.
-// Uniqueness per developer is only checked by the server.
 // Same rules as Plugin.redirect: https, a host with a dot or localhost, at most 256 characters.
 function redirectProblem(url: string) {
   if (!url) return 'Redirect URL is required.';
@@ -148,6 +146,8 @@ function redirectProblem(url: string) {
   return '';
 }
 
+// Mirrors the Plugin model: a slug name of at most 255 characters and desc of 1024.
+// Uniqueness per developer is only checked by the server.
 export function pluginProblems(name: string, desc: string, redirect: string): string[] {
   const out: string[] = [];
   if (!name) out.push('Name is required.');

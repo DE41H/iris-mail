@@ -26,7 +26,7 @@
   let auto = $state(!field.name);
   let touched = $state(false);
   const issues = $derived(fieldProblems(field, fields));
-  const laya = $derived(KINDS.find((k) => k.kind === field.kind)!);
+  const kind = $derived(KINDS.find((k) => k.kind === field.kind)!);
   const levels = $derived(field.kind === 'scale' && field.max >= field.min ? field.max - field.min + 1 : 0);
   const PLACEHOLDERS = {
     choice: 'What is this email about?',
@@ -50,7 +50,7 @@
   const summary = $derived(
     (field.kind === 'choice' || field.kind === 'multi'
       ? field.options.length ? field.options.slice(0, 3).join(', ') + (field.options.length > 3 ? ` +${field.options.length - 3}` : '') : 'no answers yet'
-      : field.kind === 'scale' || field.kind === 'range' ? `${field.min} to ${field.max}` : field.kind === 'boolean' ? 'yes or no' : laya.label.toLowerCase()) + (field.nullable ? ' or unknown' : ''),
+      : field.kind === 'scale' || field.kind === 'range' ? `${field.min} to ${field.max}` : field.kind === 'boolean' ? 'yes or no' : kind.label.toLowerCase()) + (field.nullable ? ' or unknown' : ''),
   );
 
   async function expand() {
@@ -77,7 +77,7 @@
 
 <article class="field" class:open class:bad={touched && issues.length} onfocusout={() => (touched = true)}>
   <div class="head">
-    <span class="num" title={laya.label}><i aria-hidden="true">{laya.icon}</i>{n}</span>
+    <span class="num" title={kind.label}><i aria-hidden="true">{kind.icon}</i>{n}</span>
     {#if open}
       <input bind:this={input} class="q" type="text" value={field.question} oninput={question} aria-label={`Question ${n}`} placeholder={PLACEHOLDERS[field.kind]} />
     {:else}
@@ -165,8 +165,6 @@
   .tool:focus-visible { outline: 2px solid var(--accent); }
   .del:hover:not(:disabled) { background: var(--danger-soft); color: var(--danger); }
   .rows { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 4px 16px 0 60px; }
-
-
   .range { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .range input { width: 68px; padding-top: 6px; padding-bottom: 6px; }
   .ticks { display: flex; gap: 3px; flex: 1 1 100%; }

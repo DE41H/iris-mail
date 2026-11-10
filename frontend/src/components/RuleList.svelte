@@ -56,7 +56,6 @@
     <button type="button" class="add-pill" disabled={full} onclick={() => add({ name: '', pattern: '' })}><i aria-hidden="true">+</i>Add</button>
     {#if rules.length}<button type="button" class="text-btn" aria-expanded={testing} onclick={() => (testing = !testing)}>{testing ? 'Hide tester' : 'Test'}</button>{/if}
   </div>
-
 </div>
 
 <style>

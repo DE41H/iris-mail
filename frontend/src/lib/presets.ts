@@ -8,17 +8,6 @@ export const blank = (kind: Field['kind'], name = '', question = ''): Field =>
       ? { kind, name, question, min: kind === 'scale' ? 1 : 0, max: kind === 'scale' ? 5 : 100 }
       : { kind, name, question };
 
-export const OPTION_SETS: Record<string, string[]> = {
-  'Priority': ['low', 'medium', 'high'],
-  'Sentiment': ['positive', 'neutral', 'negative'],
-  'Yes / no / unsure': ['yes', 'no', 'unsure'],
-  'Category': ['work', 'personal', 'finance', 'shopping', 'travel', 'social', 'other'],
-  'Department': ['billing', 'support', 'sales', 'other'],
-  'Next action': ['reply', 'read_later', 'archive', 'delete'],
-  'Application status': ['applied', 'interview', 'offer', 'rejected', 'other'],
-  'Order status': ['ordered', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'],
-};
-
 export interface Template {
   title: string;
   blurb: string;
@@ -59,7 +48,7 @@ export const TEMPLATES: Template[] = [
     name: 'deliveries',
     desc: 'Follows shipping mail and keeps the tracking number.',
     fields: [
-      { kind: 'choice', name: 'order_status', question: 'Is this about an order or delivery, and where is it now?', options: ['none', ...OPTION_SETS['Order status']] },
+      { kind: 'choice', name: 'order_status', question: 'Is this about an order or delivery, and where is it now?', options: ['none', 'ordered', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'] },
       { kind: 'boolean', name: 'delayed', question: 'Is the delivery late or rescheduled?' },
       { kind: 'boolean', name: 'action_needed', question: 'Do I need to do something, like sign, pay duty or pick it up?' },
       { kind: 'date', name: 'arrives_on', question: 'When is the package expected to arrive?', nullable: true },
@@ -129,7 +118,7 @@ export const TEMPLATES: Template[] = [
     desc: 'Tracks where each job application stands.',
     fields: [
       { kind: 'boolean', name: 'job_related', question: 'Is this email about a job application of mine?' },
-      { kind: 'choice', name: 'status', question: 'What stage is the application at?', options: OPTION_SETS['Application status'] },
+      { kind: 'choice', name: 'status', question: 'What stage is the application at?', options: ['applied', 'interview', 'offer', 'rejected', 'other'] },
       { kind: 'boolean', name: 'interview_invite', question: 'Does this email invite me to an interview?' },
       { kind: 'date', name: 'interview_on', question: 'On what day is the interview?', nullable: true },
     ],
@@ -168,7 +157,7 @@ export const TEMPLATES: Template[] = [
     fields: [
       { kind: 'choice', name: 'team', question: 'Which team should handle this email?', options: ['billing', 'technical', 'account', 'sales', 'feedback', 'other'] },
       { kind: 'scale', name: 'urgency', question: 'How urgent is this? 0 is not at all, 4 is something is down.', min: 0, max: 4 },
-      { kind: 'choice', name: 'sentiment', question: "What is the customer's tone?", options: OPTION_SETS['Sentiment'] },
+      { kind: 'choice', name: 'sentiment', question: "What is the customer's tone?", options: ['positive', 'neutral', 'negative'] },
       { kind: 'boolean', name: 'refund_request', question: 'Is the customer asking for a refund?' },
       { kind: 'multi', name: 'topics', question: 'What is the customer writing about?', options: ['order', 'payment', 'bug', 'login', 'feature_request', 'other'] },
     ],
@@ -183,7 +172,7 @@ export const TEMPLATES: Template[] = [
       { kind: 'scale', name: 'importance', question: 'How important is this email to me, from 1 to 5?', min: 1, max: 5 },
       { kind: 'boolean', name: 'needs_reply', question: 'Does this email need a reply from me?' },
       { kind: 'date', name: 'deadline', question: 'What deadline does this email give me?', nullable: true },
-      { kind: 'choice', name: 'next_action', question: 'What should I do with this email?', options: OPTION_SETS['Next action'] },
+      { kind: 'choice', name: 'next_action', question: 'What should I do with this email?', options: ['reply', 'read_later', 'archive', 'delete'] },
     ],
     rules: [],
   },

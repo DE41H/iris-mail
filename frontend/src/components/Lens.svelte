@@ -68,7 +68,7 @@
 </script>
 
 <figure class="bench" data-phase={phase}>
-  <figcaption class="sr">Example: an email goes through Iris and comes out as JSON answers; the email itself is not kept.</figcaption>
+  <figcaption class="sr-only">Example: an email goes through Iris and comes out as JSON answers; the email itself is not kept.</figcaption>
 
   <div class="stage" aria-hidden="true">
     {#key scene}
@@ -128,7 +128,6 @@
 
 <style>
   .bench { margin: 0; display: grid; gap: 14px; }
-  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .stage {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 56px clamp(120px, 14vw, 168px) 56px minmax(0, 1fr);
@@ -178,11 +177,12 @@
     background: repeating-linear-gradient(90deg, currentColor 0 6px, transparent 6px 14px);
     opacity: 0;
     transition: opacity 0.3s;
-    animation: flow 0.5s linear infinite;
+    animation: flow 0.5s linear infinite paused;
   }
   .beam.in { color: var(--faint); }
   .beam.out { color: var(--accent); }
-  [data-phase='read'] .beam.in::after, [data-phase='answer'] .beam.out::after { opacity: 1; }
+  /* Runs only while shown: background-position repaints every frame. */
+  [data-phase='read'] .beam.in::after, [data-phase='answer'] .beam.out::after { opacity: 1; animation-play-state: running; }
   @keyframes flow { from { background-position: -14px 0; } to { background-position: 0 0; } }
 
   /* The aperture: six blades swing open on their rim pivots while the model reads. */

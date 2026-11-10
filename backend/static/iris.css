@@ -86,7 +86,7 @@ html { scrollbar-color: var(--border-strong) transparent; scrollbar-width: thin;
 
 body {
   margin: 0;
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
   font: 15px/1.55 var(--font);
@@ -132,8 +132,8 @@ code, pre, kbd { font-family: var(--mono); font-size: 0.92em; }
   height: 20px;
   border-radius: 50%;
   background:
-    radial-gradient(circle, var(--signal) 0 22%, transparent 24%),
-    radial-gradient(circle, transparent 0 46%, var(--bg) 48% 54%, transparent 56%),
+    radial-gradient(circle, var(--signal) 2.8px, transparent 3.4px),
+    radial-gradient(circle, transparent 6.2px, var(--bg) 6.8px 7.4px, transparent 8px),
     conic-gradient(from 0deg, var(--accent), var(--accent-strong), color-mix(in oklab, var(--accent) 50%, var(--signal)), var(--accent));
   transition: rotate 0.9s var(--ease), scale 0.4s var(--spring);
 }
@@ -236,7 +236,7 @@ code, pre, kbd { font-family: var(--mono); font-size: 0.92em; }
 .actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 
 /* Forms */
-input[type="text"], input[type="number"], input[type="email"], input:not([type]), textarea, select {
+input:is([type="text"], [type="number"], [type="email"], [type="url"], :not([type])), textarea, select {
   width: 100%;
   padding: 9px 12px;
   border: 1px solid var(--border-strong);
@@ -249,6 +249,8 @@ input[type="text"], input[type="number"], input[type="email"], input:not([type])
 /* Textareas grow with what is typed instead of showing a resize grip; rows is the fallback where field-sizing is missing. */
 textarea { resize: none; field-sizing: content; max-height: 240px; }
 input.mono, textarea.mono { font-family: var(--mono); font-size: 13.5px; }
+/* iOS Safari zooms the page into any field under 16px on focus. */
+@supports (-webkit-touch-callout: none) { input, textarea, select { font-size: 16px !important; } }
 input::placeholder, textarea::placeholder { color: var(--faint); }
 input:hover, textarea:hover, select:hover { border-color: color-mix(in oklab, var(--accent) 35%, var(--border-strong)); }
 input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
@@ -316,7 +318,6 @@ select { appearance: none; padding-right: 32px; cursor: pointer; background: var
 .text-btn { border: 0; background: none; padding: 0; font: 540 13px var(--font); color: var(--muted); cursor: pointer; }
 .text-btn:hover, .text-btn[aria-expanded="true"] { color: var(--accent); }
 
-/* Skeleton for content still loading. */
 /* Loading placeholders shaped like the content. Hidden for 150ms so fast loads never flash them. */
 .skel { animation: fade-in 0.3s 150ms both; }
 .bone {

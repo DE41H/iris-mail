@@ -36,7 +36,7 @@
       <button type="button" role="tab" aria-selected={tab === t} onclick={() => (tab = t as keyof typeof TABS)}>{label}</button>
     {/each}
   </div>
-  <div class="code">
+  <div class="code" role="tabpanel">
     <Json {value} />
     <div class="copy"><CopyButton text={JSON.stringify(value, null, 2)} label="Copy" /></div>
   </div>
