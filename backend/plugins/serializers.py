@@ -1,4 +1,5 @@
 from allauth.socialaccount.models import SocialAccount, SocialToken
+from django.core.validators import URLValidator
 from rest_framework import serializers
 
 from plugins.models import (
@@ -53,7 +54,7 @@ class PluginSerializer(serializers.ModelSerializer):
         model = Plugin
         fields = ("id", "developer", "name", "desc", "schema", "rules", "redirect", "version", "prefix", "subscriber_count", "result_count")
         read_only_fields = ("id", "developer", "version", "prefix")
-        extra_kwargs = {"desc": {"allow_blank": True}, "redirect": {"required": False, "allow_blank": True}}  # noqa: RUF012
+        extra_kwargs = {"desc": {"allow_blank": True}, "redirect": {"required": True, "validators": [URLValidator(schemes=["https"])]}}  # noqa: RUF012
 
     def validate_name(self, value):
         user = self.context["request"].user
