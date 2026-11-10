@@ -1,8 +1,9 @@
 import logging
+from secrets import token_urlsafe
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from allauth.socialaccount.models import SocialToken
 from django.contrib.auth import logout
-from django.db import IntegrityError
 from django.db.models import Count, OuterRef, Subquery
 from django.db.models.functions import Coalesce
 from django.utils.timezone import localdate
@@ -17,14 +18,16 @@ from drf_spectacular.utils import (
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from plugins.authentication import PluginKeyAuthentication
 from plugins.gmail import get_hist_id, revoke
-from plugins.models import CustomUser, Plugin, Result, Subscription, Usage
+from plugins.models import Code, CustomUser, Plugin, Result, Subscription, Usage
 from plugins.permissions import PluginKeyAuth, SessionPermission
 from plugins.serializers import (
+    CodeSerializer,
+    ConnectSerializer,
     CustomUserSerializer,
     MeSerializer,
     PluginSerializer,
@@ -83,23 +86,8 @@ class PluginViewSet(
 
 @extend_schema_view(
     list=extend_schema(exclude=True),
+    destroy=extend_schema(exclude=True),
     set_active=extend_schema(exclude=True),
-    create=extend_schema(
-        summary="Add a user",
-        description="Send either `user` or `email`. The plugin is added to the user's list, turned off, and receives "
-        "mail once they turn it on. By `user`: 201 with the subscription. By `email`: always 202 with no body, "
-        "whether or not the address has an account.",
-        responses={
-            201: OpenApiResponse(SubscriptionSerializer, "Subscription created."),
-            202: OpenApiResponse(description="Accepted. The user is added if the address has an account."),
-        },
-    ),
-    destroy=extend_schema(
-        summary="Remove a user",
-        description="Ends a subscription to this plugin. The user's results are deleted after 30 days.",
-        parameters=[OpenApiParameter("id", OpenApiTypes.UUID, OpenApiParameter.PATH, description="Subscription id.")],
-        responses={204: OpenApiResponse(description="Subscription removed.")},
-    ),
     remove=extend_schema(
         summary="Remove a user by id or email",
         description="Send either `user` or `email`. Ends the user's subscription to this plugin. Always 204, "
@@ -108,37 +96,17 @@ class PluginViewSet(
         responses={204: OpenApiResponse(description="Removed, if subscribed.")},
     ),
 )
-class SubscriptionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class SubscriptionViewSet(mixins.ListModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     serializer_class = SubscriptionSerializer
     authentication_classes = (PluginKeyAuthentication, SessionAuthentication)
 
     def get_permissions(self):
-        if self.action == "destroy":
-            return [(PluginKeyAuth | SessionPermission)()]
-        return [PluginKeyAuth()] if self.action in ("create", "remove") else [SessionPermission()]
+        return [PluginKeyAuth()] if self.action == "remove" else [SessionPermission()]
 
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(self.request.auth, Plugin):  # pyright: ignore[reportAttributeAccessIssue]
             return Subscription.objects.filter(plugin=self.request.auth).prefetch_related("plugin")  # pyright: ignore[reportAttributeAccessIssue]
         return Subscription.objects.filter(user_id=self.request.user.pk).prefetch_related("plugin")
-
-    def create(self, request, *args, **kwargs):
-        if "email" not in request.data:
-            return super().create(request, *args, **kwargs)
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        if user := serializer.validated_data["user"]:
-            _, created = Subscription.objects.get_or_create(user=user, plugin=request.auth)
-            if created:
-                logger.info("Subscription added", extra={"plugin_id": request.auth.pk, "user_id": user.pk})
-        return Response(status=202)
-
-    def perform_create(self, serializer):
-        try:
-            sub = serializer.save(plugin=self.request.auth)  # pyright: ignore[reportAttributeAccessIssue]
-        except IntegrityError as err:
-            raise ValidationError("This user is already added.") from err
-        logger.info("Subscription added", extra={"plugin_id": sub.plugin_id, "user_id": sub.user_id})
 
     def perform_destroy(self, instance):
         by = "developer" if isinstance(self.request.auth, Plugin) else "user"  # pyright: ignore[reportAttributeAccessIssue]
@@ -254,3 +222,75 @@ class UsageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     def list(self, request, *args, **kwargs):
         days = self.get_serializer(self.get_queryset(), many=True).data
         return Response({"today": localdate(), "days": days})
+
+
+@extend_schema_view(
+    create=extend_schema(
+        summary="Create a connect link",
+        description="Send the user to `url` within 3 minutes. They see the plugin's questions and accept or deny, then "
+        "go to the plugin's redirect URL with `code` and `status` (`accepted` or `denied`) added. Each link works once. "
+        "Check the outcome with `GET /codes/{code}/`; codes are deleted after a day.",
+        request=None,
+        responses={201: inline_serializer("ConnectLink", {
+            "code": serializers.CharField(help_text="Shown once. Keep it to check the outcome."),
+            "url": serializers.URLField(help_text="Link to send the user to."),
+        })},
+    ),
+    retrieve=extend_schema(
+        summary="Check a connect link",
+        description="`user` and `email` are set only when the user accepted.",
+        parameters=[OpenApiParameter("code", str, OpenApiParameter.PATH, description="Code from `POST /codes/`.")],
+        responses={200: CodeSerializer, 404: OpenApiResponse(description="No such code for this plugin.")},
+    ),
+)
+class CodeViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    serializer_class = CodeSerializer
+    authentication_classes = (PluginKeyAuthentication,)
+    permission_classes = (PluginKeyAuth,)
+    lookup_field = "code"
+
+    def get_object(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+        code = Code.objects.filter(plugin=self.request.auth, hash=Plugin.gen_hash(self.kwargs["code"])).prefetch_related("user").first()  # pyright: ignore[reportAttributeAccessIssue]
+        if code is None: raise NotFound()
+        return code
+
+    def create(self, request, *args, **kwargs):
+        code = token_urlsafe(32)
+        Code.objects.create(plugin=request.auth, hash=Plugin.gen_hash(code))
+        logger.info("Connect code created", extra={"plugin_id": request.auth.pk})
+        return Response({"code": code, "url": request.build_absolute_uri(f"/connect#{code}")}, status=201)
+
+
+@extend_schema(exclude=True)
+class ConnectViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    serializer_class = ConnectSerializer
+    permission_classes = (SessionPermission,)
+    lookup_field = "code"
+
+    def get_object(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+        code = Code.pending().filter(hash=Plugin.gen_hash(self.kwargs["code"])).prefetch_related("plugin__developer").first()
+        if code is None: raise NotFound("This link has expired or was already used.")
+        return code
+
+    def retrieve(self, request, *args, **kwargs):
+        return Response(self.get_serializer(self.get_object().plugin).data)
+
+    def _done(self, code, status):
+        logger.info("Connect code used", extra={"plugin_id": code.plugin_id, "user_id": self.request.user.pk, "status": status})
+        url = urlsplit(code.plugin.redirect)
+        query = urlencode([*parse_qsl(url.query), ("code", self.kwargs["code"]), ("status", status)])
+        return Response({"redirect": urlunsplit(url._replace(query=query))})
+
+    @action(detail=True, methods=["post"])
+    def accept(self, request, code=None, **kwargs):
+        obj = self.get_object()
+        if not SocialToken.objects.filter(account__user=request.user, account__provider="google").exists():
+            raise ValidationError({"google": "Reconnect Google first."})
+        if not obj.accept(request.user.pk, get_hist_id(request.user)): raise NotFound("This link was already used.")
+        return self._done(obj, "accepted")
+
+    @action(detail=True, methods=["post"])
+    def deny(self, request, code=None, **kwargs):
+        obj = self.get_object()
+        if not obj.deny(request.user.pk): raise NotFound("This link was already used.")
+        return self._done(obj, "denied")

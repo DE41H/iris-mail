@@ -97,10 +97,6 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Send `user` or `email`")
         if email is not None:
             attrs["user"] = CustomUser.objects.filter(email__iexact=email).first()
-            return attrs
-        plugin = self.context["request"].auth
-        if self.context["view"].action == "create" and Subscription.objects.filter(user=attrs["user"], plugin=plugin).exists():
-            raise serializers.ValidationError("This user is already added.")
         return attrs
 
 

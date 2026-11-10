@@ -215,7 +215,7 @@ SPECTACULAR_SETTINGS = {
     'ENUM_NAME_OVERRIDES': {'Tier': 'plugins.models.UserTier'},
     'TAGS': [
         {'name': 'users', 'description': 'Users sharing their mail with your plugin.'},
-        {'name': 'subscriptions', 'description': 'Invite users to your plugin, or remove them.'},
+        {'name': 'subscriptions', 'description': 'Remove users from your plugin.'},
         {'name': 'results', 'description': 'Answers extracted from new inbox mail. Mail that lands in Spam is skipped, even if moved to the inbox later.'},
     ],
     'AUTHENTICATION_WHITELIST': ['plugins.authentication.PluginKeyAuthentication'],
