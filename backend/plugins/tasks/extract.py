@@ -132,6 +132,8 @@ def process(user_id):
     fetched = saved = 0
     for n in range(0, len(ids), CHUNK_SIZE):
         chunk = ids[n:n + CHUNK_SIZE]
+        live = set(active.nocache().values_list("pk", flat=True))  # pyright: ignore[reportAttributeAccessIssue]
+        subs = [s for s in subs if s.pk in live]
         done = _done(user, chunk)
         todo = [(s, {i for i in chunk if added[i] > s.hist_from and (i, s.plugin_id) not in done}) for s in subs]  # pyright: ignore[reportAttributeAccessIssue]
         need = set().union(*(want for _, want in todo))

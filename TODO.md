@@ -15,8 +15,7 @@ _None._
 
 ## P1: bugs, security and privacy
 
-- **Stale subs during a long `process` run.** `subs` is loaded once. A sub turned off or removed mid-run still gets
-  LLM calls, usage charges and `Result` rows (until the 30-day cleanup). Fix: re-read active sub ids per chunk.
+_None._
 
 ## P2: should do soon
 
