@@ -19,12 +19,13 @@ logger = structlog.get_logger(__name__)
 
 TOKEN_URI = "https://oauth2.googleapis.com/token"
 REVOKE_URI = "https://oauth2.googleapis.com/revoke"
-THREADS = 12
+THREADS = 4
+
+def google_token(user):
+    return SocialToken.objects.filter(account__user=user, account__provider="google")
 
 def client(user: CustomUser):
-    token = SocialToken.objects.select_related("account").get(
-        account__user=user, account__provider="google"
-    )
+    token = google_token(user).select_related("account").get()
     app = settings.SOCIALACCOUNT_PROVIDERS["google"]["APP"]
     return Gmail(
         credentials=Credentials(
@@ -38,7 +39,7 @@ def client(user: CustomUser):
     )
 
 def _lock_token(user):
-    return SocialToken.objects.select_for_update().filter(account__user=user, account__provider="google").first()
+    return google_token(user).select_for_update().first()
 
 def _ours(token, gmail):
     return gmail is not None and token.token_secret == gmail.creds.refresh_token
@@ -108,7 +109,7 @@ def fetch(gmail: Gmail, ids):
         return [m for ms in pool.map(part, range(0, len(ids), size or 1)) for m in ms]
 
 def revoke(user: CustomUser):
-    token = SocialToken.objects.filter(account__user=user, account__provider="google").first()
+    token = google_token(user).first()
     if token is None: return
     try:
         urlopen(Request(REVOKE_URI, data=urlencode({"token": token.token_secret or token.token}).encode()), timeout=10)
