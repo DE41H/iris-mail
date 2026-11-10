@@ -12,6 +12,13 @@ Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
 - `backend/cfg/`: settings (env via `getenv`), urls, `middleware.py` (CSP, headers)
 - `backend/plugins/`: `management/commands/` (`mk_admin`, `gen_schema`), `admin` (OTP site; tier editable in the user list; `Usage`, `Result` read-only), models, views, serializers, `gmail`, `token` (encrypted OAuth), `validation`, `schema`, `signals`,
   `adapters` (Google OAuth; `prompt=select_account`, `SocialAdapter` retries with `?action=reauthenticate` (consent) when Iris has no refresh token), `authentication`/`throttling` (API keys, flat developer rate), `pagination` (uuid cursor)
+- Connect (the only way to add a user; developers remove them with `POST /api/v1/subscriptions/remove/`): a developer's server calls `POST /api/v1/codes/` (API key) for a one-time `code` and a `/connect#<code>` link
+  (`Code`, SHA-256 only, `CODE_TTL` 3 min, needs `Plugin.redirect`). The signed-in user sees the plugin at
+  `/api/v1/connect/<code>/` and posts `accept` (subscribes, turned on) or `deny`; both return the plugin's `redirect` with
+  `code` and `status`. The developer reads `GET /api/v1/codes/<code>/`; `user` and `email` only when accepted.
+  Page: `pages/connect` + `Connect.svelte` keeps the code in `sessionStorage` (`iris-connect`) across sign-in, strips it
+  from the URL, and shows a done state for `?status=` (a plugin redirect that is empty lands back here). The sign-in
+  button forwards `next` to Google.
 - Usage: `Usage` is one row per developer per day (`used` = emails × schema questions answered by the LLM, charged by
   `usage.consume` in `extract._guess` for each answered email). `/me` reads it at `/api/v1/usage/` (`{today, days}`: every stored day, newest first, unpaginated); `/api/v1/me/` also lists `tiers`. Daily quota per
   tier is `QUOTAS` in `models.py` (`CustomUser.quota`), checked in `_guess` before each batch;
@@ -20,7 +27,7 @@ Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
   (`cleanup` 03:00 daily: jobs >7d, results >100d, or >30d if fetched/unsubscribed, usage >100d, connect codes >1d; `revive` every 5 min: retry stalled jobs)
 - `backend/static/iris.css` (dashboard, auth pages), `theme.js` (blocking, sets `data-theme` before paint from
   `localStorage.theme` or the system; the toggle is in `Nav`), `backend/templates/` (allauth)
-- `frontend/src/`: `pages/` (Astro; `me` = account, quota and usage), `components/` (Svelte), `lib/` (`api`, `session`,
+- `frontend/src/`: `pages/` (Astro; `me` = account, quota and usage; `connect` = consent), `components/` (Svelte), `lib/` (`api`, `session`,
   `schema`, `rules`, `presets`)
 - `docker/`: compose, Dockerfiles, `caddyfile`, `deploy.sh`, `.env.example` (all env vars)
 

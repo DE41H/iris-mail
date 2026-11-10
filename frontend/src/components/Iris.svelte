@@ -1,10 +1,10 @@
 <script lang="ts">
   // The home page aperture in the plugin's own colour (--h). It opens while its link is hovered or focused.
-  let { breathe = false }: { breathe?: boolean } = $props();
+  let { breathe = false, open = false }: { breathe?: boolean; open?: boolean } = $props();
   const id = $props.id();
 </script>
 
-<svg class="iris" class:breathe viewBox="-64 -64 128 128" aria-hidden="true">
+<svg class="iris" class:breathe class:open viewBox="-64 -64 128 128" aria-hidden="true">
   <defs>
     <clipPath id={`${id}-lens`}><circle r="56" /></clipPath>
     <radialGradient id={`${id}-pupil`}>
@@ -53,9 +53,9 @@
   }
 
   /* Open: the blades swing back on their rim pivots and the saffron pupil shows. */
-  :global(:is(a, button):is(:hover, :focus-visible)) .halo { stroke: color-mix(in oklab, var(--tint) 26%, transparent); stroke-width: 12; }
-  :global(:is(a, button):is(:hover, :focus-visible)) .blades { rotate: 60deg; }
-  :global(:is(a, button):is(:hover, :focus-visible)) .blade { rotate: -34deg; }
+  .open .halo, :global(:is(a, button):is(:hover, :focus-visible)) .halo { stroke: color-mix(in oklab, var(--tint) 26%, transparent); stroke-width: 12; }
+  .open .blades, :global(:is(a, button):is(:hover, :focus-visible)) .blades { rotate: 60deg; }
+  .open .blade, :global(:is(a, button):is(:hover, :focus-visible)) .blade { rotate: -34deg; }
 
   .breathe { width: 76px; height: 76px; }
   .breathe .blades { animation: turn 7s var(--ease) infinite alternate; }

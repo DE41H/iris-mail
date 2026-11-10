@@ -39,6 +39,7 @@ export const FORMATS = {
 export interface Draft {
   name: string;
   desc: string;
+  redirect: string;
   fields: Field[];
   rules: Rule[];
 }
@@ -136,12 +137,25 @@ export function slug(question: string) {
 
 // Mirrors the Plugin model: a slug name of at most 255 characters and desc of 1024.
 // Uniqueness per developer is only checked by the server.
-export function pluginProblems(name: string, desc: string): string[] {
+// Same rules as Plugin.redirect: https, a host with a dot or localhost, at most 256 characters.
+function redirectProblem(url: string) {
+  if (!url) return 'Redirect URL is required.';
+  let u: URL;
+  try { u = new URL(url); } catch { return 'Redirect URL: enter a full URL.'; }
+  if (u.protocol !== 'https:') return 'Redirect URL: use https://.';
+  if (!u.hostname.includes('.') && u.hostname !== 'localhost') return 'Redirect URL: use a full domain.';
+  if (url.length > 256) return 'Redirect URL: at most 256 characters.';
+  return '';
+}
+
+export function pluginProblems(name: string, desc: string, redirect: string): string[] {
   const out: string[] = [];
   if (!name) out.push('Name is required.');
   else if (!/^[-a-z0-9_]+$/.test(name)) out.push('Name: use only lowercase letters, numbers, - and _.');
   else if (name.length > 255) out.push('Name: at most 255 characters.');
   if (chars(desc) > 1024) out.push('Description: at most 1024 characters.');
+  const bad = redirectProblem(redirect);
+  if (bad) out.push(bad);
   return out;
 }
 

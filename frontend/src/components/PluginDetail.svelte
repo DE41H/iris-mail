@@ -12,7 +12,7 @@
 
   const id = new URLSearchParams(location.search).get('id');
   let plugin = $state<Plugin | null>(null);
-  let draft = $state<Draft>({ name: '', desc: '', fields: [], rules: [] });
+  let draft = $state<Draft>({ name: '', desc: '', redirect: '', fields: [], rules: [] });
   let locked = $state('');
   let saved = $state('');
   let shape = $state(''); // questions and rules as saved: changing them starts a new version
@@ -31,7 +31,7 @@
     plugin = p;
     const parsed = fromSchema(p.schema);
     locked = 'error' in parsed ? parsed.error : '';
-    draft = { name: p.name, desc: p.desc, fields: 'fields' in parsed ? parsed.fields : [], rules: fromRules(p.rules) };
+    draft = { name: p.name, desc: p.desc, redirect: p.redirect, fields: 'fields' in parsed ? parsed.fields : [], rules: fromRules(p.rules) };
     saved = snapshot();
     shape = shapeOf();
   }

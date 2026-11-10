@@ -14,7 +14,7 @@
   let created = $state<(Plugin & { key: string }) | null>(null);
 
   function start(t: Template) {
-    draft = structuredClone({ name: t.name, desc: t.desc, fields: t.fields, rules: t.rules });
+    draft = structuredClone({ name: t.name, desc: t.desc, redirect: '', fields: t.fields, rules: t.rules });
     scrollTo({ top: 0, behavior: 'smooth' });
   }
 

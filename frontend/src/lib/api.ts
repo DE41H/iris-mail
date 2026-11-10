@@ -18,6 +18,7 @@ export interface Plugin {
   desc: string;
   schema: unknown;
   rules: Record<string, string>;
+  redirect: string;
   version: number;
   prefix: string | null;
   subscriber_count?: number;
@@ -25,6 +26,10 @@ export interface Plugin {
 }
 
 export class ApiError extends Error {}
+
+// Each plugin gets its own iris colour, stable across visits.
+// FNV-1a: uuid7 ids share a time prefix, so a weak hash would give neighbours the same colour.
+export const hue = (id: string) => [...id].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261) % 160 + 180; // teal to magenta, around the brand violet
 
 const NOT_SIGNED_IN = 'Authentication credentials were not provided.';
 
@@ -34,7 +39,7 @@ const csrfToken = () =>
 // DRF errors are {field: [messages]} or {detail: message}.
 const describe = (data: unknown) =>
   data && typeof data === 'object'
-    ? Object.entries(data).map(([k, v]) => `${k}: ${[v].flat().join(' ')}`).join(' ')
+    ? Object.entries(data).map(([k, v]) => (k === 'detail' ? '' : `${k}: `) + [v].flat().join(' ')).join(' ')
     : 'Request failed.';
 
 // Identical GETs already in flight share one request, so a double click or two islands asking at once fetch once.

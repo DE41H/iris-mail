@@ -28,7 +28,7 @@
   let open = $state(false);
   let tried = $state(false); // problems are only called out once saving was attempted
   const sections: HTMLElement[] = $state([]);
-  const named = $derived(pluginProblems(draft.name, draft.desc));
+  const named = $derived(pluginProblems(draft.name, draft.desc, draft.redirect));
   const fieldsOk = $derived(draft.fields.every((f) => !fieldProblems(f, draft.fields).length));
   const issues = $derived([...named, ...(locked ? [] : problems(draft.fields, draft.rules))]);
   // A step shows a check once it is filled in and has nothing to fix.
@@ -116,6 +116,10 @@
           <label>
             <span class="label">Description</span>
             <textarea rows="1" bind:value={draft.desc} placeholder="Finds receipts and sorts them by what was bought." maxlength="1024"></textarea>
+          </label>
+          <label>
+            <span class="label">Redirect URL</span>
+            <input class="mono" type="url" bind:value={draft.redirect} placeholder="https://yourapp.com/iris/done" maxlength="256" autocomplete="off" spellcheck="false" />
           </label>
         </div>
       </section>

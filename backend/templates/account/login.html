@@ -5,7 +5,7 @@
 <div class="box">
   <div class="box-body">
     <p class="muted">Sign in with Google to manage your plugins and inbox access.</p>
-    <a class="btn btn-primary btn-block" href="{% url 'google_login' %}">Continue with Google</a>
+    <a class="btn btn-primary btn-block" href="{% url 'google_login' %}{% if redirect_field_value %}?{{ redirect_field_name }}={{ redirect_field_value|urlencode }}{% endif %}">Continue with Google</a>
   </div>
 </div>
 {% endblock %}

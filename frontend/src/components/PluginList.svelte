@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { listAll, message, type Plugin } from '../lib/api';
+  import { hue, listAll, message, type Plugin } from '../lib/api';
   import { fromSchema, KINDS } from '../lib/schema';
   import Count from './Count.svelte';
   import Iris from './Iris.svelte';
@@ -16,9 +16,6 @@
   };
   const icon = (kind: string) => KINDS.find((k) => k.kind === kind)?.icon;
   const plural = (n: number | undefined, word: string) => (n === 1 ? word : `${word}s`);
-  // Each plugin gets its own iris colour, stable across visits.
-  // FNV-1a: uuid7 ids share a time prefix, so a weak hash would give neighbours the same colour.
-  const hue = (id: string) => [...id].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261) % 160 + 180; // teal to magenta, around the brand violet
 
   function spot(e: PointerEvent) {
     const el = e.currentTarget as HTMLElement;
