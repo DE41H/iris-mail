@@ -16,7 +16,7 @@ services:
 
   valkey:
     image: valkey/valkey:8-alpine
-    command: valkey-server --maxmemory 256mb --maxmemory-policy volatile-lru
+    command: valkey-server --maxmemory 64mb --maxmemory-policy volatile-lru
     volumes:
       - valkey:/data
     logging: *logging
@@ -28,7 +28,7 @@ services:
       dockerfile: ../docker/backend.dockerfile
     env_file: .env
     command: >
-      granian --interface wsgi --host 0.0.0.0 --workers 2 --backpressure 16
+      granian --interface wsgi --host 0.0.0.0 --workers 1 --backpressure 16
       --respawn-failed-workers --workers-max-rss 256 cfg.wsgi:application
     sysctls:
       net.ipv4.tcp_migrate_req: 1
@@ -56,7 +56,7 @@ services:
     command: python manage.py procrastinate worker --concurrency 6
     environment:
       LITELLM_LOCAL_MODEL_COST_MAP: "True"
-    mem_limit: 256m
+    mem_limit: 396m
     logging: *logging
     restart: unless-stopped
     cap_drop: [ALL]
