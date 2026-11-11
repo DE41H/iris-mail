@@ -262,20 +262,6 @@ class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         return CustomUser.objects.filter(subscriptions__plugin=self.request.auth, subscriptions__active=True)  # pyright: ignore[reportAttributeAccessIssue]
 
 
-@extend_schema_view(list=extend_schema(
-    summary="Today's quota",
-    description="Answers (emails × questions) allowed and left today, per developer. Resets at midnight IST (UTC+5:30).",
-    responses=inline_serializer("Quota", {"quota": serializers.IntegerField(), "left": serializers.IntegerField()}),
-))
-class QuotaViewSet(viewsets.GenericViewSet):
-    authentication_classes = (PluginKeyAuthentication, AgentKeyAuthentication)
-    pagination_class = None
-
-    def list(self, request, **kwargs):
-        used = Usage.objects.filter(user_id=request.user.pk, date=localdate()).values_list("used", flat=True).first() or 0
-        return Response({"quota": request.user.quota, "left": max(request.user.quota - used, 0)})
-
-
 @extend_schema(exclude=True)
 class UsageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = UsageSerializer
