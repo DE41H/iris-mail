@@ -37,7 +37,8 @@ home page `Headline` (rolls to the total when the `Lens` aperture shuts, back wh
 ## Run
 Dev = prod. After every change: `docker/deploy.sh` (needs `docker/.env` from `.env.example`; builds, migrates,
 `invalidate all`, collectstatic, `gen_schema`, rolls backend, copies frontend, restarts worker+caddy), test at
-`https://localhost`. `dc` = `docker compose -f docker/docker-compose.yml`. Logs: `dc logs -f backend worker`. Schema:
+`https://localhost`. `PULL=1 docker/deploy.sh` pulls `ghcr.io/de41h/iris-mail/*` instead of building (server; built for amd64+arm64 and pushed by
+`.github/workflows/build.yml` on pushes to `main` touching backend/frontend/docker; server needs `docker login ghcr.io`; worker reuses the backend image). `dc` = `docker compose -f docker/docker-compose.yml`. Logs: `dc logs -f backend worker`. Schema:
 `dc exec backend python manage.py spectacular --validate --file /dev/null`. Admin (password+TOTP): set
 `DJANGO_SUPERUSER_*`, deploy, `dc exec backend python manage.py mk_admin` (creates/reuses, prints TOTP QR).
 
