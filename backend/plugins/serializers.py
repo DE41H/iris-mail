@@ -9,6 +9,7 @@ from rest_framework import serializers
 from plugins.gmail import google_token
 from plugins.models import (
     QUOTAS,
+    AgentKey,
     Code,
     CodeStatus,
     CustomUser,
@@ -50,6 +51,13 @@ class MeSerializer(CustomUserSerializer):
     def get_avatar(self, user) -> str | None:
         account = SocialAccount.objects.filter(user=user, provider="google").first()
         return account.extra_data.get("picture") if account else None
+
+
+class AgentKeySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AgentKey
+        fields = ("id", "name", "prefix")
+        read_only_fields = ("id", "prefix")
 
 
 class PluginSerializer(serializers.ModelSerializer):

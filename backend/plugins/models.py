@@ -154,13 +154,22 @@ class Code(models.Model):
         return bool(self.__class__.pending().filter(pk=self.pk).update(user_id=user_id, status=CodeStatus.DENIED))
 
 
-
 class AgentKey(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
     name = models.CharField(max_length=256, db_index=False)
-    user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="keys")
+    user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="keys", db_index=False)
     prefix = models.CharField(max_length=22, unique=True)
     key = models.BinaryField(max_length=32)
+
+    class Meta:
+        indexes = (models.Index(fields=("user", "-id")),)
+
+    @classmethod
+    def gen_key(cls):
+        secret = token_urlsafe(32)
+        pre = f"iris_agent_{secret[:11]}"
+        full = f"{pre}_{secret}"
+        return pre, Plugin.gen_hash(full), full
 
 
 class Subscription(models.Model):

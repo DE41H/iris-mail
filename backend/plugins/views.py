@@ -26,10 +26,19 @@ from rest_framework.response import Response
 
 from plugins.authentication import PluginKeyAuthentication
 from plugins.gmail import get_hist_id, google_token, revoke
-from plugins.models import Code, CustomUser, Plugin, Result, Subscription, Usage
+from plugins.models import (
+    AgentKey,
+    Code,
+    CustomUser,
+    Plugin,
+    Result,
+    Subscription,
+    Usage,
+)
 from plugins.permissions import PluginKeyAuth, SessionPermission
 from plugins.serializers import (
     NAME_TAKEN,
+    AgentKeySerializer,
     CodeSerializer,
     ConnectSerializer,
     CustomUserSerializer,
@@ -50,6 +59,17 @@ def _param(name, field, value):
 
 def _need_google(user):
     if not google_token(user).exists(): raise ValidationError({"google": "Reconnect Google first."})
+
+
+def _save_key(serializer, model, **extra) -> str:
+    clash = f"{model._meta.db_table}_prefix_key"
+    while True:
+        pre, hash, key = model.gen_key()
+        try:
+            with atomic(): serializer.save(prefix=pre, key=hash, **extra)
+            return key
+        except IntegrityError as err:
+            if getattr(getattr(err.__cause__, "diag", None), "constraint_name", None) != clash: raise
 
 
 @extend_schema(exclude=True)
@@ -75,15 +95,9 @@ class PluginViewSet(
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        while True:
-            pre, hash, key = Plugin.gen_key()
-            try:
-                with atomic(): plugin = serializer.save(developer=request.user, prefix=pre, key=hash)
-                break
-            except IntegrityError as err:
-                if getattr(getattr(err.__cause__, "diag", None), "constraint_name", None) != "plugins_plugin_prefix_key":
-                    raise ValidationError({"name": NAME_TAKEN}) from err
-        logger.info("plugin created", plugin=plugin.pk, user=request.user.pk)
+        try: key = _save_key(serializer, Plugin, developer=request.user)
+        except IntegrityError as err: raise ValidationError({"name": NAME_TAKEN}) from err
+        logger.info("plugin created", plugin=serializer.instance.pk, user=request.user.pk)  # pyright: ignore[reportOptionalMemberAccess]
         return Response({**serializer.data, "key": key}, status=201)
 
     def perform_update(self, serializer):
@@ -100,6 +114,25 @@ class PluginViewSet(
         key = plugin.rot_key()
         logger.info("key rotated", plugin=plugin.pk, user=request.user.pk)
         return Response({"key": key})
+
+
+@extend_schema(exclude=True)
+class AgentKeyViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    serializer_class = AgentKeySerializer
+
+    def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+        return AgentKey.objects.filter(user_id=self.request.user.pk)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        key = _save_key(serializer, AgentKey, user=request.user)
+        logger.info("agent key created", key=serializer.instance.pk, user=request.user.pk)  # pyright: ignore[reportOptionalMemberAccess]
+        return Response({**serializer.data, "key": key}, status=201)
+
+    def perform_destroy(self, instance):
+        logger.info("agent key revoked", key=instance.pk, user=instance.user_id)
+        instance.delete()
 
 
 @extend_schema_view(
