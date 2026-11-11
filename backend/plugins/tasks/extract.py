@@ -1,6 +1,8 @@
+import re
 from contextlib import suppress
 from functools import cache, lru_cache
 from itertools import islice
+from urllib.parse import urlsplit
 
 import re2
 import structlog
@@ -32,6 +34,21 @@ logger = structlog.get_logger(__name__)
 CHUNK_SIZE = 100
 INVISIBLE = dict.fromkeys(map(ord, "\u200b\u200c\u200d\u2060\ufeff\u034f\u00ad"))
 STRIP = ["head", "style", "script", "noscript", "template"]
+URL = re.compile(r"https?://[^\s<>\"')\]]+")
+IMAGE = re.compile(r"\[image:[^\]]*\]", re.IGNORECASE)
+FWD = re.compile(r"\s*(?:fwd?|fw)\s*:", re.IGNORECASE)
+CUT = re.compile(
+    r"^(?:On [^\n]{0,200}(?:\n[^\n]{0,200})?wrote:|-{2,} ?Original Message ?-{2,}|_{10,}|-- ?|Sent from my .*|Get Outlook for .*"
+    r"|From: .*\n(?:.*\n){0,3}?Sent: .*)$",
+    re.IGNORECASE | re.MULTILINE,
+)
+FOOTER = re.compile(
+    r"unsubscribe|view (?:this email |it |this )?(?:in|on) (?:your |a )?(?:browser|web)|privacy policy|terms of (?:service|use)"
+    r"|all rights reserved|©|\(c\) \d{4}|(?:email|manage|update) (?:your )?(?:email |notification )?(?:preferences|settings)"
+    r"|you (?:are )?receiv(?:ed|ing) this|no longer wish|this (?:e-?mail|message) was sent to|(?:do not|don't) reply"
+    r"|confidentiality notice|intended (?:solely )?for the (?:use of the )?(?:named |intended )?(?:addressee|recipient)",
+    re.IGNORECASE,
+)
 
 
 @lru_cache(maxsize=1024)
@@ -64,6 +81,29 @@ def _refine(html):
     return "\n".join(line for line in (" ".join(raw.split()) for raw in text.splitlines()) if line)
 
 
+def _url(m):
+    try: u = urlsplit(m.group(0))
+    except ValueError: return ""
+    short = f"{u.scheme}://{u.netloc}{u.path}".rstrip("/")
+    return short if len(short) <= 80 else f"{u.scheme}://{u.netloc}"
+
+
+def _trim(subject, text):
+    text = IMAGE.sub("", URL.sub(_url, text.translate(INVISIBLE)))
+    text = "\n".join(line for line in (" ".join(raw.split()) for raw in text.splitlines()) if line and not line.startswith(">"))
+    if not FWD.match(subject or "") and (cut := CUT.search(text)) and cut.start(): text = text[:cut.start()]
+    out, seen, pos = [], set(), 0
+    for line in text.splitlines():
+        pos += len(line) + 1
+        if line in seen or not any(c.isalnum() for c in line): continue
+        if len(line) <= 200 and FOOTER.search(line):
+            if pos > len(text) / 2: break  # footer block reached
+            continue
+        seen.add(line)
+        out.append(line)
+    return "\n".join(out)[:llm.MAX_BODY]
+
+
 def _guess(plugin, msgs, state):
     if not msgs: return []
     props = plugin.schema.get("properties")
@@ -90,7 +130,7 @@ def _extract(user, todo, msgs):
     def body(m): return m.plain or _refine(m.html or "")
 
     @cache
-    def state(m): return llm.email(m.sender, m.subject, body(m))
+    def state(m): return llm.email(m.sender, m.subject, _trim(m.subject, body(m)))
 
     answered = 0
     for sub, want in todo:
