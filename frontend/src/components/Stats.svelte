@@ -3,15 +3,15 @@
   import { api } from '../lib/api';
   import Count from './Count.svelte';
 
-  // Questions answered across Iris today; hidden until there is a number worth showing.
-  let today = $state(0);
+  // Hidden until there is a number worth showing.
+  let week = $state(0);
   onMount(() => {
-    api<{ today: number }>('/api/v1/usage/total/').then((s) => (today = s.today), () => {});
+    api<{ week: number }>('/api/v1/usage/stats/').then((s) => (week = s.week), () => {});
   });
 </script>
 
-{#if today > 0}
-  <p><b><Count value={today} /></b> questions answered today</p>
+{#if week > 0}
+  <p><b><Count value={week} /></b> questions answered this week</p>
 {/if}
 
 <style>

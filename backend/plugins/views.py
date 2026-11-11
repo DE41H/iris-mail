@@ -1,3 +1,4 @@
+from datetime import timedelta
 from secrets import token_urlsafe
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -229,10 +230,10 @@ class UsageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         return Response({"today": localdate(), "days": days})
 
     @action(detail=False, authentication_classes=[], permission_classes=[AllowAny])
-    def total(self, request, **kwargs):
+    def stats(self, request, **kwargs):
         today = localdate()
-        count = lambda: Usage.objects.filter(date=today).aggregate(n=Sum("used"))["n"] or 0
-        return Response({"today": cache.get_or_set(f"usage:total:{today}", count, 60 * 5)})
+        count = lambda: Usage.objects.filter(date__gt=today - timedelta(days=7)).aggregate(n=Sum("used"))["n"] or 0
+        return Response({"week": cache.get_or_set(f"usage:stats:{today}", count, 60 * 5)})
 
 
 @extend_schema_view(

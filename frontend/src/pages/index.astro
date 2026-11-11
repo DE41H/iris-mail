@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Lens from '../components/Lens.svelte';
-import Answered from '../components/Answered.svelte';
+import Stats from '../components/Stats.svelte';
 
 const steps = [
   ['Write your questions', 'Yes/no, a choice, a scale, a number, a date or short text. You get an API key.'],
@@ -19,7 +19,7 @@ const steps = [
         <a class="btn btn-primary" href="/plugins/new">Create a plugin</a>
         <a class="btn" href="/subscriptions">Manage my inbox</a>
       </div>
-      <div class="tally"><Answered client:only="svelte" /></div>
+      <div class="tally"><Stats client:only="svelte" /></div>
     </section>
 
     <div class="demo grow"><Lens client:only="svelte" /></div>
