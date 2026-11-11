@@ -6,12 +6,13 @@ from uuid import UUID
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import URLValidator
-from django.db import IntegrityError, models
+from django.db import models
 from django.db.models.functions import Upper
 from django.db.transaction import atomic
 from django.utils.timezone import now
 from uuid6 import uuid7
 
+from plugins.authentication import AGENT_PREFIX, PLUGIN_PREFIX
 from plugins.validation import RuleValidator, SchemaValidator
 
 
@@ -90,28 +91,17 @@ class Plugin(models.Model):
     @classmethod
     def gen_key(cls):
         secret = token_urlsafe(32)
-        pre = f"iris_{secret[:11]}"
+        pre = f"{PLUGIN_PREFIX}{secret[:11]}"
         full = f"{pre}_{secret}"
         hash = cls.gen_hash(full)
         return pre, hash, full
 
     @classmethod
     def auth_key(cls, key: str):
-        if not key or not key.startswith("iris_") or len(key) != 60: return None
+        if not key or not key.startswith(PLUGIN_PREFIX) or len(key) != 60: return None
         hash = cls.gen_hash(key)
         plugin = cls.objects.nocache().prefetch_related("developer").filter(prefix=key[:16]).first()  # pyright: ignore[reportAttributeAccessIssue]
         return plugin if plugin and compare_digest(bytes(plugin.key), hash) else None
-
-    def rot_key(self):
-        pre, hash, full = self.__class__.gen_key()
-        while True:
-            try:
-                with atomic():
-                    updated = self.__class__.objects.filter(pk=self.pk).invalidated_update(key=hash, prefix=pre)  # pyright: ignore[reportAttributeAccessIssue]
-                    if updated: self.refresh_from_db(fields=("key", "prefix"))
-                    return full if updated else None
-            except IntegrityError:
-                pre, hash, full = self.__class__.gen_key()
 
 
 class CodeStatus(models.IntegerChoices):
@@ -167,9 +157,15 @@ class AgentKey(models.Model):
     @classmethod
     def gen_key(cls):
         secret = token_urlsafe(32)
-        pre = f"iris_agent_{secret[:11]}"
+        pre = f"{AGENT_PREFIX}{secret[:11]}"
         full = f"{pre}_{secret}"
         return pre, Plugin.gen_hash(full), full
+
+    @classmethod
+    def auth_key(cls, key: str):
+        if not key or not key.startswith(AGENT_PREFIX) or len(key) != 66: return None
+        agent = cls.objects.prefetch_related("user").filter(prefix=key[:22]).first()
+        return agent if agent and compare_digest(bytes(agent.key), Plugin.gen_hash(key)) else None
 
 
 class Subscription(models.Model):

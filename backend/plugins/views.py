@@ -24,7 +24,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from plugins.authentication import PluginKeyAuthentication
+from plugins.authentication import AgentKeyAuthentication, PluginKeyAuthentication
 from plugins.gmail import get_hist_id, google_token, revoke
 from plugins.models import (
     AgentKey,
@@ -82,6 +82,7 @@ class PluginViewSet(
     viewsets.GenericViewSet,
 ):
     serializer_class = PluginSerializer
+    authentication_classes = (AgentKeyAuthentication, SessionAuthentication)
 
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         def count(qs):
@@ -110,9 +111,10 @@ class PluginViewSet(
 
     @action(detail=True, methods=["post"])
     def rotate_key(self, request, pk=None, **kwargs):
-        plugin = self.get_object()
-        key = plugin.rot_key()
-        logger.info("key rotated", plugin=plugin.pk, user=request.user.pk)
+        serializer = self.get_serializer(self.get_object(), data={}, partial=True)
+        serializer.is_valid(raise_exception=True)
+        key = _save_key(serializer, Plugin)
+        logger.info("key rotated", plugin=serializer.instance.pk, user=request.user.pk)  # pyright: ignore[reportOptionalMemberAccess]
         return Response({"key": key})
 
 

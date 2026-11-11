@@ -186,7 +186,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'plugins.throttling.UserThrottle',
-        'plugins.throttling.PluginKeyThrottle',
+        'plugins.throttling.KeyThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '120/minute',
