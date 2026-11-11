@@ -23,6 +23,7 @@ dependencies = [
     "litellm==1.108.3",
     "jsonschema==4.26.0",
     "structlog>=26.1.0",
+    "brotli>=1.2.1",
 ]
 
 [dependency-groups]
