@@ -14,8 +14,9 @@
   let paused = false;
 
   onMount(() => {
-    let showing = 'intro';
-    let queue = Promise.resolve();
+    let target = intro;
+    let shown = intro;
+    let busy = false;
 
     // Old lines roll up and out, new ones roll in from below.
     async function roll(to: string[]) {
@@ -30,10 +31,15 @@
     // Lens phases: 'drop' shuts the aperture, 'read' opens it. The pitch shows first, so the first shut is the first flip.
     const onLens = (e: Event) => {
       const want = { drop: 'stats', read: 'intro' }[(e as CustomEvent<string>).detail];
-      if (!stats || paused || !want || want === showing) return;
-      showing = want;
-      const to = want === 'stats' ? stats : intro;
-      queue = queue.then(() => roll(to));
+      if (!stats || paused || !want) return;
+      target = want === 'stats' ? stats : intro;
+      if (busy) return;
+      // Chase only the latest target: hidden tabs freeze animations, and queued flips would replay on return.
+      busy = true;
+      (async () => {
+        while (shown !== target) await roll((shown = target));
+        busy = false;
+      })();
     };
     addEventListener('iris:lens', onLens);
 
