@@ -2,6 +2,7 @@ from os import getenv
 from pathlib import Path
 
 import structlog
+from django.conf import global_settings
 from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -136,23 +137,18 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Internationalization
-LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Kolkata'
-USE_I18N = True
-USE_TZ = True
 
 
 # Staticfiles
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STORAGES = {**global_settings.STORAGES, 'staticfiles': {'BACKEND': 'cfg.storage.BrotliStorage'}}
 
 
 # Auth
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
-]
+AUTHENTICATION_BACKENDS = [*global_settings.AUTHENTICATION_BACKENDS, 'allauth.account.auth_backends.AuthenticationBackend']
 LOGIN_REDIRECT_URL = '/plugins'
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*']
