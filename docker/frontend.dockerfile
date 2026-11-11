@@ -1,7 +1,7 @@
 FROM node:24-alpine AS build
 
 WORKDIR /app
-ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 ASTRO_TELEMETRY_DISABLED=1
 RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
 RUN --mount=type=cache,target=/root/.cache/node/corepack \
