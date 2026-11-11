@@ -183,7 +183,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated'
     ],
-    'EXCEPTION_HANDLER': 'plugins.throttling.exception_handler',
+    'EXCEPTION_HANDLER': 'plugins.handlers.exception_handler',
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'plugins.throttling.UserThrottle',
