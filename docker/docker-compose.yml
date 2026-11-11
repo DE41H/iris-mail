@@ -52,7 +52,7 @@ services:
   worker:
     image: ghcr.io/de41h/iris-mail/backend
     env_file: .env
-    command: python manage.py procrastinate worker --concurrency 6
+    command: python manage.py procrastinate worker --concurrency 6 --delete-jobs successful
     environment:
       LITELLM_LOCAL_MODEL_COST_MAP: "True"
     mem_limit: 396m
