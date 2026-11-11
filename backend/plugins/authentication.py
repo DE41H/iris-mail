@@ -47,7 +47,7 @@ class PluginKeyAuthentication(KeyAuthentication):
     model, owner = Plugin, "developer"
 
     def accepts(self, key):
-        return key.startswith(PLUGIN_PREFIX)
+        return key.startswith(PLUGIN_PREFIX) and not key.startswith(AGENT_PREFIX)
 
 
 class AgentKeyAuthentication(KeyAuthentication):
