@@ -134,6 +134,14 @@ class AgentKeyViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.Des
         logger.info("agent key revoked", key=instance.pk, user=instance.user_id)
         instance.delete()
 
+    @action(detail=True, methods=["post"])
+    def rotate_key(self, request, pk=None, **kwargs):
+        serializer = self.get_serializer(self.get_object(), data={}, partial=True)
+        serializer.is_valid(raise_exception=True)
+        key = _save_key(serializer, AgentKey)
+        logger.info("agent key rotated", key=serializer.instance.pk, user=request.user.pk)  # pyright: ignore[reportOptionalMemberAccess]
+        return Response({**serializer.data, "key": key})
+
 
 @extend_schema_view(
     list=extend_schema(exclude=True),
