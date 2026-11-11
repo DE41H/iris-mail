@@ -25,7 +25,9 @@ class PluginKeyAuthentication(BaseAuthentication):
         plugin = Plugin.auth_key(parts[1].decode(errors="ignore"))
         if plugin is None:
             cache.add(ident, 0, 60*60)
-            if cache.incr(ident) == MAX_FAILS:
+            try: fails = cache.incr(ident)
+            except ValueError: fails = int(cache.add(ident, 1, 60*60))
+            if fails == MAX_FAILS:
                 logger.warning("ip blocked", ip=ident.removeprefix("badkey:"))
             raise AuthenticationFailed("Invalid API key.")
         return plugin.developer, plugin
