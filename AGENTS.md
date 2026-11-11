@@ -10,7 +10,7 @@ Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
 ## Layout
 - `backend/cfg/`: settings (`getenv`), urls, `storage` (collectstatic writes `.br` copies), `middleware` (CSP, headers), `LOGGING` (structlog console)
 - `backend/plugins/`: models (`AgentKey`: per-user `iris_agent_` keys, dashboard `/api/v1/keys/`), views (`_save_key`: key-prefix clash retry), serializers, `gmail`, `token` (encrypted OAuth), `validation`, `meta`, `schema`,
-  `signals`, `pagination` (uuid cursor), `authentication`+`throttling` (`KeyAuthentication`: plugin keys, agent keys (`iris_agent_`, `PluginViewSet` only); both flat per-dev rate only; `UserThrottle` = dashboard), `admin` (OTP;
+  `signals`, `pagination` (uuid cursor), `authentication`+`throttling` (`KeyAuthentication`: plugin keys, agent keys (`iris_agent_`, `PluginViewSet` only); both flat per-dev rate only, their 429s add today's `quota`/`left` via `errors.exception_handler`; `UserThrottle` = dashboard), `admin` (OTP;
   tier editable; `Usage`, `Result` read-only), commands `mk_admin` `gen_schema`, `adapters` (Google,
   `prompt=select_account`; no refresh token → `?action=reauthenticate`)
 - `plugins/tasks/`: `poll` (`poll_hist` /10 min, `init_hist`), `extract` (`process`), `llm` (router, provider schema,
@@ -18,7 +18,7 @@ Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
   `revive` /5 min retries stalled jobs)
 - `backend/static/`: `iris.css`, `theme.js` (blocking, `data-theme` from `localStorage.theme`/system, `theme-color` meta from `--bg`; toggle in `Nav`);
   `templates/`: allauth
-- `frontend/src/`: `pages/` (`me` account+usage, `keys` plugin+agent keys: rotate/create/revoke, full key only in the once-shown `KeyCard`, `connect` consent, `docs`), `components/`, `lib/` (`api` `session`
+- `frontend/src/`: `pages/` (`me` account+usage, `keys` plugin/agent switch (remembered in `localStorage`): rotate, create agent, delete with undo, full key only in the once-shown `KeyCard`, `connect` consent, `docs`), `components/`, `lib/` (`api` `session` `undo`
   `schema` `rules` `presets`)
 - `docker/`: compose, Dockerfiles, `caddyfile`, `deploy.sh`, `.env.example` (all env vars)
 
@@ -52,7 +52,7 @@ Backend
   content. `process` binds `user` (and `plugin` per sub) via `structlog.contextvars`. Prints `[level] msg [logger] k=v`.
 - `uuid7` PKs, index every new query, constraints in `Meta.constraints`.
 - Migrations run under the live old release: add only nullable/defaulted columns; drop/rename a release later.
-- cacheops (insideout, survives Valkey eviction) caches `CustomUser`, `Plugin`, `Subscription` 5 min; never list
+- cacheops (insideout, survives Valkey eviction) caches `CustomUser`, `Plugin`, `Subscription`, `AgentKey` 5 min; never list
   `Result` (its signals kill fast-delete in cleanup/cascades): `.invalidated_update()` + `prefetch_related`, never
   `.update()`/`select_related`.
 - `/docs` = API-key endpoints only; dashboard views `@extend_schema(exclude=True)`. Terse: API-wide facts in
@@ -74,7 +74,7 @@ Schema
 Frontend
 - One screen/page, `client:only="svelte"` islands (except `Headline`: `client:load`, so the h1 is in the HTML), short copy.
 - CSP: no inline `<script>`/`style="…"` in `.astro`, no markdown pages.
-- Destructive: inline `ConfirmButton`, never `confirm()`.
+- Destructive: inline `ConfirmButton`, never `confirm()`. Deleting list rows (agent keys, subscriptions): `.trash` strip on the row's right edge, row hides at once, request waits 5s behind an `Undo` toast (`lib/undo.svelte.ts`).
 - Heavy code via `import()` beside API calls (`PluginEditor`/re2js in `NewPlugin`, `PluginDetail`). `preloadIslands` in
   `astro.config.mjs` adds modulepreload links for each page's static island imports.
 - No chart lib (`Account` graph = CSS bars); no dep unless it removes more code than it adds.
