@@ -13,7 +13,7 @@ def init_hist(user_id):
     user = CustomUser.objects.get(pk=user_id)
     CustomUser.objects.filter(pk=user_id, hist_id__isnull=True).invalidated_update(hist_id=get_hist_id(user))  # pyright: ignore[reportAttributeAccessIssue]
 
-@app.periodic(cron="*/3 * * * *")
+@app.periodic(cron="*/10 * * * *")
 @app.task(name="plugins.tasks.poll_hist")
 def poll_hist(timestamp):
     user_ids = CustomUser.objects.nocache().filter(subscriptions__active=True, socialaccount__provider="google").values_list("pk", flat=True).distinct()  # pyright: ignore[reportAttributeAccessIssue]
