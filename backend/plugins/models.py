@@ -71,8 +71,8 @@ class Plugin(models.Model):
     schema = models.JSONField(default=dict, validators=[SchemaValidator()])
     rules = models.JSONField(default=dict, blank=True, validators=[RuleValidator()])
     version = models.PositiveSmallIntegerField(default=1, editable=False)
-    key = models.BinaryField(max_length=32, blank=True, null=True)
-    prefix = models.CharField(max_length=16, unique=True, blank=True, null=True)
+    key = models.BinaryField(max_length=32)
+    prefix = models.CharField(max_length=16, unique=True)
     redirect = models.URLField(max_length=256, validators=[URLValidator(schemes=["https"])])
 
     class Meta:
@@ -80,10 +80,6 @@ class Plugin(models.Model):
             models.UniqueConstraint(
                 fields=("developer", "name"),
                 name="unique_developer_plugin_name",
-            ),
-            models.CheckConstraint(
-                condition=models.Q(key__isnull=True, prefix__isnull=True) | models.Q(key__isnull=False, prefix__isnull=False),
-                name="plugin_key_prefix_together",
             ),
         )
 
@@ -103,7 +99,7 @@ class Plugin(models.Model):
     def auth_key(cls, key: str):
         if not key or not key.startswith("iris_") or len(key) != 60: return None
         hash = cls.gen_hash(key)
-        plugin = cls.objects.nocache().prefetch_related("developer").filter(prefix__isnull=False, prefix=key[:16]).first()  # pyright: ignore[reportAttributeAccessIssue]
+        plugin = cls.objects.nocache().prefetch_related("developer").filter(prefix=key[:16]).first()  # pyright: ignore[reportAttributeAccessIssue]
         return plugin if plugin and compare_digest(bytes(plugin.key), hash) else None
 
     def rot_key(self):
@@ -156,6 +152,15 @@ class Code(models.Model):
 
     def deny(self, user_id) -> bool:
         return bool(self.__class__.pending().filter(pk=self.pk).update(user_id=user_id, status=CodeStatus.DENIED))
+
+
+
+class AgentKey(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
+    name = models.CharField(max_length=256, db_index=False)
+    user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="keys")
+    prefix = models.CharField(max_length=22, unique=True)
+    key = models.BinaryField(max_length=32)
 
 
 class Subscription(models.Model):

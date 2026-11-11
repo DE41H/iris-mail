@@ -45,6 +45,9 @@ class PluginAdmin(admin.ModelAdmin):
     autocomplete_fields = ("developer",)
     readonly_fields = ("version", "prefix")
 
+    def has_add_permission(self, request):
+        return False
+
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related("developer").annotate(subs=Count("subscribers"))
 

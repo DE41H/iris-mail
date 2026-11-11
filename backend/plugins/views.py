@@ -75,11 +75,14 @@ class PluginViewSet(
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        try:
-            with atomic():
-                plugin = serializer.save(developer=request.user)
-                key = plugin.rot_key()
-        except IntegrityError as err: raise ValidationError({"name": NAME_TAKEN}) from err
+        while True:
+            pre, hash, key = Plugin.gen_key()
+            try:
+                with atomic(): plugin = serializer.save(developer=request.user, prefix=pre, key=hash)
+                break
+            except IntegrityError as err:
+                if getattr(getattr(err.__cause__, "diag", None), "constraint_name", None) != "plugins_plugin_prefix_key":
+                    raise ValidationError({"name": NAME_TAKEN}) from err
         logger.info("plugin created", plugin=plugin.pk, user=request.user.pk)
         return Response({**serializer.data, "key": key}, status=201)
 
