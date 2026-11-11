@@ -116,6 +116,7 @@ CACHEOPS = {
     'plugins.customuser': {'ops': 'all'},
     'plugins.plugin': {'ops': 'all'},
     'plugins.subscription': {'ops': 'all'},
+    'plugins.agentkey': {'ops': 'all'},
 }
 
 
