@@ -8,7 +8,7 @@ Stack: Django 6.1, DRF, drf-spectacular, Postgres 17, Procrastinate, Valkey, cac
 Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
 
 ## Layout
-- `backend/cfg/`: settings (`getenv`), urls, `middleware` (CSP, headers), `LOGGING` (structlog console)
+- `backend/cfg/`: settings (`getenv`), urls, `storage` (collectstatic writes `.br` copies), `middleware` (CSP, headers), `LOGGING` (structlog console)
 - `backend/plugins/`: models, views, serializers, `gmail`, `token` (encrypted OAuth), `validation`, `meta`, `schema`,
   `signals`, `pagination` (uuid cursor), `authentication`+`throttling` (API keys: flat per-dev rate only; `UserThrottle` = dashboard), `admin` (OTP;
   tier editable; `Usage`, `Result` read-only), commands `mk_admin` `gen_schema`, `adapters` (Google,
@@ -77,7 +77,7 @@ Frontend
 - Heavy code via `import()` beside API calls (`PluginEditor`/re2js in `NewPlugin`, `PluginDetail`). `preloadIslands` in
   `astro.config.mjs` adds modulepreload links for each page's static island imports.
 - No chart lib (`Account` graph = CSS bars); no dep unless it removes more code than it adds.
-- Caddy: serves build-time `.br` files (`precompress` in `astro.config.mjs`), `/_astro/*` immutable, `/static/fonts/*` 1y, rest `max-age=600`; `/x` served as `/x/index.html` (no
+- Caddy: serves build-time `.br` files (`precompress` in `astro.config.mjs`, `cfg.storage` for `/static`), `/_astro/*` immutable, `/static/fonts/*` 1y, rest `max-age=600`; `/x` served as `/x/index.html` (no
   redirect); `Speculation-Rules` header → `public/speculation-rules.json` prefetches pages on hover (not prerender:
   keeps load animations).
 - Loading: content-shaped `.skel` + `.bone` (iris.css), hidden first 150ms.
