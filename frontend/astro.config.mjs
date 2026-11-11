@@ -2,6 +2,7 @@ import { defineConfig } from 'astro/config';
 import svelte from '@astrojs/svelte';
 import { glob, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { brotliCompressSync, constants } from 'node:zlib';
 
 // An island only finds its imports once its own file arrives. Listing the whole static import graph as
 // modulepreload links fetches it all at once, saving a round trip or two before the page renders.
@@ -27,6 +28,20 @@ const preloadIslands = {
   },
 };
 
+// Max-level brotli once at build beats Caddy's fast on-the-fly level by ~15-20%; Caddy serves the .br files.
+const precompress = {
+  name: 'precompress',
+  hooks: {
+    'astro:build:done': async ({ dir }) => {
+      const root = fileURLToPath(dir);
+      for await (const file of glob('**/*.{html,js,css,json,svg}', { cwd: root })) {
+        const data = await readFile(root + file);
+        await writeFile(`${root + file}.br`, brotliCompressSync(data, { params: { [constants.BROTLI_PARAM_QUALITY]: 11 } }));
+      }
+    },
+  },
+};
+
 // Django serves the API, allauth pages and static files; proxy them in dev so the
 // session cookie and CSRF token stay same-origin.
 const backend = 'http://127.0.0.1:8000';
@@ -34,7 +49,7 @@ const backend = 'http://127.0.0.1:8000';
 export default defineConfig({
   output: 'static',
   outDir: './build',
-  integrations: [svelte(), preloadIslands],
+  integrations: [svelte(), preloadIslands, precompress], // precompress last: it must see the final HTML
   devToolbar: { enabled: false },
   markdown: { syntaxHighlight: false }, // no markdown pages; Shiki's inline styles would break CSP
   // Hashes Astro's inline scripts and styles into a CSP meta tag; Caddy adds frame-ancestors.

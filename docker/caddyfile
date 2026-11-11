@@ -44,13 +44,18 @@
 		header /speculation-rules.json Content-Type application/speculationrules+json
 		try_files {path} {path}/index.html
 		encode zstd gzip
-		file_server
+		file_server {
+			precompressed br
+		}
 	}
 
 	handle_errors 404 {
 		root * /srv/site
 		import site_headers
 		rewrite * /404.html
-		file_server
+		encode zstd gzip
+		file_server {
+			precompressed br
+		}
 	}
 }

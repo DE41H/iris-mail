@@ -77,7 +77,7 @@ Frontend
 - Heavy code via `import()` beside API calls (`PluginEditor`/re2js in `NewPlugin`, `PluginDetail`). `preloadIslands` in
   `astro.config.mjs` adds modulepreload links for each page's static island imports.
 - No chart lib (`Account` graph = CSS bars); no dep unless it removes more code than it adds.
-- Caddy: `/_astro/*` immutable, `/static/fonts/*` 1y, rest `max-age=600`; `/x` served as `/x/index.html` (no
+- Caddy: serves build-time `.br` files (`precompress` in `astro.config.mjs`), `/_astro/*` immutable, `/static/fonts/*` 1y, rest `max-age=600`; `/x` served as `/x/index.html` (no
   redirect); `Speculation-Rules` header → `public/speculation-rules.json` prefetches pages on hover (not prerender:
   keeps load animations).
 - Loading: content-shaped `.skel` + `.bone` (iris.css), hidden first 150ms.
