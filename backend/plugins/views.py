@@ -223,7 +223,7 @@ class UsageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     pagination_class = None
 
     def get_queryset(self):  # pyright: ignore[reportIncompatibleMethodOverride]
-        return Usage.objects.filter(user_id=self.request.user.pk).order_by("-date")
+        return Usage.objects.filter(user_id=self.request.user.pk, date__gt=localdate() - timedelta(days=7)).order_by("-date")
 
     def list(self, request, *args, **kwargs):
         days = self.get_serializer(self.get_queryset(), many=True).data
@@ -233,7 +233,7 @@ class UsageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     def stats(self, request, **kwargs):
         today = localdate()
         count = lambda: Usage.objects.filter(date__gt=today - timedelta(days=7)).aggregate(n=Sum("used"))["n"] or 0
-        return Response({"week": cache.get_or_set(f"usage:stats:{today}", count, 60 * 5)})
+        return Response({"week": cache.get_or_set(f"usage:stats:{today}", count, 60 * 15)})
 
 
 @extend_schema_view(

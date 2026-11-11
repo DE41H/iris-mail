@@ -53,7 +53,7 @@ class CustomUser(AbstractUser):
 class Usage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
     user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="usage", db_index=False)
-    date = models.DateField(db_index=True)
+    date = models.DateField()
     used = models.PositiveIntegerField(default=0)
 
     class Meta:

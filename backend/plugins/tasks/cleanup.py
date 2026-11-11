@@ -3,6 +3,7 @@ from datetime import timedelta
 
 import structlog
 from django.db.models import Exists, OuterRef, Q
+from django.utils.timezone import localdate
 from procrastinate.contrib.django import app
 from procrastinate.exceptions import UniqueViolation
 from procrastinate.jobs import Status
@@ -15,7 +16,7 @@ logger = structlog.get_logger(__name__)
 JOB_KEEP_FOR_HRS = 7 * 24
 RESULT_KEEP_FOR = timedelta(days=30)
 RESULT_MAX_AGE = timedelta(days=100)
-USAGE_KEEP_FOR = timedelta(days=100)
+USAGE_KEEP_FOR = timedelta(days=7)
 CODE_KEEP_FOR = timedelta(days=1)
 
 async def _retry(job):
@@ -34,7 +35,7 @@ async def cleanup(timestamp):
     cond_3 = Q(id__lt=uuid_before(RESULT_KEEP_FOR))
     condition = (cond_1) | (cond_2 & cond_3)
     clean_results = Result.objects.filter(condition).adelete()
-    clean_usage = Usage.objects.filter(id__lt=uuid_before(USAGE_KEEP_FOR)).adelete()
+    clean_usage = Usage.objects.filter(date__lte=localdate() - USAGE_KEEP_FOR).adelete()
     clean_codes = Code.objects.filter(id__lt=uuid_before(CODE_KEEP_FOR)).adelete()
     (count, _), (usage, _), (codes, _), _ = await gather(clean_results, clean_usage, clean_codes, delete_jobs)
     logger.info("cleanup", results=count, usage=usage, codes=codes)

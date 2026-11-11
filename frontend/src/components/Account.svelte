@@ -5,7 +5,6 @@
   import DeleteAccount from './DeleteAccount.svelte';
 
   type Day = { date: string; used: number };
-  const EMPTY_DAYS = 30; // span of the empty graph before any usage exists
 
   let usage = $state<{ today: string; days: Day[] } | null>(null);
   let error = $state('');
@@ -21,18 +20,14 @@
   const fmt = (iso: string, opts: Intl.DateTimeFormatOptions) => new Date(ms(iso)).toLocaleDateString(undefined, { ...opts, timeZone: 'UTC' });
   const num = (n: number) => n.toLocaleString();
 
-  // Every day from the oldest stored one (days are newest first) to today, gaps filled with 0.
+  // The last 7 days ending today, gaps filled with 0.
   const series = $derived.by((): Day[] => {
     if (!usage) return [];
     const by = new Map(usage.days.map((d) => [d.date, d.used]));
-    const end = ms(usage.today);
-    const start = usage.days.length ? Math.min(ms(usage.days.at(-1)!.date), end) : end - (EMPTY_DAYS - 1) * 864e5;
-    const out: Day[] = [];
-    for (let t = start; t <= end; t += 864e5) {
-      const date = new Date(t).toISOString().slice(0, 10);
-      out.push({ date, used: by.get(date) ?? 0 });
-    }
-    return out;
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(ms(usage!.today) - (6 - i) * 864e5).toISOString().slice(0, 10);
+      return { date, used: by.get(date) ?? 0 };
+    });
   });
 
   const today = $derived(usage?.days.find((d) => d.date === usage!.today)?.used ?? 0);
@@ -41,14 +36,16 @@
   const upgradable = $derived(!!$session && $session.tiers.some((t) => t.quota > $session!.quota)); // a higher tier exists
   const level = $derived(share >= 1 ? 'full' : share >= 0.8 ? 'high' : '');
 
-  // The y axis tops out at a round number: 1, 2 or 5 times a power of ten.
-  const top = $derived.by(() => {
+  // Y axis: ticks every 1, 2 or 5 times a power of ten, at most 6 divisions, topping out just above the peak.
+  const ticks = $derived.by(() => {
     const peak = Math.max(10, ...series.map((d) => d.used));
-    const p = 10 ** Math.floor(Math.log10(peak));
-    return [1, 2, 5, 10].map((m) => m * p).find((v) => v >= peak)!;
+    const p = 10 ** Math.floor(Math.log10(peak / 6));
+    const step = [1, 2, 5, 10].map((m) => m * p).find((s) => peak / s <= 6)!;
+    const n = Math.ceil(peak / step);
+    return Array.from({ length: n + 1 }, (_, i) => (n - i) * step);
   });
-  const step = $derived(Math.ceil(series.length / 6)); // a date label every `step` days
-  const day = (iso: string) => fmt(iso, { month: 'short', day: 'numeric' });
+  const top = $derived(ticks[0]);
+  const tip = (d: Day) => `${num(d.used)} questions\n${fmt(d.date, { weekday: 'short', month: 'short', day: 'numeric' })}`;
 </script>
 
 {#if error}
@@ -81,18 +78,17 @@
     </section>
 
     <section class="card reveal d2">
-      <div class="card-head"><span>Questions per day</span></div>
-      <div class="plot" style:--n={series.length} aria-hidden="true">
-        <div class="y"><span>{num(top)}</span><span>{num(top / 2)}</span><span>0</span></div>
+      <div class="card-head"><span>Usage graph</span></div>
+      <div class="plot" style:--n={series.length} style:--t={ticks.length - 1} aria-hidden="true">
+        <div class="y">{#each ticks as t}<span>{num(t)}</span>{/each}</div>
         <div class="bars">
-          {#each series as d}<span class="bar" style:--h={d.used / top}></span>{/each}
+          {#each series as d}<span class="bar" style:--h={d.used / top} data-tip={tip(d)}></span>{/each}
         </div>
-        <div class="x">{#each series as d, i}{#if i % step === 0}<span style:grid-column="{i + 1} / span {step}">{day(d.date)}</span>{/if}{/each}</div>
       </div>
       <!-- Tables ignore overflow, so the wrapper does the hiding. -->
       <div class="sr-only">
         <table>
-          <caption>Questions answered per day</caption>
+          <caption>Questions answered, last 7 days</caption>
           <thead><tr><th>Date</th><th>Questions</th></tr></thead>
           <tbody>{#each series as d}<tr><td>{d.date}</td><td>{d.used}</td></tr>{/each}</tbody>
         </table>
@@ -119,7 +115,7 @@
     </section>
     <section class="card">
       <div class="card-head"><span class="bone sk-w"></span></div>
-      <div class="plot sk-bars">{#each { length: 30 } as _, i}<span class="bone" style:--h={0.25 + 0.6 * Math.abs(Math.sin(i * 0.7))}></span>{/each}</div>
+      <div class="plot sk-bars">{#each { length: 7 } as _, i}<span class="bone" style:--h={0.25 + 0.6 * Math.abs(Math.sin(i * 0.7))}></span>{/each}</div>
     </section>
   </div>
 {/if}
@@ -169,18 +165,19 @@
   .note { margin: 0; font-size: 13px; color: var(--danger); }
 
   /* CSS bars instead of a chart library: theme colours apply as is, nothing extra loads. */
-  .plot { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 200px auto; column-gap: 10px; padding: 18px 18px 12px; font-size: 11.5px; color: var(--faint); }
+  .plot { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 200px; column-gap: 10px; padding: 18px 18px 14px; font-size: 11.5px; color: var(--faint); }
   .y { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; margin: -0.6em 0; }
-  .bars, .x { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
   .bars {
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
     border-bottom: 1px solid var(--border);
-    background: linear-gradient(var(--border) 0 0) top / 100% 1px no-repeat, linear-gradient(var(--border) 0 0) center / 100% 1px no-repeat;
+    background: repeating-linear-gradient(var(--border) 0 1px, transparent 1px calc(100% / var(--t)));
   }
-  .bar { display: flex; align-items: flex-end; justify-content: center; }
+  .bar { position: relative; display: flex; align-items: flex-end; justify-content: center; }
   .bar::before {
     content: '';
-    width: 72%;
-    max-width: 28px;
+    width: 64%;
+    max-width: 44px;
     height: calc(var(--h) * 100%);
     border-radius: 4px 4px 0 0;
     background: color-mix(in oklab, var(--accent) 70%, transparent);
@@ -190,7 +187,30 @@
   }
   .bar:hover::before { background: var(--accent); }
   @keyframes grow { from { scale: 1 0; } }
-  .x { grid-column: 2; padding-top: 6px; white-space: nowrap; }
+  /* Hover tooltip: the count, then the day, just above the bar. */
+  .bar::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(var(--h) * 100% + 8px);
+    left: 50%;
+    translate: -50% 0;
+    z-index: 1;
+    padding: 6px 9px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background: var(--bg);
+    color: var(--accent);
+    font-size: 12px;
+    line-height: 1.35;
+    text-align: center;
+    white-space: pre;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+  .bar:first-child::after { left: 0; translate: none; text-align: left; }
+  .bar:last-child::after { left: auto; right: 0; translate: none; text-align: right; }
+  .bar:hover::after { opacity: 1; }
 
   .leave { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 
@@ -200,13 +220,13 @@
   .sk-h2 { width: 60px; height: 14px; }
   .sk-figure { width: 220px; height: 34px; border-radius: 8px; }
   .sk-w { width: 90px; }
-  .sk-bars { display: flex; align-items: flex-end; gap: 1.5%; height: 253px; }
+  .sk-bars { display: flex; align-items: flex-end; gap: 6%; height: 232px; }
   .sk-bars .bone { flex: 1; height: calc(var(--h) * 100%); border-radius: 4px 4px 0 0; }
 
   @media (max-width: 640px) {
     .who .avatar, .sk-avatar { width: 52px; height: 52px; font-size: 22px; }
     .figure b { font-size: 32px; }
-    .plot { padding: 14px 10px 8px; grid-template-rows: 180px auto; }
-    .sk-bars { height: 225px; }
+    .plot { padding: 14px 10px 10px; grid-template-rows: 180px; }
+    .sk-bars { height: 204px; }
   }
 </style>

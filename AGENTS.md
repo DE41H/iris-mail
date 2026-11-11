@@ -14,7 +14,7 @@ Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
   tier editable; `Usage`, `Result` read-only), commands `mk_admin` `gen_schema`, `adapters` (Google,
   `prompt=select_account`; no refresh token → `?action=reauthenticate`)
 - `plugins/tasks/`: `poll` (`poll_hist` /10 min, `init_hist`), `extract` (`process`), `llm` (router, provider schema,
-  checks), `cleanup` (03:00: jobs >7d, results >100d or >30d if fetched/unsubscribed, usage >100d, codes >1d;
+  checks), `cleanup` (03:00: jobs >7d, results >100d or >30d if fetched/unsubscribed, usage >7d, codes >1d;
   `revive` /5 min retries stalled jobs)
 - `backend/static/`: `iris.css`, `theme.js` (blocking, `data-theme` from `localStorage.theme`/system, `theme-color` meta from `--bg`; toggle in `Nav`);
   `templates/`: allauth
@@ -29,9 +29,9 @@ Connect (only way to add a user): dev `POST /api/v1/codes/` → `code` + `/conne
 stripped from URL; `?status=` → done state (empty redirect lands here); sign-in forwards `next`.
 
 Usage: one `Usage` row/dev/day, `used` = emails × questions answered (`usage.consume` in `extract._guess`, which
-checks `CustomUser.quota` from `QUOTAS` before each batch). `/api/v1/usage/` → `{today, days}` (newest first,
-unpaginated). `/api/v1/me/` has `quota`, `tiers`. Public
-`/api/v1/usage/stats/` → `{week}` (sum of all `used` over the last 7 days incl. today, Django cache 5 min) for the
+checks `CustomUser.quota` from `QUOTAS` before each batch). `/api/v1/usage/` → `{today, days}` (last 7 days, newest first,
+unpaginated; `Account` usage graph, hover = count + day). `/api/v1/me/` has `quota`, `tiers`. Public
+`/api/v1/usage/stats/` → `{week}` (sum of all `used` over the last 7 days incl. today, Django cache 15 min) for the
 home page `Headline` (rolls to the total when the `Lens` aperture shuts, back when it opens; `iris:lens` event).
 
 ## Run
