@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Iris: dev makes plugin (JSON schema questions + regex rules) → API key. User signs in with Google, subscribes. Gmail
-polled /3 min, deduped, answered by LiteLLM (`tasks/llm.py`, `llm.MODELS` order: Groq (gpt-oss first), then Gemini
+polled /10 min, deduped, answered by LiteLLM (`tasks/llm.py`, `llm.MODELS` order: Groq (gpt-oss first), then Gemini
 (Flash Lite first), then Claude Haiku as last fallback). Only answers stored (`Result`); devs list + ack (`fetched`) via API.
 
 Stack: Django 6.1, DRF, drf-spectacular, Postgres 17, Procrastinate, Valkey, cacheops, allauth, django-otp, LiteLLM,
@@ -13,7 +13,7 @@ Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
   `signals`, `pagination` (uuid cursor), `authentication`+`throttling` (API keys: flat per-dev rate only; `UserThrottle` = dashboard), `admin` (OTP;
   tier editable; `Usage`, `Result` read-only), commands `mk_admin` `gen_schema`, `adapters` (Google,
   `prompt=select_account`; no refresh token → `?action=reauthenticate`)
-- `plugins/tasks/`: `poll` (`poll_hist` /3 min, `init_hist`), `extract` (`process`), `llm` (router, provider schema,
+- `plugins/tasks/`: `poll` (`poll_hist` /10 min, `init_hist`), `extract` (`process`), `llm` (router, provider schema,
   checks), `cleanup` (03:00: jobs >7d, results >100d or >30d if fetched/unsubscribed, usage >100d, codes >1d;
   `revive` /5 min retries stalled jobs)
 - `backend/static/`: `iris.css`, `theme.js` (blocking, `data-theme` from `localStorage.theme`/system, `theme-color` meta from `--bg`; toggle in `Nav`);
@@ -87,7 +87,8 @@ Frontend
 - Extract only active subs. Never LLM twice for same user+message+plugin.
 - Secrets from env; `GROQ_KEYS`, `GEMINI_KEYS`, `ANTHROPIC_KEYS` (comma lists); only providers/tiers that don't train on
   prompts (Gmail Limited Use).
-- LLM gets only sender, subject, first `llm.MAX_BODY` chars.
+- LLM gets only sender, subject, first `llm.MAX_BODY` chars of `extract._trim` (no quotes, signatures, footers, URL
+  queries); rules match the full body.
 
 ## Known issues (accepted, don't fix)
 - LLM can be wrong / prompt-injected by email; rules are reliable.
