@@ -1,8 +1,8 @@
 # AGENTS.md
 
 Iris: dev makes plugin (JSON schema questions + regex rules) → API key. User signs in with Google, subscribes. Gmail
-polled /3 min, deduped, answered by LiteLLM (`tasks/llm.py`, `llm.MODELS` order: Gemini models (Flash Lite first),
-then Claude Haiku as last fallback). Only answers stored (`Result`); devs list + ack (`fetched`) via API.
+polled /3 min, deduped, answered by LiteLLM (`tasks/llm.py`, `llm.MODELS` order: Groq (gpt-oss first), then Gemini
+(Flash Lite first), then Claude Haiku as last fallback). Only answers stored (`Result`); devs list + ack (`fetched`) via API.
 
 Stack: Django 6.1, DRF, drf-spectacular, Postgres 17, Procrastinate, Valkey, cacheops, allauth, django-otp, LiteLLM,
 Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
@@ -85,7 +85,8 @@ Frontend
 - API keys SHA-256, shown once.
 - OAuth tokens encrypted (`token.py`, key = `DJANGO_SECRET_KEY` + `DJANGO_SALT_KEY`; changing either logs all out).
 - Extract only active subs. Never LLM twice for same user+message+plugin.
-- Secrets from env; `GEMINI_KEYS`, `ANTHROPIC_KEYS` (comma lists), paid tier only (Gmail Limited Use).
+- Secrets from env; `GROQ_KEYS`, `GEMINI_KEYS`, `ANTHROPIC_KEYS` (comma lists); only providers/tiers that don't train on
+  prompts (Gmail Limited Use).
 - LLM gets only sender, subject, first `llm.MAX_BODY` chars.
 
 ## Known issues (accepted, don't fix)
