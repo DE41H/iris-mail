@@ -183,6 +183,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated'
     ],
+    'EXCEPTION_HANDLER': 'plugins.throttling.exception_handler',
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'plugins.throttling.UserThrottle',
@@ -205,7 +206,8 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Iris API',
     'DESCRIPTION': 'Base `/api/v1`. Auth `Authorization: Bearer <key>`. Lists: 50 per page, newest first, follow `next`. '
-                   'Errors: 400 `{field: [msg]}`, 401 bad key, 429 over 1000 req/h per developer (or 10 bad keys/h per IP).',
+                   'Errors: 400 `{field: [msg]}`, 401 bad key, 429 over 1000 req/h per developer (or 10 bad keys/h per IP); '
+                   'with a key its body adds `quota` and `left`: answers (emails × questions) allowed and left today, reset at midnight IST.',
     'VERSION': '1.0.0',
     'SCHEMA_PATH_PREFIX': r'/api/v[0-9]+',
     'PARSER_WHITELIST': ['rest_framework.parsers.JSONParser'],
