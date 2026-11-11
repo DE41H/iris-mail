@@ -3,8 +3,9 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import structlog
 from django.contrib.auth import logout
+from django.core.cache import cache
 from django.db import IntegrityError
-from django.db.models import Count, OuterRef, Subquery
+from django.db.models import Count, OuterRef, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.db.transaction import atomic
 from django.utils.timezone import localdate
@@ -19,6 +20,7 @@ from rest_framework import mixins, serializers, viewsets
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from plugins.authentication import PluginKeyAuthentication
@@ -225,6 +227,12 @@ class UsageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     def list(self, request, *args, **kwargs):
         days = self.get_serializer(self.get_queryset(), many=True).data
         return Response({"today": localdate(), "days": days})
+
+    @action(detail=False, authentication_classes=[], permission_classes=[AllowAny])
+    def total(self, request, **kwargs):
+        today = localdate()
+        count = lambda: Usage.objects.filter(date=today).aggregate(n=Sum("used"))["n"] or 0
+        return Response({"today": cache.get_or_set(f"usage:total:{today}", count, 60 * 5)})
 
 
 @extend_schema_view(

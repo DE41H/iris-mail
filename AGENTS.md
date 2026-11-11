@@ -30,7 +30,8 @@ stripped from URL; `?status=` → done state (empty redirect lands here); sign-i
 
 Usage: one `Usage` row/dev/day, `used` = emails × questions answered (`usage.consume` in `extract._guess`, which
 checks `CustomUser.quota` from `QUOTAS` before each batch). `/api/v1/usage/` → `{today, days}` (newest first,
-unpaginated). `/api/v1/me/` has `quota`, `tiers`.
+unpaginated). `/api/v1/me/` has `quota`, `tiers`. Public
+`/api/v1/usage/total/` → `{today}` (sum of all `used` today, Django cache 5 min) for the home page `Answered` counter.
 
 ## Run
 Dev = prod. After every change: `docker/deploy.sh` (needs `docker/.env` from `.env.example`; builds, migrates,
