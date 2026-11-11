@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Lens from '../components/Lens.svelte';
-import Stats from '../components/Stats.svelte';
+import Headline from '../components/Headline.svelte';
 
 const steps = [
   ['Write your questions', 'Yes/no, a choice, a scale, a number, a date or short text. You get an API key.'],
@@ -13,13 +13,12 @@ const steps = [
 <Layout title="Ask inboxes questions" wide>
   <div class="screen landing">
     <section class="hero">
-      <h1><span>Ask inboxes questions.</span><br /><span>Get JSON back.</span></h1>
+      <Headline client:load />
       <p class="lead">An AI model reads each new email and answers your questions about it. You get the answers, never the email.</p>
       <div class="cta">
         <a class="btn btn-primary" href="/plugins/new">Create a plugin</a>
         <a class="btn" href="/subscriptions">Manage my inbox</a>
       </div>
-      <div class="tally"><Stats client:only="svelte" /></div>
     </section>
 
     <div class="demo grow"><Lens client:only="svelte" /></div>
@@ -39,27 +38,10 @@ const steps = [
   /* Grows past one screen on short windows instead of running into the footer. */
   .landing { justify-content: space-between; gap: 28px; height: auto; min-height: calc(100dvh - 60px - 48px - 36px); }
   .hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px 48px; align-items: end; }
-  /* The one load moment: the headline pulls into focus, narrow and light to wide and heavy. */
-  .hero h1 {
-    grid-column: 1 / -1;
-    font-size: clamp(38px, 6.4vw, 80px);
-    line-height: 1;
-    letter-spacing: -0.035em;
-    font-weight: 720;
-    font-stretch: 118%;
-    animation: focus 1.4s var(--ease) both;
-  }
-  @keyframes focus {
-    from { font-stretch: 75%; font-weight: 250; letter-spacing: 0.02em; filter: blur(10px); opacity: 0; }
-    60% { filter: blur(0); opacity: 1; }
-  }
   .lead, .cta { animation: rise 0.8s 0.5s var(--ease) both; }
   .lead { font-size: 17px; color: var(--muted); max-width: 40ch; }
   .cta { display: flex; gap: 10px; flex-wrap: wrap; }
-  @media (min-width: 861px) { .hero h1 span { white-space: nowrap; } }
   .cta .btn { padding: 11px 20px; font-size: 15px; }
-  /* Space is held so the number arriving does not shift the page. */
-  .tally { grid-column: 2; justify-self: end; min-height: 20px; margin-top: -8px; animation: rise 0.8s 0.6s var(--ease) both; }
 
   .demo { display: flex; flex-direction: column; justify-content: center; animation: rise 0.9s 0.7s var(--ease) both; }
 
@@ -85,7 +67,6 @@ const steps = [
 
   @media (max-width: 860px) {
     .hero, .steps { grid-template-columns: 1fr; }
-    .tally { grid-column: 1; justify-self: start; }
     .steps { gap: 14px; }
     .cta .btn { flex: 1 1 auto; }
   }

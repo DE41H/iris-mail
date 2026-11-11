@@ -60,6 +60,9 @@
     play(i);
   }
 
+  // The home page headline flips when the aperture opens ('read') and shuts ('drop').
+  $effect(() => void dispatchEvent(new CustomEvent('iris:lens', { detail: phase })));
+
   onMount(() => {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) phase = 'answer';
     else play(0);

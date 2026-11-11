@@ -32,7 +32,7 @@ Usage: one `Usage` row/dev/day, `used` = emails × questions answered (`usage.co
 checks `CustomUser.quota` from `QUOTAS` before each batch). `/api/v1/usage/` → `{today, days}` (newest first,
 unpaginated). `/api/v1/me/` has `quota`, `tiers`. Public
 `/api/v1/usage/stats/` → `{week}` (sum of all `used` over the last 7 days incl. today, Django cache 5 min) for the
-home page `Stats` counter.
+home page `Headline` (rolls to the total when the `Lens` aperture shuts, back when it opens; `iris:lens` event).
 
 ## Run
 Dev = prod. After every change: `docker/deploy.sh` (needs `docker/.env` from `.env.example`; builds, migrates,
@@ -71,7 +71,7 @@ Schema
   others = description hint + `llm.CHECKS`.
 
 Frontend
-- One screen/page, `client:only="svelte"` islands, short copy.
+- One screen/page, `client:only="svelte"` islands (except `Headline`: `client:load`, so the h1 is in the HTML), short copy.
 - CSP: no inline `<script>`/`style="…"` in `.astro`, no markdown pages.
 - Destructive: inline `ConfirmButton`, never `confirm()`.
 - Heavy code via `import()` beside API calls (`PluginEditor`/re2js in `NewPlugin`, `PluginDetail`). `preloadIslands` in
