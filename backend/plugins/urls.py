@@ -8,6 +8,7 @@ from plugins.views import (
     ConnectViewSet,
     MeViewSet,
     PluginViewSet,
+    QuotaViewSet,
     ResultViewSet,
     SubscriptionViewSet,
     UsageViewSet,
@@ -20,6 +21,7 @@ r.register(r'subscriptions', SubscriptionViewSet, basename='subscription')
 r.register(r'results', ResultViewSet, basename='results')
 r.register(r'users', UserViewSet, basename='users')
 r.register(r'usage', UsageViewSet, basename='usage')
+r.register(r'quota', QuotaViewSet, basename='quota')
 r.register(r'codes', CodeViewSet, basename='codes')
 r.register(r'connect', ConnectViewSet, basename='connect')
 r.register(r'keys', AgentKeyViewSet, basename='keys')

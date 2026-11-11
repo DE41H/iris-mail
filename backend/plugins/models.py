@@ -12,8 +12,10 @@ from django.db.transaction import atomic
 from django.utils.timezone import now
 from uuid6 import uuid7
 
-from plugins.authentication import AGENT_PREFIX, PLUGIN_PREFIX
 from plugins.validation import RuleValidator, SchemaValidator
+
+AGENT_PREFIX = "iris_agent_"
+PLUGIN_PREFIX = "iris_"
 
 
 class UserTier(models.IntegerChoices):

@@ -4,13 +4,11 @@ from rest_framework.authentication import BaseAuthentication, get_authorization_
 from rest_framework.exceptions import AuthenticationFailed, Throttled
 from rest_framework.throttling import BaseThrottle
 
-from plugins.models import AgentKey, Plugin
+from plugins.models import AGENT_PREFIX, PLUGIN_PREFIX, AgentKey, Plugin
 
 logger = structlog.get_logger(__name__)
 
 MAX_FAILS = 10
-AGENT_PREFIX = "iris_agent_"
-PLUGIN_PREFIX = "iris_"
 
 
 class KeyAuthentication(BaseAuthentication):
@@ -49,7 +47,7 @@ class PluginKeyAuthentication(KeyAuthentication):
     model, owner = Plugin, "developer"
 
     def accepts(self, key):
-        return not key.startswith(PLUGIN_PREFIX)
+        return key.startswith(PLUGIN_PREFIX)
 
 
 class AgentKeyAuthentication(KeyAuthentication):
