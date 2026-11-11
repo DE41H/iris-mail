@@ -26,6 +26,8 @@ export const loadSession = () => (loading ??= check());
 async function check() {
   // Not through api(): a signed-out visitor is an answer here, not a reason to redirect.
   const res = await fetch('/api/v1/me/', { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+  // Only 401/403 mean signed out; a throttle or deploy blip keeps the last known answer.
+  if (!res.ok && res.status !== 401 && res.status !== 403) return session.update((s) => s ?? null);
   const user = res.ok ? ((await res.json()) as User) : null;
   session.set(user);
   try { sessionStorage.setItem(KEY, JSON.stringify(user)); } catch {}
