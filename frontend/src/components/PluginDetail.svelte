@@ -3,7 +3,6 @@
   import { api, message, type Plugin } from '../lib/api';
   import { fromRules, fromSchema, toBody, type Draft } from '../lib/schema';
   import ConfirmButton from './ConfirmButton.svelte';
-  import KeyCard from './KeyCard.svelte';
   import type Editor from './PluginEditor.svelte';
 
   // Loads beside the plugin fetch, so the skeleton paints before the editor's code arrives.
@@ -16,10 +15,8 @@
   let locked = $state('');
   let saved = $state('');
   let shape = $state(''); // questions and rules as saved: changing them starts a new version
-  let key = $state('');
   let error = $state('');
   let notice = $state('');
-  let sheet = $state<HTMLDialogElement>();
 
   const snapshot = () => JSON.stringify(draft);
   const shapeOf = () => JSON.stringify([draft.fields, draft.rules]);
@@ -50,17 +47,6 @@
     setTimeout(() => (notice = ''), 2500);
   }
 
-  async function rotate() {
-    try {
-      key = (await api<{ key: string }>(`/api/v1/plugins/${id}/rotate_key/`, { method: 'POST' })).key;
-      sheet?.showModal();
-      const fresh = await api<Plugin>(`/api/v1/plugins/${id}/`);
-      if (plugin) plugin.prefix = fresh.prefix;
-    } catch (err) {
-      error = message(err);
-    }
-  }
-
   async function remove() {
     try {
       await api(`/api/v1/plugins/${id}/`, { method: 'DELETE' });
@@ -85,21 +71,10 @@
         <h1>{plugin!.name}</h1>
       {/snippet}
       {#snippet tools()}
-        <ConfirmButton label="Delete plugin" confirm="Are you sure?" danger onconfirm={remove} />
+        <ConfirmButton label="Delete" danger onconfirm={remove} />
       {/snippet}
       {#snippet aside()}
         <section class="card meta">
-          <div class="key">
-            <div class="key-text">
-              <h2>API key</h2>
-              {#if plugin!.prefix}
-                <code class="prefix" title="Only the start of the key is kept">{plugin!.prefix}<span aria-hidden="true">••••••••••••</span></code>
-              {:else}
-                <span class="muted">No key yet</span>
-              {/if}
-            </div>
-            <ConfirmButton label={plugin!.prefix ? 'Rotate' : 'Create key'} confirm="Are you sure?" onconfirm={rotate} />
-          </div>
           <dl class="stats">
             <div>
               <dt>Version</dt>
@@ -125,7 +100,7 @@
           {/each}
         </div>
         <div class="sk-main">
-          <div class="card sk-card"><span class="bone sk-h2"></span><span class="bone" style:width="70%"></span><span class="bone sk-field"></span></div>
+          <div class="card sk-card sk-stats">{#each { length: 3 } as _}<span class="bone sk-stat"></span>{/each}</div>
           <div class="card sk-card sk-out"><span class="bone sk-h2"></span>{#each [80, 55, 65, 40] as w}<span class="bone" style:width={`${w}%`}></span>{/each}</div>
         </div>
       </div>
@@ -133,19 +108,8 @@
   {/if}
 </div>
 
-<!-- The key is shown once, so only "Done" closes this. Chrome still closes on a second Escape, so reopen right after. -->
-<dialog bind:this={sheet} oncancel={(e) => (e.preventDefault(), setTimeout(() => key && !sheet?.open && sheet?.showModal()))} aria-label="New API key">
-  {#if key}
-    <div class="sheet">
-      <KeyCard {key} />
-      <div class="actions"><button type="button" class="btn btn-primary" onclick={() => (sheet?.close(), (key = ''))}>Done, I copied it</button></div>
-    </div>
-  {/if}
-</dialog>
-
 <style>
-  .toast { position: fixed; top: 72px; left: 50%; translate: -50% 0; z-index: 20; animation: pop 0.45s var(--spring) both; }
-  .sheet { display: grid; gap: 12px; }
+  .toast { position: fixed; top: 72px; inset-inline: 0; width: fit-content; margin-inline: auto; z-index: 20; animation: pop 0.45s var(--spring) both; }
 
   .sk { display: grid; gap: 18px; }
   .sk-head { display: grid; gap: 12px; }
@@ -155,16 +119,13 @@
   .sk-card { display: grid; gap: 14px; padding: 20px 22px; }
   .sk-h2 { width: 110px; height: 15px; margin-bottom: 4px; }
   .sk-field { height: 40px; border-radius: var(--radius-sm); }
+  .sk-stats { grid-template-columns: repeat(3, 1fr); padding: 16px 18px; }
+  .sk-stat { height: 44px; }
   .sk-out { min-height: 220px; align-content: start; }
   @media (max-width: 960px) { .sk-cols { grid-template-columns: minmax(0, 1fr); } }
 
   .meta { display: grid; gap: 12px; padding: 16px 18px; }
-  .key { display: flex; align-items: center; gap: 12px; }
-  .key-text { flex: 1; min-width: 0; display: grid; gap: 6px; }
-  .key h2 { font-size: 15px; color: var(--text); }
-  .prefix { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; color: var(--accent); }
-  .prefix span { color: var(--faint); letter-spacing: 0.05em; }
-  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; padding-top: 12px; border-top: 1px solid var(--border); }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
   .stats div + div { padding-left: 12px; border-left: 1px solid var(--border); }
   .stats dt { font-size: 12.5px; color: var(--muted); }
   .stats dd { display: flex; align-items: baseline; gap: 6px; margin: 2px 0 0; font-size: 20px; font-weight: 640; font-stretch: 110%; font-variant-numeric: tabular-nums; }

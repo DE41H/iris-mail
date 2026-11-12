@@ -25,6 +25,12 @@ export interface Plugin {
   result_count?: number;
 }
 
+export interface AgentKey {
+  id: string;
+  name: string;
+  prefix: string;
+}
+
 // Each plugin gets its own iris colour, stable across visits.
 // FNV-1a: uuid7 ids share a time prefix, so a weak hash would give neighbours the same colour.
 export const hue = (id: string) => [...id].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261) % 160 + 180; // teal to magenta, around the brand violet

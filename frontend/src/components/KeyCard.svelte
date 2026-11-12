@@ -3,7 +3,7 @@
   import CopyButton from './CopyButton.svelte';
 
   // The server returns a key once, so this card is the only place it lives.
-  let { key }: { key: string } = $props();
+  let { key, path = '/api/v1/results/?fetched=false' }: { key: string; path?: string } = $props();
 
   const GLYPHS = 'abcdefghijklmnopqrstuvwxyz0123456789#$%&';
   let shown = $state('');
@@ -18,18 +18,18 @@
     return () => clearInterval(tick);
   });
 
-  const curl = $derived(`curl -H "Authorization: Bearer ${key}" ${location.origin}/api/v1/results/?fetched=false`);
+  const curl = $derived(`curl -H "Authorization: Bearer ${key}" ${location.origin}${path}`);
 </script>
 
 <section class="card key">
-  <div class="card-head"><h2>Your API key</h2><span class="once">Shown once. Copy it now.</span></div>
+  <div class="card-head"><h2>Your API key</h2></div>
   <div class="card-body stack">
     <div class="row">
       <code>{shown}</code>
-      <CopyButton text={key} label="Copy key" />
+      <CopyButton text={key} />
     </div>
     <div>
-      <div class="label">Fetch new results</div>
+      <div class="label">{path.includes('results') ? 'Fetch new results' : 'List your plugins'}</div>
       <div class="row">
         <code class="small">{curl}</code>
         <CopyButton text={curl} />
@@ -41,7 +41,6 @@
 <style>
   .key { border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); box-shadow: var(--shadow-lift); animation: rise 0.5s var(--ease) both; }
   h2 { color: var(--text); }
-  .once { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--signal-soft); color: var(--signal-text); font-weight: 560; }
   .row { display: flex; align-items: center; gap: 8px; }
   code {
     flex: 1;

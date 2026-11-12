@@ -51,7 +51,7 @@
     <span class="track" aria-hidden="true"></span>
     <span class="state">{sub.active ? 'On' : 'Off'}</span>
   </label>
-  <ConfirmButton label="Remove" confirm="Are you sure?" danger onconfirm={remove} />
+  <ConfirmButton label="Remove" danger onconfirm={remove} />
 
   {#if asking}
     <div class="consent" transition:slide={{ duration: 220 }}>

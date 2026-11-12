@@ -39,7 +39,7 @@
   </div>
 {:else if draft && PluginEditor}
   <div class="screen" in:fade={{ duration: 200 }}>
-    <PluginEditor bind:draft submit="Create plugin" onsubmit={create}>
+    <PluginEditor bind:draft submit="Create" onsubmit={create}>
       {#snippet head()}
         <div class="eyebrow"><button type="button" class="back" onclick={() => (draft = null)}>Templates</button> <span aria-hidden="true">/</span> new</div>
         <h1>New plugin</h1>

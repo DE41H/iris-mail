@@ -26,6 +26,7 @@
   <a href="/docs" aria-current={current('/docs')}>Docs</a>
   {#if $session}
     <a href="/plugins" aria-current={current('/plugins')}>Plugins</a>
+    <a href="/keys" aria-current={current('/keys')}>Keys</a>
     <a href="/subscriptions" aria-current={current('/subscriptions')}><span class="long">Subscriptions</span><span class="short">Inbox</span></a>
     <span class="account">
       {@render toggle()}
@@ -120,9 +121,10 @@
   }
 
   .short { display: none; }
-  /* The full nav needs ~360px; phones narrower than 400px get the short label. */
+  /* The full nav needs ~400px; narrower phones get the short label and tighter spacing. */
   @media (max-width: 400px) {
     .long { display: none; }
     .short { display: inline; }
+    .account { gap: 6px; padding-left: 8px; }
   }
 </style>

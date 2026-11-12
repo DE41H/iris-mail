@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import KeyList from '../components/KeyList.svelte';
+---
+
+<Layout title="Keys">
+  <div class="screen">
+    <KeyList client:only="svelte" />
+  </div>
+</Layout>

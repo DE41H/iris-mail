@@ -2,7 +2,7 @@
   import { onDestroy } from 'svelte';
 
   // Inline two-step confirmation: the first click arms the button, a second within 4s runs it.
-  let { label, confirm, danger = false, onconfirm }: { label: string; confirm: string; danger?: boolean; onconfirm: () => unknown } = $props();
+  let { label, danger = false, onconfirm }: { label: string; danger?: boolean; onconfirm: () => unknown } = $props();
 
   let armed = $state(false);
   let busy = $state(false);
@@ -28,12 +28,14 @@
 </script>
 
 <button type="button" class="btn" class:btn-danger={danger} class:armed disabled={busy} onclick={click} onblur={() => armed && (clearTimeout(timer), (armed = false))}>
-  {busy ? 'Working…' : armed ? confirm : label}
+  {busy ? 'Working…' : label}{#if armed}<span class="sr-only">, click again to confirm</span>{/if}
 </button>
 
 <style>
   .btn { position: relative; overflow: hidden; }
-  .armed { border-color: currentColor; animation: nudge 0.35s var(--ease); }
+  /* Armed: the label stays; the button shakes harder as the 4s window runs out. */
+  @property --amp { syntax: '<length>'; inherits: false; initial-value: 1px; }
+  .armed { border-color: currentColor; animation: shake 0.3s linear infinite, grow 4s linear both; }
   /* The bar drains over the 4s window, so it is clear how long the second click stays open. */
   .armed::after {
     content: '';
@@ -45,5 +47,6 @@
     animation: drain 4s linear both;
   }
   @keyframes drain { to { scale: 0 1; } }
-  @keyframes nudge { 30% { translate: -3px 0; } 60% { translate: 2px 0; } }
+  @keyframes grow { to { --amp: 3px; } }
+  @keyframes shake { 25% { translate: calc(var(--amp) * -1) 0; } 75% { translate: var(--amp) 0; } }
 </style>

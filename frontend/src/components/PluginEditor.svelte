@@ -18,7 +18,7 @@
     steps?: boolean; // numbered steps for a new plugin; plain sections when editing one
     tools?: Snippet; // top right, beside the title
     aside?: Snippet; // top of the side column, above the live output
-    children?: Snippet; // bottom bar, beside the submit button
+    children?: Snippet; // page head, beside the submit button
   }
 
   let { draft = $bindable(), submit, onsubmit, head, dirty = true, locked = '', steps = true, tools, aside, children }: Props = $props();
@@ -66,12 +66,8 @@
 {#snippet status()}
   {#if locked}
     <span class="state">Read only</span>
-  {:else if issues.length && !tried}
-    <span class="state">Not ready yet</span>
-  {:else if issues.length}
+  {:else if issues.length && tried}
     <button type="button" class="state warn" onclick={() => (open = !open)} aria-expanded={open}>{issues.length} to fix <span class="caret" class:up={open}>▾</span></button>
-  {:else if dirty}
-    <span class="state ok">Unsaved changes</span>
   {/if}
   <div class="actions">
     {@render children?.()}
@@ -94,12 +90,10 @@
 <form class="editor grow" class:plain={!steps} onsubmit={save} novalidate>
   <div class="page-head reveal">
     <div>{@render head()}</div>
-    {#if tools || !steps}
-      <div class="actions top">
-        {#if !steps}{@render status()}{/if}
-        {@render tools?.()}
-      </div>
-    {/if}
+    <div class="actions top">
+      {@render status()}
+      {@render tools?.()}
+    </div>
   </div>
 
   <div class="cols grow">
@@ -152,12 +146,12 @@
       <SchemaPreview fields={draft.fields} rules={draft.rules} />
     </section>
   </div>
-
-  {#if steps}<div class="bar">{@render status()}</div>{/if}
 </form>
 
 <style>
   .editor { display: flex; flex-direction: column; gap: 16px; }
+  /* The reveal animation makes the head its own stacking context; lift it so the issues dropdown covers the cards below. */
+  .page-head { position: relative; z-index: 6; }
 
   /* Edit on the left, see the result on the right: both columns scroll on their own. */
   .cols {
@@ -199,43 +193,30 @@
   .out-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 18px 0; }
   .out-head h2 { font-size: 15px; color: var(--text); }
 
-  .bar {
-    position: sticky;
-    bottom: 0;
-    z-index: 5;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin: -4px -24px -20px;
-    padding: 12px 24px 14px;
-    background: color-mix(in oklab, var(--bg) 82%, transparent);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid var(--border);
-  }
-  .bar .actions { margin-left: auto; }
-  /* Editing an existing plugin: status and save sit in the page head instead of a bottom bar. */
+  /* Status and save sit in the page head. */
   .top { position: relative; }
   .top .actions { display: contents; }
-  .top .issues { left: auto; right: 0; bottom: auto; top: calc(100% + 10px); z-index: 5; }
   .state { display: inline-flex; align-items: center; gap: 7px; font: 540 13px var(--font); color: var(--muted); background: none; border: 0; padding: 0; }
-  .state.ok, .state.warn { animation: pop 0.35s var(--spring); }
-  .state.ok::before, .state.warn::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-  .state.ok { color: var(--accent); }
+  .state.warn { animation: pop 0.35s var(--spring); }
+  .state.warn::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
   .state.warn { color: var(--signal-text); cursor: pointer; }
   .caret { display: inline-block; transition: rotate 0.3s var(--spring); }
   .caret.up { rotate: 180deg; }
   .issues {
     position: absolute;
-    left: 24px;
-    bottom: calc(100% + 10px);
-    width: min(460px, calc(100% - 48px));
+    right: 0;
+    top: calc(100% + 10px);
+    z-index: 5;
+    width: min(460px, calc(100vw - 32px));
     max-height: 260px;
     overflow: auto;
     margin: 0;
     padding: 12px 16px 12px 32px;
     color: var(--text);
     font-size: 13px;
+    background: color-mix(in oklab, var(--signal) 8%, var(--surface));
+    border-color: color-mix(in oklab, var(--signal) 45%, var(--border));
+    border-left: 3px solid var(--signal);
     box-shadow: var(--shadow-lift);
   }
 
@@ -247,7 +228,6 @@
     .output :global(pre) { max-height: 360px; }
   }
   @media (max-width: 640px) {
-    .bar { margin-inline: -16px; padding-inline: 16px; }
     .sec-head { padding: 16px 16px 0; }
     .body, .plain .body { padding: 14px 16px 18px; }
   }

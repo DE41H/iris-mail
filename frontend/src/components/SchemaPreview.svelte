@@ -38,7 +38,7 @@
   </div>
   <div class="code" role="tabpanel">
     <Json {value} />
-    <div class="copy"><CopyButton text={JSON.stringify(value, null, 2)} label="Copy" /></div>
+    <div class="copy"><CopyButton text={JSON.stringify(value, null, 2)} label="Copy JSON" icon /></div>
   </div>
 </div>
 

@@ -18,7 +18,7 @@ Granian, Astro 7, Svelte 5 (pnpm), Caddy, Docker, Python 3.13 (uv).
   `revive` /5 min retries stalled jobs)
 - `backend/static/`: `iris.css`, `theme.js` (blocking, `data-theme` from `localStorage.theme`/system, `theme-color` meta from `--bg`; toggle in `Nav`);
   `templates/`: allauth
-- `frontend/src/`: `pages/` (`me` account+usage, `keys` plugin/agent switch (remembered in `localStorage`): rotate, create agent, delete with undo, full key only in the once-shown `KeyCard`, `connect` consent, `docs`), `components/`, `lib/` (`api` `session` `undo`
+- `frontend/src/`: `pages/` (`me` account+usage, `keys` plugin/agent switch (remembered in `localStorage`): rotate, create agent, revoke, full key only in the once-shown `KeyCard`, `connect` consent, `docs`), `components/`, `lib/` (`api` `session`
   `schema` `rules` `presets`)
 - `docker/`: compose, Dockerfiles, `caddyfile`, `deploy.sh`, `.env.example` (all env vars)
 
@@ -74,7 +74,7 @@ Schema
 Frontend
 - One screen/page, `client:only="svelte"` islands (except `Headline`: `client:load`, so the h1 is in the HTML), short copy.
 - CSP: no inline `<script>`/`style="…"` in `.astro`, no markdown pages.
-- Destructive: inline `ConfirmButton`, never `confirm()`. Deleting list rows (agent keys, subscriptions): `.trash` strip on the row's right edge, row hides at once, request waits 5s behind an `Undo` toast (`lib/undo.svelte.ts`).
+- Destructive: inline `ConfirmButton`, never `confirm()`.
 - Heavy code via `import()` beside API calls (`PluginEditor`/re2js in `NewPlugin`, `PluginDetail`). `preloadIslands` in
   `astro.config.mjs` adds modulepreload links for each page's static island imports.
 - No chart lib (`Account` graph = CSS bars); no dep unless it removes more code than it adds.
